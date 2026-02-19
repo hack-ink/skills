@@ -36,6 +36,7 @@ These rules are hack-ink mandatory conventions for Rust code and Rust developmen
 - If `mod.rs` exists, flatten it into `a.rs` and `a/xxx.rs` style files.
 
 ## Error handling
+
 - Use `color_eyre::eyre::Result` for fallible APIs. Do not introduce `anyhow`.
 - Use `#[error(transparent)]` only for thin wrappers where this crate adds no context and the upstream message is already sufficient for developers.
 - Use `ok_or_else` to convert `Option` to `Result` with context.
