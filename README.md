@@ -5,6 +5,9 @@ This repository hosts reusable agent skills for Codex workflows.
 ## Available skills
 
 - `dep-roll` — controlled dependency-upgrade workflow for pnpm, Poetry, Cargo, verification, and Dependabot alignment (`dep-roll/SKILL.md`).
+- `python-style` — mandatory Python conventions for shared workspace virtualenv setup and Poetry workflow (`python-style/SKILL.md`).
+- `rust-style` — mandatory Rust conventions for scope, toolchain/workflow, safety, formatting, error handling, logging, and ownership (`rust-style/SKILL.md`).
+- `pre-commit` — repo-specific pre-commit/push gate requiring `Makefile.toml` and `cargo make lint-fix`, `cargo make fmt`, `cargo make test` (`pre-commit/SKILL.md`).
 
 ## Contributing
 
