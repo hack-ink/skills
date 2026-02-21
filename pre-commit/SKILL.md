@@ -1,51 +1,50 @@
 ---
 name: pre-commit
-description: Use when you are about to commit or push in a hack-ink repository that uses a Makefile.toml lint/format/test gate and requires docs-sync and GitHub Actions verification.
+description: Trigger when preparing a commit where repo-specific pre-commit checks are required.
 ---
 
 # Pre-commit
 
 ## Scope
 
-- This skill is for hack-ink repositories where `Makefile.toml` is required.
+- This skill is path-conditional and runs only the commands explicitly required by the repository layout.
 
 ## Steps
 
-1. Before every commit, run full checks. **All tests must pass.**
-   - Check `Makefile.toml` exists and confirm it defines tasks `lint-fix`, `fmt`, and `test`.
-   - Run the commands in this exact order:
-     - `cargo make lint-fix`
-     - `cargo make fmt`
-     - `cargo make test`
+1. `Makefile.toml` exists at repo-root?
+    - If present, run **exactly** in this order:
+        - `cargo make lint-fix`
+        - `cargo make fmt`
+        - `cargo make test`
+    - If not present, record that the Makefile.toml gate is not applicable and skip this section.
 
-2. Verify staged docs coverage before proceeding (mandatory):
-   - Stage code/config changes as normal.
-   - If there are staged non-doc changes, require corresponding staged docs changes in `docs/` (excluding `docs/plan/**`).
-   - If no such docs changes are staged, stop and require either:
-     - staging the missing docs updates, or
-     - explicit confirmation that docs updates are intentionally not needed for this commit.
-   - Example:
-     - `git diff --cached --name-only | grep -v '^docs/'` (staged non-doc files)
-     - `git diff --cached --name-only -- docs/ | grep -v '^docs/plan/'` (staged docs files, excluding plan docs)
+2. `docs/` directory exists at repo-root?
+    - If present, run docs checks only when the repository explicitly documents one exact command for docs validation.
+        - If an exact command is documented, run that exact command.
+        - If no exact command is documented, skip docs checks and record that docs validation is not defined.
+    - Do not infer or auto-detect docs commands.
 
-3. After push, verify CI is green before considering work complete:
-   - `CURRENT_SHA="$(git rev-parse HEAD)"`
-   - `gh` preferred:
-     - `RUN_ID=$(gh run list --json databaseId,headSha --limit 50 --jq '.[] | select(.headSha == "'"${CURRENT_SHA}"'") | .databaseId' | head -n 1)`
-     - `if [ -z "${RUN_ID}" ]; then echo "No GitHub Actions run found for ${CURRENT_SHA}; verify manually in Actions UI."; else gh run watch --exit-status "${RUN_ID}"; fi`
-   - Manual fallback tied to HEAD:
-     - `echo "Open your repository Actions page and confirm workflows for ${CURRENT_SHA} are successful."`
+3. `.github/workflows/` directory exists at repo-root?
+    - If present, run workflow checks only when the repository explicitly documents one exact command.
+        - If an exact command is documented, run that exact command.
+        - If no exact command is documented, skip workflow checks and record that workflow verification is not defined.
+    - Do not auto-detect workflow runs or use `gh` CLI watchers.
 
-`lint-fix` may change code, so formatting must follow to keep a stable diff, and tests must run after both to validate the final result.
+`lint-fix` may change files, so keep `fmt` and `test` tied to the same local state.
 
 ## Outputs
 
-- Commands and exit codes: run `cargo make lint-fix`, `cargo make fmt`, `cargo make test`.
-- Docs sync evidence (staged checks):
-  - `NON_DOC_FILES=$(git diff --cached --name-only | grep -v '^docs/')`
-  - `DOC_FILES=$(git diff --cached --name-only -- docs/ | grep -v '^docs/plan/')`
-  - Include `NON_DOC_FILES` and `DOC_FILES`; when `NON_DOC_FILES` is non-empty, `DOC_FILES` must be non-empty (excluding `docs/plan/**`).
-- Post-push CI evidence (for `CURRENT_SHA`):
-  - Capture and record `${RUN_ID}` and watch result (`gh run list`, `gh run watch --exit-status`) when available.
-  - If `RUN_ID` is empty, record manual verification note that actions for `${CURRENT_SHA}` were checked in the UI.
-- Working-tree summary: run and record `git status` and `git diff --stat`.
+- For each section above, report:
+    - Command executed and exact arguments.
+    - Whether it ran or was skipped (with reason for each skip).
+    - Exit code for each command.
+- If `Makefile.toml` exists:
+    - `cargo make lint-fix` exit code
+    - `cargo make fmt` exit code
+    - `cargo make test` exit code
+- If `docs/` exists and has an explicitly documented command:
+    - document-check command + exit code
+- If `.github/workflows/` exists and has an explicitly documented command:
+    - workflow-check command + exit code
+- If docs or workflow command is skipped:
+    - add explicit skip reason (e.g. `docs/check command not explicitly documented`; `workflow check command not explicitly documented`).
