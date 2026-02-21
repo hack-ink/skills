@@ -1,4 +1,4 @@
-# Hack.ink AI-agent skills
+# hack.ink AI-agent skills
 
 This repository hosts reusable agent skills for Codex workflows.
 
