@@ -1,12 +1,12 @@
 # Protocol Testing Methodology
 
-This document defines a repeatable test suite for the Director/Auditor/Orchestrator/Implementer protocol using the packaged schemas in `codex-multi-agent-protocol/schemas/`.
+This document defines a repeatable test suite for the Director/Auditor/Orchestrator/Implementer protocol using the packaged schemas in `schemas/`.
 
 ## 1) Preconditions
 
 1. Ensure your working tree includes the latest protocol package updates.
 2. Confirm protocol tokens are present across the packaged schema set:
-   - `rg -n 'assistant_nested|agent-output\\.auditor|agent-output\\.orchestrator|agent-output\\.implementer' codex-multi-agent-protocol/schemas/*.json`
+   - `rg -n 'assistant_nested|agent-output\\.auditor|agent-output\\.orchestrator|agent-output\\.implementer' schemas/*.json`
    - Run a second check to confirm legacy routing tokens are absent from the same paths.
 
 Pass criteria:
@@ -16,7 +16,13 @@ Pass criteria:
 
 ## 2) Schema Validation (Structural)
 
-Run:
+Run from the skill root (so `schemas/` resolves correctly):
+
+```sh
+cd ~/.codex/skills/codex-multi-agent-protocol
+```
+
+Then run:
 
 ```sh
 python3 - <<'PY'
@@ -24,12 +30,12 @@ import json
 from pathlib import Path
 from jsonschema import Draft202012Validator
 files = [
-  'codex-multi-agent-protocol/schemas/dispatch-preflight.schema.json',
-  'codex-multi-agent-protocol/schemas/agent-output.auditor.write.schema.json',
-  'codex-multi-agent-protocol/schemas/agent-output.auditor.read_only.schema.json',
-  'codex-multi-agent-protocol/schemas/agent-output.orchestrator.write.schema.json',
-  'codex-multi-agent-protocol/schemas/agent-output.orchestrator.read_only.schema.json',
-  'codex-multi-agent-protocol/schemas/agent-output.implementer.schema.json',
+  'schemas/dispatch-preflight.schema.json',
+  'schemas/agent-output.auditor.write.schema.json',
+  'schemas/agent-output.auditor.read_only.schema.json',
+  'schemas/agent-output.orchestrator.write.schema.json',
+  'schemas/agent-output.orchestrator.read_only.schema.json',
+  'schemas/agent-output.implementer.schema.json',
 ]
 for f in files:
     d = json.loads(Path(f).read_text())

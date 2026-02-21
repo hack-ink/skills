@@ -1,27 +1,26 @@
 ---
 name: codex-multi-agent-protocol
-description: Protocol package for 4-role Director->Auditor->Orchestrator->Implementer routing with canonical JSON schemas and repeatable validation/testing steps.
+description: Use when a task requires multi-agent execution with Director/Auditor/Orchestrator/Implementer routing and schema-validated outputs.
 ---
 
 # Codex Multi-Agent Protocol
 
 ## When to use
 
-- Use this skill when defining, validating, or testing 4-role protocol messages across Director, Auditor, Orchestrator, and Implementer.
-- Use it when updating runtime protocol schemas and when verifying outputs are structurally schema-valid before acceptance.
+- Use this skill when a task is non-trivial and benefits from delegated work or review gates (especially repository writes with ambiguity, risk, or multiple slices).
+- Use it when validating or evolving the 4-role protocol (schemas, routing, liveness, and acceptance rules).
 
 ## Why this helps
 
-- Provides a single portable package for protocol schemas instead of relying on runtime-only files.
-- Keeps structural checks and protocol test procedure in one place so role routing and payload acceptance rules stay consistent.
+- Packages the protocol schemas and test methodology together so validation is deterministic and portable.
+- Keeps protocol evolution and regression checks close to the schemas to reduce drift.
 
 ## How to use
 
-1. Validate schema structure and examples from repository root:
-   - `python3 - <<'PY'`
-   - Use the script in `references/PROTOCOL_TESTING.md` section 2.
-2. If schemas changed, run positive and negative protocol tests described in `references/PROTOCOL_TESTING.md`.
-3. Apply runtime updates only after schema validation passes and required protocol tests are green.
+1. Run all validation steps from the skill root directory (where `schemas/` and `references/` exist):
+   - Example: `cd ~/.codex/skills/codex-multi-agent-protocol`
+2. Validate schema structure and examples using `references/PROTOCOL_TESTING.md` section 2.
+3. If schemas or routing rules changed, run the E2E and negative tests in `references/PROTOCOL_TESTING.md`.
 
 ## Contents
 
@@ -35,5 +34,5 @@ description: Protocol package for 4-role Director->Auditor->Orchestrator->Implem
 
 ## Notes
 
-- These schemas are structural. Cross-field/runtime invariants remain enforced by the active AGENTS protocol.
+- These schemas are structural. Cross-field/runtime invariants remain enforced by the active AGENTS protocol (or the protocol section of this skill when it is used).
 - Keep `routing_mode` as `assistant_nested` unless the protocol SSOT explicitly changes.
