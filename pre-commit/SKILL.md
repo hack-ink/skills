@@ -31,7 +31,7 @@ description: Use when you are about to commit or push in a hack-ink repository t
 3. After push, verify CI is green before considering work complete:
    - `CURRENT_SHA="$(git rev-parse HEAD)"`
    - `gh` preferred:
-     - `RUN_ID=$(gh run list --json id,headSha --limit 50 --jq '.[] | select(.headSha == "'"${CURRENT_SHA}"'") | .id' | head -n 1)`
+     - `RUN_ID=$(gh run list --json databaseId,headSha --limit 50 --jq '.[] | select(.headSha == "'"${CURRENT_SHA}"'") | .databaseId' | head -n 1)`
      - `if [ -z "${RUN_ID}" ]; then echo "No GitHub Actions run found for ${CURRENT_SHA}; verify manually in Actions UI."; else gh run watch --exit-status "${RUN_ID}"; fi`
    - Manual fallback tied to HEAD:
      - `echo "Open your repository Actions page and confirm workflows for ${CURRENT_SHA} are successful."`
