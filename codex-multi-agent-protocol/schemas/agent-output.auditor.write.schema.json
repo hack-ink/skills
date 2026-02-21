@@ -1,0 +1,193 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "file:///.codex/agent-output-auditor-write.schema.json",
+	"title": "Codex Auditor Output (Write)",
+	"description": "Structural schema for auditor outputs that report completion of write subtasks.",
+	"type": "object",
+	"required": [
+		"ssot_id",
+		"task_id",
+		"subtask_id",
+		"agent_type",
+		"routing_mode",
+		"slice_id",
+		"implementer_subtask_ids",
+		"parallel_peak_inflight",
+		"status",
+		"blocked",
+		"rationale",
+		"review_only",
+		"blocking_reason",
+		"validation_evidence",
+		"allowed_paths",
+		"review_loop"
+	],
+	"properties": {
+		"ssot_id": {
+			"type": "string",
+			"minLength": 1
+		},
+		"task_id": {
+			"type": "string",
+			"minLength": 1
+		},
+		"subtask_id": {
+			"type": "string",
+			"minLength": 1
+		},
+		"agent_type": {
+			"type": "string",
+			"const": "auditor"
+		},
+		"routing_mode": {
+			"type": "string",
+			"const": "assistant_nested"
+		},
+		"slice_id": {
+			"type": "string",
+			"minLength": 1
+		},
+		"implementer_subtask_ids": {
+			"type": "array",
+			"minItems": 1,
+			"items": {
+				"type": "string",
+				"minLength": 1
+			}
+		},
+		"parallel_peak_inflight": {
+			"type": "integer",
+			"minimum": 1
+		},
+		"status": {
+			"type": "string",
+			"enum": ["in_progress", "done", "awaiting_review"]
+		},
+		"blocked": {
+			"type": "boolean"
+		},
+		"rationale": {
+			"type": "string",
+			"minLength": 1
+		},
+		"review_only": {
+			"type": "boolean"
+		},
+		"blocking_reason": {
+			"type": "string",
+			"minLength": 1
+		},
+		"validation_evidence": {
+			"type": "string",
+			"minLength": 1
+		},
+		"allowed_paths": {
+			"type": "array",
+			"minItems": 1,
+			"items": {
+				"type": "string",
+				"minLength": 1,
+				"pattern": "^/"
+			}
+		},
+		"review_loop": {
+			"type": "object",
+			"required": [
+				"policy",
+				"auditor_passes",
+				"orchestrator_self_passes",
+				"converged",
+				"new_issues_found_in_last_audit_pass",
+				"escalation_reason"
+			],
+			"properties": {
+				"policy": {
+					"type": "string",
+					"const": "adaptive_min2_max3_second_pass_stable"
+				},
+				"auditor_passes": {
+					"type": "integer",
+					"minimum": 2,
+					"maximum": 3
+				},
+				"orchestrator_self_passes": {
+					"type": "integer",
+					"minimum": 2
+				},
+				"converged": {
+					"type": "boolean"
+				},
+				"new_issues_found_in_last_audit_pass": {
+					"type": "boolean"
+				},
+				"escalation_reason": {
+					"type": "string",
+					"minLength": 1
+				}
+			},
+			"additionalProperties": false
+		}
+	},
+	"allOf": [
+		{
+			"oneOf": [
+				{
+					"properties": {
+						"status": {
+							"const": "awaiting_review"
+						},
+						"blocked": {
+							"const": true
+						}
+					}
+				},
+				{
+					"allOf": [
+						{
+							"properties": {
+								"status": {
+									"enum": ["in_progress", "done"]
+								}
+							}
+						},
+						{
+							"properties": {
+								"blocked": {
+									"const": false
+								}
+							}
+						}
+					]
+				}
+			]
+		}
+	],
+	"examples": [
+		{
+			"ssot_id": "sso-t-2026-02-18",
+			"task_id": "task-write-001",
+			"subtask_id": "s2-write",
+			"agent_type": "auditor",
+			"routing_mode": "assistant_nested",
+			"slice_id": "slice-audit-write-a",
+			"implementer_subtask_ids": ["impl-1", "implementer-2"],
+			"parallel_peak_inflight": 2,
+			"status": "done",
+			"blocked": false,
+			"rationale": "Auditor review completed and passed.",
+			"review_only": false,
+			"blocking_reason": "not_applicable",
+			"validation_evidence": "Auditor independently validated all implementer payloads and completed required audit passes.",
+			"allowed_paths": ["/abs/runtime/.codex/AGENTS.md"],
+			"review_loop": {
+				"policy": "adaptive_min2_max3_second_pass_stable",
+				"auditor_passes": 2,
+				"orchestrator_self_passes": 2,
+				"converged": true,
+				"new_issues_found_in_last_audit_pass": false,
+				"escalation_reason": "none"
+			}
+		}
+	],
+	"additionalProperties": false
+}

@@ -1,0 +1,157 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "file:///.codex/agent-output-implementer.schema.json",
+	"title": "Codex Implementer Output",
+	"description": "Structural schema for implementer outputs.",
+	"type": "object",
+	"required": [
+		"ssot_id",
+		"task_id",
+		"subtask_id",
+		"agent_type",
+		"routing_mode",
+		"slice_id",
+		"attempt",
+		"status",
+		"summary",
+		"blocked",
+		"self_check",
+		"rationale",
+		"blocking_reason",
+		"allowed_paths"
+	],
+	"properties": {
+		"ssot_id": {
+			"type": "string",
+			"minLength": 1
+		},
+		"task_id": {
+			"type": "string",
+			"minLength": 1
+		},
+		"subtask_id": {
+			"type": "string",
+			"minLength": 1
+		},
+		"agent_type": {
+			"type": "string",
+			"const": "implementer"
+		},
+		"routing_mode": {
+			"type": "string",
+			"const": "assistant_nested"
+		},
+		"slice_id": {
+			"type": "string",
+			"minLength": 1
+		},
+		"attempt": {
+			"type": "integer",
+			"minimum": 1
+		},
+		"status": {
+			"type": "string",
+			"enum": ["in_progress", "done", "awaiting_review"]
+		},
+		"summary": {
+			"type": "string",
+			"minLength": 1
+		},
+		"blocked": {
+			"type": "boolean"
+		},
+		"self_check": {
+			"type": "object",
+			"required": ["status", "command", "evidence"],
+			"properties": {
+				"status": {
+					"type": "string",
+					"enum": ["pass", "fail", "not_applicable"]
+				},
+				"command": {
+					"type": "string",
+					"minLength": 1
+				},
+				"evidence": {
+					"type": "string",
+					"minLength": 1
+				}
+			},
+			"additionalProperties": false
+		},
+		"rationale": {
+			"type": "string",
+			"minLength": 1
+		},
+		"blocking_reason": {
+			"type": "string",
+			"minLength": 1
+		},
+		"allowed_paths": {
+			"type": "array",
+			"minItems": 1,
+			"items": {
+				"type": "string",
+				"minLength": 1,
+				"pattern": "^/"
+			}
+		}
+	},
+	"allOf": [
+		{
+			"oneOf": [
+				{
+					"properties": {
+						"status": {
+							"const": "awaiting_review"
+						},
+						"blocked": {
+							"const": true
+						}
+					}
+				},
+				{
+					"allOf": [
+						{
+							"properties": {
+								"status": {
+									"enum": ["in_progress", "done"]
+								}
+							}
+						},
+						{
+							"properties": {
+								"blocked": {
+									"const": false
+								}
+							}
+						}
+					]
+				}
+			]
+		}
+	],
+	"examples": [
+		{
+			"ssot_id": "sso-t-2026-02-18",
+			"task_id": "task-write-001",
+			"subtask_id": "s2-write",
+			"agent_type": "implementer",
+			"routing_mode": "assistant_nested",
+			"slice_id": "slice-implementer-a",
+			"attempt": 1,
+			"status": "done",
+			"summary": "Applied requested schema updates.",
+			"blocked": false,
+			"self_check": {
+				"status": "pass",
+				"command": "python3 -m jsonschema --version",
+				"evidence": "Schema validation command completed."
+			},
+			"rationale": "Implemented only requested schema files.",
+			"blocking_reason": "not_applicable",
+			"allowed_paths": ["/abs/runtime/.codex/AGENTS.md"]
+		}
+	],
+	"additionalProperties": false
+}
