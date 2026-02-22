@@ -2,17 +2,17 @@
 
 This document defines a repeatable test suite for the Director/Auditor/Orchestrator/Implementer protocol using the packaged schemas in `schemas/`.
 
-Operational workflow rules (parallel windowing, spec→quality gates, integration evidence) live in `references/WORKFLOWS.md`.
+Operational workflow rules (parallel windowing, spec->quality gates, integration evidence) live in `references/WORKFLOWS.md`.
 
 ## Test tiers (recommended)
 
-- **Smoke (default, < 2 min):** Run `python3 references/e2e/run_smoke.py`. Then run sections **1–3** with **2 implementers** and a small window (2). This validates schema/examples + fixtures quickly, then validates depth=3 nesting + wait-any behavior without stressing the thread pool.
-- **Stress (on-demand, can be slow):** Run sections **5–7** only when you change runtime concurrency settings (`max_threads`, scheduler) or when debugging liveness/timeout issues.
+- **Smoke (default, < 2 min):** Run `python3 references/e2e/run_smoke.py`. Then run sections **1-3** with **2 implementers** and a small window (2). This validates schema/examples + fixtures quickly, then validates depth=3 nesting + wait-any behavior without stressing the thread pool.
+- **Stress (on-demand, can be slow):** Run sections **5-7** only when you change runtime concurrency settings (`max_threads`, scheduler) or when debugging liveness/timeout issues.
 
 Notes:
 
 - `codex exec` is **not required** to run these tests. It is only useful when you want a **clean, ephemeral, non-interactive** reproduction (e.g., regression runs) and a single captured final JSON output.
-- Always **`close_agent` for completed children**. Finished-but-not-closed agents continue consuming thread slots and can make later tasks appear “stuck” due to thread starvation.
+- Always **`close_agent` for completed children**. Finished-but-not-closed agents continue consuming thread slots and can make later tasks appear "stuck" due to thread starvation.
 
 ## 1) Preconditions
 
@@ -28,7 +28,7 @@ Notes:
     - `ulimit -Sn` and `ulimit -Hn`
     - If soft is `256`, expect high-concurrency `exec_command` runs to be flaky or fail with `os error 24`.
     - Note: `launchctl limit` can be higher than the per-shell soft limit (`ulimit -Sn`). Prefer checking both.
-    - If you see `os error 24` even with a high `max_threads`, fix the open-files limits (don’t rely on protocol-level throttling).
+    - If you see `os error 24` even with a high `max_threads`, fix the open-files limits (don't rely on protocol-level throttling).
 5. (Recommended for stress runs) Ensure no other long-running Codex sessions are consuming agent threads:
     - `ps -Ao pid,etime,command | rg '\\bcodex( resume)?\\b'`
     - Close/exit other interactive sessions before trying to saturate `max_threads`.
@@ -83,7 +83,7 @@ Pass criteria:
 Goal:
 
 - Exercise **windowed** parallel dispatch (`wait_any`) with ownership lock.
-- Exercise **spec → quality** audit phases.
+- Exercise **spec -> quality** audit phases.
 - Exercise Orchestrator **integration evidence** (`integration_report`).
 
 ### Setup

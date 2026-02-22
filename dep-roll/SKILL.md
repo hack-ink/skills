@@ -33,7 +33,7 @@ Perform version constraint and lockfile updates in a disciplined order so depend
 
 - Do not hand-edit lockfiles. Regenerate them with the ecosystem tooling.
 - Do not proceed to Dependabot reconciliation until verification has run for the touched ecosystems.
-- If verification fails, stop and report the failure; do not “fix forward” by stacking unrelated changes.
+- If verification fails, stop and report the failure; do not "fix forward" by stacking unrelated changes.
 
 ## Procedure (repo-agnostic)
 

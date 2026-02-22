@@ -1,7 +1,7 @@
 # Protocol Workflows (v2)
 
 This document is the **operational playbook** that pairs with the structural schemas in `schemas/`.
-If the schemas answer **“what JSON must look like”**, this answers **“how the work must run”**.
+If the schemas answer **"what JSON must look like"**, this answers **"how the work must run"**.
 
 ## Hard gates summary (printable)
 
@@ -28,7 +28,7 @@ Return a blocked/redirected result that recommends `micro_solo` execution.
 
 ## 0.1) `review_only` flag (briefs vs work)
 
-The `review_only` boolean distinguishes “a deliverable that is only a brief/review artifact” from “work that changes state”.
+The `review_only` boolean distinguishes "a deliverable that is only a brief/review artifact" from "work that changes state".
 
 Guidelines:
 
@@ -91,7 +91,7 @@ Use when you have an implementation plan with multiple tasks that are **mostly i
 
 ### 2.1 Fresh implementer per task (required)
 
-- One task slice → one implementer.
+- One task slice -> one implementer.
 - Do **not** reuse implementers across tasks (reduce context pollution).
 - Do **not** run multiple implementing slices concurrently unless independence + ownership lock is satisfied.
 
@@ -103,7 +103,7 @@ If an implementer asks a clarifying question:
 2. If the answer changes scope/constraints, update the slice `task_contract`.
 3. Re-dispatch the implementer with the updated contract.
 
-### 2.3 Two-phase audit gate (required): spec → quality
+### 2.3 Two-phase audit gate (required): spec -> quality
 
 Auditor review is explicitly two-phase, reflected in `audit_phases`:
 
@@ -122,16 +122,16 @@ If any phase finds issues:
 
 1. The implementer fixes.
 2. The same phase re-reviews.
-3. Repeat until pass (bounded by your protocol’s pass limits).
+3. Repeat until pass (bounded by your protocol's pass limits).
 
-## 3) Prompt contract template (Orchestrator → Implementer)
+## 3) Prompt contract template (Orchestrator -> Implementer)
 
 Every slice must include a `task_contract` with at least:
 
 - `goal`: what to accomplish
 - `scope`: the boundaries (what area/file/subsystem)
 - `constraints`: what not to do (no refactors, touch only X, etc.)
-- `expected_output`: what the implementer must return (and what “done” means)
+- `expected_output`: what the implementer must return (and what "done" means)
 - `non_goals`: explicitly excluded work
 
 Recommended additions (encode either in the message or in schema fields):
@@ -173,7 +173,7 @@ For operational slices, include:
 
 - Micro task routed to multi-agent (should short-circuit).
 - Parallel implementers with overlapping ownership.
-- “Just increase timeouts” fixes for flaky tests without root-cause reasoning.
+- "Just increase timeouts" fixes for flaky tests without root-cause reasoning.
 - Running quality review before spec review passes.
 - Proceeding after any reviewer marks `blocked=true`.
 - Leaving completed agents unclosed (thread starvation risk).

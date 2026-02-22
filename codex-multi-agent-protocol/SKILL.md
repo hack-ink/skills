@@ -7,7 +7,7 @@ description: Use when a task requires multi-agent execution with Director/Audito
 
 ## Objective
 
-Provide a reliable, auditable slow-path workflow for multi-agent execution: explicit routing, explicit ownership, evidence-backed verification, and two-phase review (spec → quality).
+Provide a reliable, auditable slow-path workflow for multi-agent execution: explicit routing, explicit ownership, evidence-backed verification, and two-phase review (spec -> quality).
 
 ## When to use
 
@@ -17,7 +17,7 @@ Provide a reliable, auditable slow-path workflow for multi-agent execution: expl
 
 ## Inputs
 
-- The task goal, scope, and constraints (including “no-go” areas).
+- The task goal, scope, and constraints (including "no-go" areas).
 - The intended routing decision and task kind (for example: `write`, `read_only`, `research`).
 - Ownership paths/scopes per slice (files, repos, or `web:` scopes).
 - The minimum verification evidence that will be accepted for completion.
@@ -62,8 +62,8 @@ Rules of thumb:
 - Keep **tool concurrency opportunistic**:
     - If `ulimit -Sn` is high (typically `>= 4096`) and tool steps are short, you can usually run many `exec_command` calls concurrently (often up to `max_threads`) without special throttling.
     - Prefer **short** tool steps; avoid long `sleep` inside `exec_command` for stress tests (keep agents alive by not closing them instead).
-    - If you see `os error 24` / “Too many open files”, treat it as an **environment regression**: re-check `launchctl limit maxfiles` and `ulimit -Sn/-Hn` and fix the limit (don’t “paper over” with protocol throttling).
+    - If you see `os error 24` / "Too many open files", treat it as an **environment regression**: re-check `launchctl limit maxfiles` and `ulimit -Sn/-Hn` and fix the limit (don't "paper over" with protocol throttling).
 
 Spawn hygiene:
 
-- Always pass a non-empty initial `message` to `spawn_agent` (some runners fail closed with “Provide one of: message or items” if it’s omitted).
+- Always pass a non-empty initial `message` to `spawn_agent` (some runners fail closed with "Provide one of: message or items" if it's omitted).

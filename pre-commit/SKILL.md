@@ -28,7 +28,7 @@ Run these commands and record their exit codes in the report:
 - `git status --porcelain`
 - `git diff --stat`
 
-If the repository has a “no CJK characters” policy, also run:
+If the repository has a "no CJK characters" policy, also run:
 
 - `rg -n \"[\\x{4E00}-\\x{9FFF}]\" -S .`
 
