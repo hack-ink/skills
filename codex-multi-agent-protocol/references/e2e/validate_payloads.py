@@ -123,7 +123,9 @@ def assert_cross_payload_invariants(
     ssot_id = dispatch["ssot_id"]
     try:
         subtask = next(
-            s for s in dispatch["subtasks"] if s["subtask_id"] == orchestrator["subtask_id"]
+            s
+            for s in dispatch["subtasks"]
+            if s["subtask_id"] == orchestrator["subtask_id"]
         )
     except StopIteration:
         raise AssertionError(
@@ -189,9 +191,9 @@ def assert_negative_invariants_examples(
     # Implementer touched path outside allowed_paths must fail.
     if implementers:
         bad_impl = json.loads(json.dumps(implementers[0]))
-        bad_impl["changeset"]["touched_paths"] = bad_impl["changeset"]["touched_paths"] + [
-            "/abs/repo/fixture/outside"
-        ]
+        bad_impl["changeset"]["touched_paths"] = bad_impl["changeset"][
+            "touched_paths"
+        ] + ["/abs/repo/fixture/outside"]
         try:
             assert_implementer_invariants(bad_impl)
         except AssertionError:

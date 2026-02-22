@@ -5,7 +5,6 @@ from pathlib import Path
 
 from jsonschema import Draft202012Validator
 
-
 ROOT = Path(__file__).resolve().parents[2]
 SCHEMAS_DIR = ROOT / "schemas"
 E2E_DIR = Path(__file__).resolve().parent
@@ -50,4 +49,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

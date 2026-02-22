@@ -36,7 +36,7 @@ Provide a reliable, auditable slow-path workflow for multi-agent execution: expl
 1. Read the operational playbook: `codex-multi-agent-protocol/references/WORKFLOWS.md`.
 2. Use the protocol testing guide: `codex-multi-agent-protocol/references/PROTOCOL_TESTING.md`.
 3. Run the smoke suite (schemas + examples + fixtures + invariants):
-   - `python3 codex-multi-agent-protocol/references/e2e/run_smoke.py`
+    - `python3 codex-multi-agent-protocol/references/e2e/run_smoke.py`
 
 ## Outputs
 

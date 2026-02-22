@@ -286,18 +286,20 @@
 			]
 		},
 		{
-			"if": {"properties": {"blocked": {"const": false}}},
-			"then": {"properties": {"blocking_reason": {"const": "not_applicable"}}}
+			"if": { "properties": { "blocked": { "const": false } } },
+			"then": { "properties": { "blocking_reason": { "const": "not_applicable" } } }
 		},
 		{
-			"if": {"properties": {"blocked": {"const": true}}},
-			"then": {"properties": {"blocking_reason": {"not": {"const": "not_applicable"}}}}
+			"if": { "properties": { "blocked": { "const": true } } },
+			"then": {
+				"properties": { "blocking_reason": { "not": { "const": "not_applicable" } } }
+			}
 		},
 		{
-			"if": {"properties": {"status": {"const": "done"}}},
+			"if": { "properties": { "status": { "const": "done" } } },
 			"then": {
 				"properties": {
-					"review_loop": {"properties": {"converged": {"const": true}}}
+					"review_loop": { "properties": { "converged": { "const": true } } }
 				}
 			}
 		}

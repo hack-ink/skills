@@ -247,12 +247,14 @@
 			]
 		},
 		{
-			"if": {"properties": {"blocked": {"const": false}}},
-			"then": {"properties": {"blocking_reason": {"const": "not_applicable"}}}
+			"if": { "properties": { "blocked": { "const": false } } },
+			"then": { "properties": { "blocking_reason": { "const": "not_applicable" } } }
 		},
 		{
-			"if": {"properties": {"blocked": {"const": true}}},
-			"then": {"properties": {"blocking_reason": {"not": {"const": "not_applicable"}}}}
+			"if": { "properties": { "blocked": { "const": true } } },
+			"then": {
+				"properties": { "blocking_reason": { "not": { "const": "not_applicable" } } }
+			}
 		}
 	],
 	"examples": [
