@@ -13,10 +13,12 @@ From the skill root:
 
 ```sh
 cd ~/.codex/skills/codex-multi-agent-protocol
+python3 references/e2e/run_smoke.py
 python3 references/e2e/validate_payloads.py
 ```
 
 ## Notes
 
 - These fixtures validate schema shape and required fields.
+- `validate_payloads.py` also enforces cross-payload invariants (ID alignment, implementer set consistency, allowed_paths containment) and runs a small negative suite to ensure the invariant checks actually fail when they should.
 - They do not prove runtime behavior (actual spawning, wait-any, close_agent hygiene).

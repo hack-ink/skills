@@ -92,9 +92,12 @@
 			"properties": {
 				"touched_paths": {
 					"type": "array",
+					"minItems": 1,
+					"uniqueItems": true,
 					"items": {
 						"type": "string",
-						"minLength": 1
+						"minLength": 1,
+						"pattern": "^(/|web:|repo:)"
 					}
 				},
 				"notes": {
@@ -242,6 +245,14 @@
 					]
 				}
 			]
+		},
+		{
+			"if": {"properties": {"blocked": {"const": false}}},
+			"then": {"properties": {"blocking_reason": {"const": "not_applicable"}}}
+		},
+		{
+			"if": {"properties": {"blocked": {"const": true}}},
+			"then": {"properties": {"blocking_reason": {"not": {"const": "not_applicable"}}}}
 		}
 	],
 	"examples": [
@@ -276,7 +287,7 @@
 			"questions": [],
 			"changeset": {
 				"touched_paths": [
-					"codex-multi-agent-protocol/schemas/dispatch-preflight.schema.json"
+					"/abs/repo/codex-multi-agent-protocol/schemas/dispatch-preflight.schema.json"
 				],
 				"notes": "Added protocol_version/workflow_mode and routing sizing fields; updated example."
 			},
@@ -290,7 +301,7 @@
 			],
 			"rationale": "Implemented only requested schema files.",
 			"blocking_reason": "not_applicable",
-			"allowed_paths": ["/abs/runtime/.codex/AGENTS.md"]
+			"allowed_paths": ["/abs/repo"]
 		}
 	],
 	"additionalProperties": false

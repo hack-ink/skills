@@ -5,40 +5,49 @@ description: Use when a task requires multi-agent execution with Director/Audito
 
 # Codex Multi-Agent Protocol
 
+## Objective
+
+Provide a reliable, auditable slow-path workflow for multi-agent execution: explicit routing, explicit ownership, evidence-backed verification, and two-phase review (spec → quality).
+
 ## When to use
 
-- Use this skill when a task is non-trivial and benefits from delegated work or review gates (especially repository writes with ambiguity, risk, or multiple slices).
-- Use it when validating or evolving the 4-role protocol (schemas, routing, liveness, and acceptance rules).
+- The task is non-trivial and benefits from delegated work or review gates (especially multi-slice repo changes or parallel read-only research).
+- You need the Director/Auditor/Orchestrator/Implementer protocol with schema-validated outputs.
+- You are validating or evolving the protocol package (schemas, fixtures, and operational workflow rules).
 
-## Why this helps
+## Inputs
 
-- Packages the protocol schemas and test methodology together so validation is deterministic and portable.
-- Keeps protocol evolution and regression checks close to the schemas to reduce drift.
+- The task goal, scope, and constraints (including “no-go” areas).
+- The intended routing decision and task kind (for example: `write`, `read_only`, `research`).
+- Ownership paths/scopes per slice (files, repos, or `web:` scopes).
+- The minimum verification evidence that will be accepted for completion.
+
+## Hard gates (non-negotiable)
+
+- If `dispatch-preflight.routing_decision != "multi_agent"`, short-circuit and do not spawn implementers.
+- Do not run parallel implementers unless independence assessment + ownership lock policy are satisfied.
+- Auditor review must be spec-first, then quality. Quality review must not run before spec passes.
+- No evidence, no completion: implementers must provide `verification_steps`; orchestrator must provide `integration_report` evidence for write workflows.
+- Do not proceed if any reviewer sets `blocked=true`.
+- Close completed agents to avoid thread starvation.
 
 ## How to use
 
-1. Run all validation steps from the skill root directory (where `schemas/` and `references/` exist):
-    - Example: `cd ~/.codex/skills/codex-multi-agent-protocol`
-2. Read the operational playbook at `references/WORKFLOWS.md` (routing guardrails, parallel windowing, spec→quality audit phases, integration evidence).
-3. Validate schema structure and examples using `references/PROTOCOL_TESTING.md` section 2.
-4. If schemas or routing rules changed, run the E2E and negative tests in `references/PROTOCOL_TESTING.md`.
+1. Read the operational playbook: `codex-multi-agent-protocol/references/WORKFLOWS.md`.
+2. Use the protocol testing guide: `codex-multi-agent-protocol/references/PROTOCOL_TESTING.md`.
+3. Run the smoke suite (schemas + examples + fixtures + invariants):
+   - `python3 codex-multi-agent-protocol/references/e2e/run_smoke.py`
 
-## Contents
+## Outputs
 
-- `schemas/dispatch-preflight.schema.json`
-- `schemas/agent-output.auditor.read_only.schema.json`
-- `schemas/agent-output.auditor.write.schema.json`
-- `schemas/agent-output.orchestrator.read_only.schema.json`
-- `schemas/agent-output.orchestrator.write.schema.json`
-- `schemas/agent-output.implementer.schema.json`
-- `references/WORKFLOWS.md`
-- `references/PROTOCOL_TESTING.md`
+- A schema-valid set of payloads that includes evidence fields (verification and integration evidence).
+- If evolving the protocol package: updated schemas/fixtures plus a successful run of `references/e2e/validate_payloads.py`.
 
 ## Notes
 
-- These schemas are structural. Cross-field/runtime invariants remain enforced by the active AGENTS protocol (or the protocol section of this skill when it is used).
-- Keep `routing_mode` as `assistant_nested` unless the protocol SSOT explicitly changes.
-- Protocol v2 requires `protocol_version="2.0"` and a `dispatch-preflight` that includes task sizing + routing decision. If the routing decision is not `multi_agent`, the protocol must short-circuit (no implementer spawns).
+- Schemas are structural; invariants are enforced via workflow rules and fixture validation.
+- Keep `routing_mode="assistant_nested"` unless the SSOT explicitly changes.
+- Protocol v2 requires `protocol_version="2.0"` and a `dispatch-preflight` that includes sizing + routing. Non-multi-agent routing must short-circuit.
 
 ## Concurrency budgets (practical)
 

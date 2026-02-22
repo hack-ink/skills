@@ -3,6 +3,15 @@
 This document is the **operational playbook** that pairs with the structural schemas in `schemas/`.
 If the schemas answer **“what JSON must look like”**, this answers **“how the work must run”**.
 
+## Hard gates summary (printable)
+
+- If `dispatch-preflight.routing_decision != "multi_agent"`, short-circuit (no implementer spawns).
+- Do not parallelize without an explicit independence assessment and an ownership lock policy.
+- Auditor review is two-phase: spec must pass before quality runs.
+- No evidence, no completion: implementers must return `verification_steps`; orchestrator must return integration evidence for write workflows.
+- Stop on `blocked=true` from any review phase.
+- Close completed agents (thread starvation is a real failure mode).
+
 ## 0) Routing guardrails (fast path vs slow path)
 
 This protocol is a **slow path**: it trades overhead for correctness, auditability, and coordination.
@@ -16,6 +25,16 @@ This routing decision should be made by your global `AGENTS.md` before invoking 
 
 If a `dispatch-preflight` indicates `routing_decision != "multi_agent"`, **do not spawn implementers**.
 Return a blocked/redirected result that recommends `micro_solo` execution.
+
+## 0.1) `review_only` flag (briefs vs work)
+
+The `review_only` boolean distinguishes “a deliverable that is only a brief/review artifact” from “work that changes state”.
+
+Guidelines:
+
+- Use `review_only=true` for prework artifacts such as an execution brief, an audit brief, or a review-only checkpoint where no changes should be claimed.
+- Use `review_only=false` for normal research outputs and for any workflow that performs tool actions, writes files, or mutates state.
+- If `review_only=true`, the payload must not claim that code or external systems were changed; treat it as a planning/review deliverable.
 
 ## 1) Parallel dispatch workflow (independent domains)
 
@@ -143,6 +162,7 @@ For operational slices, include:
 - Must provide `integration_report`:
     - `conflict_check` command + evidence
     - `full_test` command + evidence
+- Must obey repository-level write gates (if present). For example, before any `git commit` / `git push`, run the repository's pre-commit gate skill and follow its required commit message format.
 
 ### Auditor
 

@@ -213,6 +213,45 @@
 			"additionalProperties": false
 		}
 	},
+	"allOf": [
+		{
+			"if": {
+				"properties": {
+					"task_kind": {
+						"enum": ["instruction_only", "vcs_only", "single_file_edit"]
+					}
+				}
+			},
+			"then": {
+				"properties": {
+					"routing_decision": {"const": "micro_solo"},
+					"sizing": {"properties": {"class": {"enum": ["micro", "small"]}}},
+					"parallel_policy": {"properties": {"window_size": {"const": 1}}}
+				}
+			}
+		},
+		{
+			"if": {
+				"properties": {
+					"task_kind": {"const": "multi_file_or_ambiguous_or_risky"}
+				}
+			},
+			"then": {
+				"properties": {
+					"routing_decision": {"const": "multi_agent"},
+					"sizing": {"properties": {"class": {"enum": ["medium", "large"]}}}
+				}
+			}
+		},
+		{
+			"if": {
+				"properties": {
+					"routing_decision": {"enum": ["micro_solo", "single_agent"]}
+				}
+			},
+			"then": {"properties": {"parallel_policy": {"properties": {"window_size": {"const": 1}}}}}
+		}
+	],
 	"examples": [
 		{
 			"ssot_id": "sso-t-2026-02-22-director-auditor-orchestrator-implementer-v2",

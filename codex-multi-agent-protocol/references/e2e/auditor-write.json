@@ -24,11 +24,11 @@
 		}
 	],
 	"diff_review": {
-		"status": "not_applicable",
-		"base_ref": "not_applicable",
-		"head_ref": "not_applicable",
-		"command": "not_applicable",
-		"evidence": "Fixture payloads are standalone examples."
+		"status": "pass",
+		"base_ref": "HEAD~1",
+		"head_ref": "HEAD",
+		"command": "git diff --stat HEAD~1..HEAD",
+		"evidence": "0 files changed"
 	},
 	"status": "done",
 	"blocked": false,

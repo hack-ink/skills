@@ -168,23 +168,31 @@
 			"properties": {
 				"status": {
 					"type": "string",
-					"enum": ["pass", "fail", "not_applicable"]
+					"enum": ["pass", "fail"]
 				},
 				"base_ref": {
-					"type": "string",
-					"minLength": 1
+					"allOf": [
+						{"type": "string", "minLength": 1},
+						{"not": {"const": "not_applicable"}}
+					]
 				},
 				"head_ref": {
-					"type": "string",
-					"minLength": 1
+					"allOf": [
+						{"type": "string", "minLength": 1},
+						{"not": {"const": "not_applicable"}}
+					]
 				},
 				"command": {
-					"type": "string",
-					"minLength": 1
+					"allOf": [
+						{"type": "string", "minLength": 1},
+						{"not": {"const": "not_applicable"}}
+					]
 				},
 				"evidence": {
-					"type": "string",
-					"minLength": 1
+					"allOf": [
+						{"type": "string", "minLength": 1},
+						{"not": {"const": "not_applicable"}}
+					]
 				}
 			},
 			"additionalProperties": false
@@ -290,6 +298,22 @@
 					]
 				}
 			]
+		},
+		{
+			"if": {"properties": {"blocked": {"const": false}}},
+			"then": {"properties": {"blocking_reason": {"const": "not_applicable"}}}
+		},
+		{
+			"if": {"properties": {"blocked": {"const": true}}},
+			"then": {"properties": {"blocking_reason": {"not": {"const": "not_applicable"}}}}
+		},
+		{
+			"if": {"properties": {"status": {"const": "done"}}},
+			"then": {
+				"properties": {
+					"review_loop": {"properties": {"converged": {"const": true}}}
+				}
+			}
 		}
 	],
 	"examples": [
@@ -319,11 +343,11 @@
 				}
 			],
 			"diff_review": {
-				"status": "not_applicable",
-				"base_ref": "not_applicable",
-				"head_ref": "not_applicable",
-				"command": "not_applicable",
-				"evidence": "Diff review skipped in example payload."
+				"status": "pass",
+				"base_ref": "HEAD~1",
+				"head_ref": "HEAD",
+				"command": "git diff --stat HEAD~1..HEAD",
+				"evidence": "0 files changed"
 			},
 			"status": "done",
 			"blocked": false,

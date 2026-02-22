@@ -6,7 +6,7 @@ Operational workflow rules (parallel windowing, spec→quality gates, integratio
 
 ## Test tiers (recommended)
 
-- **Smoke (default, < 2 min):** Run sections **1–3** with **2 implementers** and a small window (2). This validates depth=3 nesting + wait-any behavior without stressing the thread pool.
+- **Smoke (default, < 2 min):** Run `python3 references/e2e/run_smoke.py`. Then run sections **1–3** with **2 implementers** and a small window (2). This validates schema/examples + fixtures quickly, then validates depth=3 nesting + wait-any behavior without stressing the thread pool.
 - **Stress (on-demand, can be slow):** Run sections **5–7** only when you change runtime concurrency settings (`max_threads`, scheduler) or when debugging liveness/timeout issues.
 
 Notes:
@@ -19,7 +19,8 @@ Notes:
 1. Ensure your working tree includes the latest protocol package updates.
 2. Confirm protocol tokens are present across the packaged schema set:
     - `rg -n 'assistant_nested|agent-output\\.auditor|agent-output\\.orchestrator|agent-output\\.implementer' schemas/*.json`
-    - Run a second check to confirm legacy routing tokens are absent from the same paths.
+    - Confirm legacy routing tokens are absent (should return no matches; exit code 1):
+        - `rg -n 'assistant_solo|assistant_direct|assistant_router|agent-output\\.director|director-output|auditor-output|orchestrator-output|implementer-output' schemas/*.json`
 3. Confirm protocol v2 fields are present across the packaged schema set:
     - `rg -n '\"protocol_version\"|\"workflow_mode\"|\"task_kind\"|\"routing_decision\"' schemas/*.json`
 4. (Recommended for stress runs) Confirm open-files limits are not at the macOS default:
@@ -39,10 +40,10 @@ Pass criteria:
 
 ## 2) Schema Validation (Structural)
 
-Run from the skill root (so `schemas/` resolves correctly):
+Run from the skill root (so `schemas/` resolves correctly). If you are editing this repo directly, run from the repo root and prefix paths with `codex-multi-agent-protocol/`.
 
 ```sh
-cd ~/.codex/skills/codex-multi-agent-protocol
+cd /path/to/codex-multi-agent-protocol
 ```
 
 Then run:
@@ -145,7 +146,7 @@ PY
 
 Optional quick check:
 
-- Validate the bundled sample fixtures: `python3 references/e2e/validate_payloads.py`
+- Validate the bundled sample fixtures and invariants: `python3 references/e2e/validate_payloads.py`
 
 Pass criteria:
 
