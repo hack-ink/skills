@@ -23,6 +23,7 @@ Notes:
    - `ulimit -Sn` and `ulimit -Hn`
    - If soft is `256`, expect high-concurrency `exec_command` runs to be flaky or fail with `os error 24`.
    - Note: `launchctl limit` can be higher than the per-shell soft limit (`ulimit -Sn`). Prefer checking both.
+   - If you see `os error 24` even with a high `max_threads`, fix the open-files limits (don’t rely on protocol-level throttling).
 4. (Recommended for stress runs) Ensure no other long-running Codex sessions are consuming agent threads:
    - `ps -Ao pid,etime,command | rg '\\bcodex( resume)?\\b'`
    - Close/exit other interactive sessions before trying to saturate `max_threads`.

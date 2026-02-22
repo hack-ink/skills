@@ -49,8 +49,8 @@ Rules of thumb:
 - Keep **agent concurrency aggressive** (use windowed dispatch and replenish; aim to saturate `max_threads` when you have independent slices).
 - Keep **tool concurrency opportunistic**:
   - If `ulimit -Sn` is high (typically `>= 4096`) and tool steps are short, you can usually run many `exec_command` calls concurrently (often up to `max_threads`) without special throttling.
-  - If you see `os error 24` / “Too many open files”, tool timeouts, or general runner instability, back off to a *temporary* window for shell-heavy phases (common windows: 8–16) and ramp back up after stability returns.
   - Prefer **short** tool steps; avoid long `sleep` inside `exec_command` for stress tests (keep agents alive by not closing them instead).
+  - If you see `os error 24` / “Too many open files”, treat it as an **environment regression**: re-check `launchctl limit maxfiles` and `ulimit -Sn/-Hn` and fix the limit (don’t “paper over” with protocol throttling).
 
 Spawn hygiene:
 
