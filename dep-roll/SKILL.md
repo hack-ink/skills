@@ -1,6 +1,6 @@
 ---
 name: dep-roll
-description: Use when dependency upgrades are needed across multiple ecosystems and you need a controlled workflow for dependency manifests, lockfile regeneration, validation, and Dependabot reconciliation.
+description: Use when upgrading dependencies across multiple ecosystems or regenerating lockfiles where ordering and verification matter.
 ---
 
 # Dep Roll

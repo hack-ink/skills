@@ -1,6 +1,6 @@
 ---
 name: research
-description: Use for research/investigation. Read existing materials first, fully understand the user’s pain points, ask clarifying questions, and make evidence-backed recommendations with websearch (default: 3 independent sources; fallback: 2 only if necessary).
+description: Use when the user requests research, investigation, best practices, comparisons, or evidence-backed recommendations.
 ---
 
 # Research
@@ -38,6 +38,7 @@ Turn an ambiguous question into a decision-ready recommendation backed by explic
 5. **Alternatives**: present at least 2 viable options with tradeoffs (cost, complexity, risk, time-to-implement, operational burden).
 6. **No evidence, no claim**: if a claim cannot be supported, label it as a hypothesis and say what evidence would confirm/deny it.
 7. **No leaks**: do not include secrets, customer data, or proprietary identifiers in websearch queries or external citations.
+8. **Architecture-first over minimal edits**: You may recommend breaking/destructive changes (rewrites, API changes, migrations) when they materially improve architecture, performance, or outcomes; do not constrain recommendations to minimal diffs. Always state blast radius and include a migration/rollback plan.
 
 ## Procedure
 

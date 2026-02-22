@@ -48,7 +48,15 @@ Minimum type/shape constraints:
 - `refs`: array (can be empty)
 - `risk`: one of `low`, `medium`, `high`
 
-Optional local validation (record exit code in the report):
+Recommended message generator (prints a single-line JSON message):
+
+- `python3 pre-commit/scripts/cmsg.py --type <type> --scope <scope> --summary <summary> --intent <intent> --impact <impact> --risk <low|medium|high>`
+
+Local validation (required; record exit code in the report):
+
+- `python3 pre-commit/scripts/validate_cmsg.py`
+
+Fallback validation (use only if the script is unavailable; record exit code in the report):
 
 - `python -c 'import json,sys; o=json.loads(sys.stdin.read()); req=\"schema type scope summary intent impact breaking risk refs\".split(); missing=[k for k in req if k not in o]; assert not missing, missing; assert o[\"schema\"]==\"cmsg/1\"; assert isinstance(o[\"breaking\"], bool); assert isinstance(o[\"refs\"], list); assert o[\"risk\"] in (\"low\",\"medium\",\"high\")'`
 
@@ -95,7 +103,8 @@ Preflight
 Commit message
 - proposed: `<single-line cmsg/1 JSON>`
 - validation: ran | skipped: <reason>
-  - `python -c '...'` (exit: <code> | n/a)
+  - `python3 pre-commit/scripts/validate_cmsg.py` (exit: <code> | n/a)
+  - fallback: `python -c '...'` (exit: <code> | n/a)
 
 Repo gates
 - Makefile.toml gate: ran | skipped: <reason>
