@@ -2,11 +2,11 @@
 	"ssot_id": "sso-t-e2e-2026-02-22-research",
 	"protocol_version": "2.0",
 	"task_id": "task-research-001",
-	"subtask_id": "res-1",
-	"agent_type": "implementer",
+	"subtask_id": "op-1",
+	"agent_type": "operator",
 	"workflow_mode": "parallel_dispatch",
 	"routing_mode": "assistant_nested",
-	"slice_id": "slice-implementer-research-e2e-1",
+	"slice_id": "slice-operator-e2e-1",
 	"attempt": 1,
 	"status": "done",
 	"summary": "Completed web research angle A and returned evidence-rich summary.",
@@ -20,15 +20,13 @@
 		"goal": "Research angle A and return evidence-rich summary.",
 		"scope": "Only web:topic/research-e2e/angle-a.",
 		"constraints": ["No repo writes", "Do not exceed scope"],
-		"expected_output": ["verification_steps evidence", "summary with sources/unknowns"],
-		"non_goals": ["No implementation work"]
+		"expected_output": ["actions evidence", "summary with sources/unknowns"],
+		"non_goals": ["No implementation work"],
+		"capabilities": ["net_fetch", "synthesize"],
+		"writes_repo": false
 	},
 	"questions": [],
-	"changeset": {
-		"touched_paths": ["web:topic/research-e2e/angle-a"],
-		"notes": "Read-only research; no filesystem changes."
-	},
-	"verification_steps": [
+	"actions": [
 		{
 			"name": "query-execution",
 			"command": "web.search_query q='multi-agent parallel dispatch best practices'",
@@ -40,3 +38,4 @@
 	"blocking_reason": "not_applicable",
 	"allowed_paths": ["web:topic/research-e2e/angle-a"]
 }
+

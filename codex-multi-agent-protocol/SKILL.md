@@ -1,6 +1,6 @@
 ---
 name: codex-multi-agent-protocol
-description: Use when a task requires multi-agent execution with Director/Auditor/Orchestrator/Implementer routing and schema-validated outputs.
+description: Use when a task requires multi-agent execution with Director/Auditor/Orchestrator and leaf-role routing (Implementer for coding, Operator for non-coding) with schema-validated outputs.
 ---
 
 # Codex Multi-Agent Protocol
@@ -12,22 +12,22 @@ Provide a reliable, auditable slow-path workflow for multi-agent execution: expl
 ## When to use
 
 - The task is non-trivial and benefits from delegated work or review gates (especially multi-slice repo changes or parallel read-only research).
-- You need the Director/Auditor/Orchestrator/Implementer protocol with schema-validated outputs.
+- You need the Director/Auditor/Orchestrator/leaf-agent protocol with schema-validated outputs.
 - You are validating or evolving the protocol package (schemas, fixtures, and operational workflow rules).
 
 ## Inputs
 
 - The task goal, scope, and constraints (including "no-go" areas).
-- The intended routing decision and task kind (for example: `write`, `read_only`, `research`).
+- The intended routing decision and task kind (for example: `write`, `read_only`).
 - Ownership paths/scopes per slice (files, repos, or `web:` scopes).
 - The minimum verification evidence that will be accepted for completion.
 
 ## Hard gates (non-negotiable)
 
-- If `dispatch-preflight.routing_decision != "multi_agent"`, short-circuit and do not spawn implementers.
-- Do not run parallel implementers unless independence assessment + ownership lock policy are satisfied.
+- If `dispatch-preflight.routing_decision != "multi_agent"`, short-circuit and do not spawn leaf agents.
+- Do not run parallel leaf agents unless independence assessment + ownership lock policy are satisfied.
 - Auditor review must be spec-first, then quality. Quality review must not run before spec passes.
-- No evidence, no completion: implementers must provide `verification_steps`; orchestrator must provide `integration_report` evidence for write workflows.
+- No evidence, no completion: implementers must provide `verification_steps`; operators must provide `actions`; orchestrator must provide `integration_report` evidence for write workflows.
 - Do not proceed if any reviewer sets `blocked=true`.
 - Close completed agents to avoid thread starvation.
 

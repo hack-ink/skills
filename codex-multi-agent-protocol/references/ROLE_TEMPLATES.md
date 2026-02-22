@@ -1,15 +1,16 @@
 # Role Templates (v2)
 
-This document provides copy-pastable templates for the 4-role workflow:
+This document provides copy-pastable templates for the 5-role workflow:
 
 - Director (main)
 - Auditor
 - Orchestrator
-- Implementer
+- Implementer (Coder)
+- Operator
 
 Goal: keep runs fast while preserving reliability via explicit contracts, evidence, and rerun escalation.
 
-## Implementer `task_contract` template (write)
+## Implementer (Coder) `task_contract` template (write)
 
 Use for code/config changes.
 
@@ -26,27 +27,36 @@ Use for code/config changes.
   - Risk notes + rollback suggestion (if applicable).
 - **non_goals**: <explicit exclusions>
 
-Implementer output checklist:
+Implementer (Coder) output checklist:
 
 - List touched file paths (or `not_applicable`).
 - Provide concrete verification evidence (stdout snippets or exit codes).
 - Call out any assumptions or blockers.
 
-## Implementer `task_contract` template (read_only research)
+## Operator `task_contract` template (read_only ops/research)
 
-Use for research that feeds decisions.
+Use for command execution, fetching, inspection, and research that feeds decisions without repo writes.
 
-- **goal**: <what decision this research supports>
-- **scope**: <topics + boundaries>
+- **goal**: <what decision this work supports>
+- **scope**: <topics/repos/dirs + boundaries>
 - **constraints**:
   - Do not include sensitive internal identifiers in queries.
+  - Do not modify repo-tracked files.
+  - Prefer short, deterministic commands; stop on conflicts.
   - Use 3+ independent sources when feasible; prefer primary docs.
   - Label hypotheses vs verified facts.
 - **expected_output**:
-  - 3–7 bullets of findings.
-  - Evidence map: claim -> evidence -> source link.
+  - Command log: command -> exit code -> key output lines.
+  - 3–7 bullets of findings, each tied to evidence.
+  - Evidence map: claim -> evidence -> source link (for web research).
   - Open questions + what would resolve them.
 - **non_goals**: <explicit exclusions>
+
+Operator output checklist:
+
+- Provide an action log with concrete commands and evidence.
+- Keep synthesis minimal; do not over-interpret ambiguous outputs.
+- Call out any assumptions or blockers.
 
 ## Auditor (spec -> quality) checklists
 

@@ -2,7 +2,7 @@
 	"$schema": "https://json-schema.org/draft/2020-12/schema",
 	"$id": "file:///.codex/agent-output-auditor-write.schema.json",
 	"title": "Codex Auditor Output (Write)",
-	"description": "Structural schema for auditor outputs that report completion of write subtasks.",
+	"description": "Structural schema for auditor outputs that report completion of write subtasks. Write workflows may dispatch a mix of coding Implementer (Coder) slices and non-coding Operator slices.",
 	"type": "object",
 	"required": [
 		"ssot_id",
@@ -14,6 +14,7 @@
 		"routing_mode",
 		"slice_id",
 		"implementer_subtask_ids",
+		"operator_subtask_ids",
 		"parallel_peak_inflight",
 		"audit_phases",
 		"diff_review",
@@ -139,6 +140,13 @@
 		"implementer_subtask_ids": {
 			"type": "array",
 			"minItems": 1,
+			"items": {
+				"type": "string",
+				"minLength": 1
+			}
+		},
+		"operator_subtask_ids": {
+			"type": "array",
 			"items": {
 				"type": "string",
 				"minLength": 1
@@ -329,6 +337,7 @@
 			"routing_mode": "assistant_nested",
 			"slice_id": "slice-audit-write-a",
 			"implementer_subtask_ids": ["impl-1", "impl-2"],
+			"operator_subtask_ids": [],
 			"parallel_peak_inflight": 2,
 			"audit_phases": [
 				{

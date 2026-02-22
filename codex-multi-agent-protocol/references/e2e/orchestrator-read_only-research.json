@@ -7,7 +7,8 @@
 	"workflow_mode": "parallel_dispatch",
 	"routing_mode": "assistant_nested",
 	"slice_id": "slice-orchestrate-research-e2e",
-	"implementer_subtask_ids": ["res-1", "res-2"],
+	"implementer_subtask_ids": [],
+	"operator_subtask_ids": ["op-1", "op-2"],
 	"parallel_peak_inflight": 2,
 	"dispatch_plan": {
 		"independence_assessment": {
@@ -34,7 +35,8 @@
 		},
 		"slices": [
 			{
-				"implementer_subtask_id": "res-1",
+				"leaf_subtask_id": "op-1",
+				"leaf_agent_type": "operator",
 				"domain_id": "web-angle-a",
 				"ownership_paths": ["web:topic/research-e2e/angle-a"],
 				"task_contract": {
@@ -42,14 +44,17 @@
 					"scope": "Only web:topic/research-e2e/angle-a.",
 					"constraints": ["No repo writes", "Do not exceed scope"],
 					"expected_output": [
-						"verification_steps evidence",
+						"actions evidence",
 						"summary with sources/unknowns"
 					],
-					"non_goals": ["No implementation work"]
+					"non_goals": ["No implementation work"],
+					"capabilities": ["net_fetch", "synthesize"],
+					"writes_repo": false
 				}
 			},
 			{
-				"implementer_subtask_id": "res-2",
+				"leaf_subtask_id": "op-2",
+				"leaf_agent_type": "operator",
 				"domain_id": "repo-analysis",
 				"ownership_paths": ["repo:obra/superpowers"],
 				"task_contract": {
@@ -57,10 +62,12 @@
 					"scope": "Only repo:obra/superpowers.",
 					"constraints": ["No repo writes", "Do not exceed scope"],
 					"expected_output": [
-						"verification_steps evidence",
+						"actions evidence",
 						"summary with risks/unknowns"
 					],
-					"non_goals": ["No unrelated repositories"]
+					"non_goals": ["No unrelated repositories"],
+					"capabilities": ["repo_inspect", "synthesize"],
+					"writes_repo": false
 				}
 			}
 		]

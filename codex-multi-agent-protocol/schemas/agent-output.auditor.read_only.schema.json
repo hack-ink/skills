@@ -2,7 +2,7 @@
 	"$schema": "https://json-schema.org/draft/2020-12/schema",
 	"$id": "file:///.codex/agent-output-auditor-read-only.schema.json",
 	"title": "Codex Auditor Output (Read Only)",
-	"description": "Structural schema for auditor outputs that report completion of read_only subtasks.",
+	"description": "Structural schema for auditor outputs that report completion of read_only subtasks. Read-only workflows may dispatch Operator slices; Implementer (Coder) is reserved for code_change work.",
 	"type": "object",
 	"required": [
 		"ssot_id",
@@ -14,6 +14,7 @@
 		"routing_mode",
 		"slice_id",
 		"implementer_subtask_ids",
+		"operator_subtask_ids",
 		"parallel_peak_inflight",
 		"audit_phases",
 		"diff_review",
@@ -136,6 +137,13 @@
 			"minLength": 1
 		},
 		"implementer_subtask_ids": {
+			"type": "array",
+			"items": {
+				"type": "string",
+				"minLength": 1
+			}
+		},
+		"operator_subtask_ids": {
 			"type": "array",
 			"items": {
 				"type": "string",
@@ -315,6 +323,7 @@
 			"routing_mode": "assistant_nested",
 			"slice_id": "slice-audit-prework-a",
 			"implementer_subtask_ids": [],
+			"operator_subtask_ids": ["op-brief-1"],
 			"parallel_peak_inflight": 0,
 			"audit_phases": [
 				{

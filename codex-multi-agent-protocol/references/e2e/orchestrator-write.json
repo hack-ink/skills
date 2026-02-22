@@ -8,6 +8,7 @@
 	"routing_mode": "assistant_nested",
 	"slice_id": "slice-orchestrate-write-e2e",
 	"implementer_subtask_ids": ["impl-1", "impl-2"],
+	"operator_subtask_ids": [],
 	"parallel_peak_inflight": 2,
 	"dispatch_plan": {
 		"independence_assessment": {
@@ -34,7 +35,8 @@
 		},
 		"slices": [
 			{
-				"implementer_subtask_id": "impl-1",
+				"leaf_subtask_id": "impl-1",
+				"leaf_agent_type": "implementer",
 				"domain_id": "fixture-a",
 				"ownership_paths": ["/abs/repo/fixture/a"],
 				"task_contract": {
@@ -42,11 +44,14 @@
 					"scope": "Only ownership_paths for slice A.",
 					"constraints": ["No changes outside ownership_paths"],
 					"expected_output": ["verification_steps evidence", "no ownership overlap"],
-					"non_goals": ["No unrelated refactors"]
+					"non_goals": ["No unrelated refactors"],
+					"capabilities": ["code_change"],
+					"writes_repo": true
 				}
 			},
 			{
-				"implementer_subtask_id": "impl-2",
+				"leaf_subtask_id": "impl-2",
+				"leaf_agent_type": "implementer",
 				"domain_id": "fixture-b",
 				"ownership_paths": ["/abs/repo/fixture/b"],
 				"task_contract": {
@@ -54,7 +59,9 @@
 					"scope": "Only ownership_paths for slice B.",
 					"constraints": ["No changes outside ownership_paths"],
 					"expected_output": ["verification_steps evidence", "no ownership overlap"],
-					"non_goals": ["No unrelated refactors"]
+					"non_goals": ["No unrelated refactors"],
+					"capabilities": ["code_change"],
+					"writes_repo": true
 				}
 			}
 		]

@@ -117,8 +117,26 @@ def assert_implementer_invariants(implementer: dict) -> None:
             )
 
 
+def assert_operator_invariants(operator: dict) -> None:
+    contract = operator["task_contract"]
+    if contract.get("writes_repo") is not False:
+        raise AssertionError("Expected operator.task_contract.writes_repo == false")
+
+    actions = operator.get("actions", [])
+    if not actions:
+        raise AssertionError("Expected operator.actions to be non-empty")
+
+    for action in actions:
+        if not action.get("evidence"):
+            raise AssertionError("Expected operator.actions[*].evidence to be non-empty")
+
+
 def assert_cross_payload_invariants(
-    dispatch: dict, orchestrator: dict, auditor: dict, implementers: list[dict]
+    dispatch: dict,
+    orchestrator: dict,
+    auditor: dict,
+    implementers: list[dict],
+    operators: list[dict],
 ) -> None:
     ssot_id = dispatch["ssot_id"]
     try:
@@ -138,11 +156,15 @@ def assert_cross_payload_invariants(
     assert_equal(auditor["ssot_id"], ssot_id, "auditor.ssot_id")
     for impl in implementers:
         assert_equal(impl["ssot_id"], ssot_id, "implementer.ssot_id")
+    for op in operators:
+        assert_equal(op["ssot_id"], ssot_id, "operator.ssot_id")
 
     assert_equal(orchestrator["task_id"], task_id, "orchestrator.task_id")
     assert_equal(auditor["task_id"], task_id, "auditor.task_id")
     for impl in implementers:
         assert_equal(impl["task_id"], task_id, "implementer.task_id")
+    for op in operators:
+        assert_equal(op["task_id"], task_id, "operator.task_id")
 
     assert_equal(orchestrator["subtask_id"], subtask_id, "orchestrator.subtask_id")
     assert_equal(auditor["subtask_id"], subtask_id, "auditor.subtask_id")
@@ -157,6 +179,18 @@ def assert_cross_payload_invariants(
         set(auditor["implementer_subtask_ids"]),
         impl_ids,
         "auditor.implementer_subtask_ids",
+    )
+
+    op_ids = {op["subtask_id"] for op in operators}
+    assert_equal(
+        set(orchestrator["operator_subtask_ids"]),
+        op_ids,
+        "orchestrator.operator_subtask_ids",
+    )
+    assert_equal(
+        set(auditor["operator_subtask_ids"]),
+        op_ids,
+        "auditor.operator_subtask_ids",
     )
 
 
@@ -219,6 +253,7 @@ def main() -> None:
             "auditor_payload": "auditor-write.json",
             "dispatch_payload": "dispatch-preflight.json",
             "implementer_payloads": ["implementer-1.json", "implementer-2.json"],
+            "operator_payloads": [],
         },
         {
             "name": "read_only_research",
@@ -226,16 +261,14 @@ def main() -> None:
                 "dispatch-preflight-research.json": "schemas/dispatch-preflight.schema.json",
                 "orchestrator-read_only-research.json": "schemas/agent-output.orchestrator.read_only.schema.json",
                 "auditor-read_only-research.json": "schemas/agent-output.auditor.read_only.schema.json",
-                "implementer-research-1.json": "schemas/agent-output.implementer.schema.json",
-                "implementer-research-2.json": "schemas/agent-output.implementer.schema.json",
+                "operator-1.json": "schemas/agent-output.operator.schema.json",
+                "operator-2.json": "schemas/agent-output.operator.schema.json",
             },
             "orchestrator_payload": "orchestrator-read_only-research.json",
             "auditor_payload": "auditor-read_only-research.json",
             "dispatch_payload": "dispatch-preflight-research.json",
-            "implementer_payloads": [
-                "implementer-research-1.json",
-                "implementer-research-2.json",
-            ],
+            "implementer_payloads": [],
+            "operator_payloads": ["operator-1.json", "operator-2.json"],
         },
     ]
 
@@ -250,13 +283,18 @@ def main() -> None:
         orchestrator = loaded[suite["orchestrator_payload"]]
         auditor = loaded[suite["auditor_payload"]]
         implementers = [loaded[p] for p in suite["implementer_payloads"]]
+        operators = [loaded[p] for p in suite["operator_payloads"]]
 
         assert_dispatch_preflight_invariants(dispatch)
         assert_orchestrator_invariants(orchestrator, suite_name=suite["name"])
         assert_auditor_invariants(auditor)
         for impl in implementers:
             assert_implementer_invariants(impl)
-        assert_cross_payload_invariants(dispatch, orchestrator, auditor, implementers)
+        for op in operators:
+            assert_operator_invariants(op)
+        assert_cross_payload_invariants(
+            dispatch, orchestrator, auditor, implementers, operators
+        )
 
         if suite["name"] == "write":
             assert_negative_invariants_examples(dispatch, orchestrator, implementers)

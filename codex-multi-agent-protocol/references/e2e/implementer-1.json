@@ -21,7 +21,9 @@
 		"scope": "Only ownership_paths for slice A.",
 		"constraints": ["No changes outside ownership_paths"],
 		"expected_output": ["verification_steps evidence"],
-		"non_goals": ["No unrelated refactors"]
+		"non_goals": ["No unrelated refactors"],
+		"capabilities": ["code_change"],
+		"writes_repo": true
 	},
 	"questions": [],
 	"changeset": {

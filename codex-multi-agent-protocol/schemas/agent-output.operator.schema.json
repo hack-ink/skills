@@ -1,8 +1,8 @@
 {
 	"$schema": "https://json-schema.org/draft/2020-12/schema",
-	"$id": "file:///.codex/agent-output-implementer.schema.json",
-	"title": "Codex Implementer Output",
-	"description": "Structural schema for implementer outputs.",
+	"$id": "file:///.codex/agent-output-operator.schema.json",
+	"title": "Codex Operator Output",
+	"description": "Structural schema for operator outputs. Operator is a non-coding leaf role intended for command execution, fetching, and inspection tasks without repo writes.",
 	"type": "object",
 	"required": [
 		"ssot_id",
@@ -20,8 +20,7 @@
 		"self_check",
 		"task_contract",
 		"questions",
-		"changeset",
-		"verification_steps",
+		"actions",
 		"rationale",
 		"blocking_reason",
 		"allowed_paths"
@@ -74,7 +73,6 @@
 					"items": {
 						"type": "string",
 						"enum": [
-							"code_change",
 							"repo_inspect",
 							"git_ops",
 							"net_fetch",
@@ -85,7 +83,7 @@
 				},
 				"writes_repo": {
 					"type": "boolean",
-					"const": true
+					"const": false
 				}
 			},
 			"additionalProperties": false
@@ -112,27 +110,6 @@
 				}
 			},
 			"additionalProperties": false
-		},
-		"changeset": {
-			"type": "object",
-			"required": ["touched_paths", "notes"],
-			"properties": {
-				"touched_paths": {
-					"type": "array",
-					"minItems": 1,
-					"uniqueItems": true,
-					"items": {
-						"type": "string",
-						"minLength": 1,
-						"pattern": "^(/|web:|repo:)"
-					}
-				},
-				"notes": {
-					"type": "string",
-					"minLength": 1
-				}
-			},
-			"additionalProperties": false
 		}
 	},
 	"properties": {
@@ -154,7 +131,7 @@
 		},
 		"agent_type": {
 			"type": "string",
-			"const": "implementer"
+			"const": "operator"
 		},
 		"workflow_mode": {
 			"type": "string",
@@ -212,10 +189,7 @@
 				"minLength": 1
 			}
 		},
-		"changeset": {
-			"$ref": "#/$defs/changeset"
-		},
-		"verification_steps": {
+		"actions": {
 			"type": "array",
 			"minItems": 1,
 			"items": {
@@ -242,38 +216,6 @@
 	},
 	"allOf": [
 		{
-			"oneOf": [
-				{
-					"properties": {
-						"status": {
-							"const": "awaiting_review"
-						},
-						"blocked": {
-							"const": true
-						}
-					}
-				},
-				{
-					"allOf": [
-						{
-							"properties": {
-								"status": {
-									"enum": ["in_progress", "done"]
-								}
-							}
-						},
-						{
-							"properties": {
-								"blocked": {
-									"const": false
-								}
-							}
-						}
-					]
-				}
-			]
-		},
-		{
 			"if": { "properties": { "blocked": { "const": false } } },
 			"then": { "properties": { "blocking_reason": { "const": "not_applicable" } } }
 		},
@@ -288,51 +230,42 @@
 		{
 			"ssot_id": "sso-t-2026-02-22",
 			"protocol_version": "2.0",
-			"task_id": "task-write-001",
-			"subtask_id": "s2-write",
-			"agent_type": "implementer",
-			"workflow_mode": "subagent_task_execution",
+			"task_id": "task-ops-001",
+			"subtask_id": "op-1",
+			"agent_type": "operator",
+			"workflow_mode": "parallel_dispatch",
 			"routing_mode": "assistant_nested",
-			"slice_id": "slice-implementer-a",
+			"slice_id": "slice-op-1",
 			"attempt": 1,
 			"status": "done",
-			"summary": "Applied requested schema updates.",
+			"summary": "Collected repository inspection evidence for the orchestrator.",
 			"blocked": false,
 			"self_check": {
 				"status": "pass",
-				"command": "python3 -c \"print('ok')\"",
-				"evidence": "Basic command executed successfully."
+				"command": "rg -n \"protocol_version\" -S codex-multi-agent-protocol/schemas",
+				"evidence": "Found expected protocol_version const entries."
 			},
 			"task_contract": {
-				"goal": "Update the specified schema files and keep examples valid.",
-				"scope": "Only the schema files and referenced protocol docs for this task.",
-				"constraints": ["No unrelated refactors", "Keep routing_mode=assistant_nested"],
-				"expected_output": [
-					"Schema-valid JSON changes",
-					"Updated examples matching new required fields"
-				],
-				"non_goals": ["No new product features outside the protocol package"],
-				"capabilities": ["code_change", "synthesize"],
-				"writes_repo": true
+				"goal": "Collect evidence by running repo inspection commands.",
+				"scope": "Command execution and inspection only; no repo writes.",
+				"constraints": ["Do not modify files", "Do not run long-running commands"],
+				"expected_output": ["Command outputs with minimal interpretation"],
+				"non_goals": ["No code changes"],
+				"capabilities": ["repo_inspect", "command_exec", "synthesize"],
+				"writes_repo": false
 			},
 			"questions": [],
-			"changeset": {
-				"touched_paths": [
-					"/abs/repo/codex-multi-agent-protocol/schemas/dispatch-preflight.schema.json"
-				],
-				"notes": "Added protocol_version/workflow_mode and routing sizing fields; updated example."
-			},
-			"verification_steps": [
+			"actions": [
 				{
-					"name": "schema-smoke",
-					"command": "python3 -c \"print('ok')\"",
+					"name": "Locate relevant schemas",
+					"command": "ls codex-multi-agent-protocol/schemas",
 					"status": "pass",
-					"evidence": "ok"
+					"evidence": "Found orchestrator/auditor/implementer schemas."
 				}
 			],
-			"rationale": "Implemented only requested schema files.",
+			"rationale": "Evidence captured for orchestrator synthesis.",
 			"blocking_reason": "not_applicable",
-			"allowed_paths": ["/abs/repo"]
+			"allowed_paths": ["repo:."]
 		}
 	],
 	"additionalProperties": false

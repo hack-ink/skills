@@ -2,7 +2,7 @@
 	"$schema": "https://json-schema.org/draft/2020-12/schema",
 	"$id": "file:///.codex/agent-output-orchestrator-read-only.schema.json",
 	"title": "Codex Orchestrator Output (Read Only)",
-	"description": "Structural schema for orchestrator outputs that report completion of read_only subtasks.",
+	"description": "Structural schema for orchestrator outputs that report completion of read_only subtasks. Read-only workflows may dispatch non-coding Operator slices; Implementer (Coder) is reserved for code_change work.",
 	"type": "object",
 	"required": [
 		"ssot_id",
@@ -14,6 +14,7 @@
 		"routing_mode",
 		"slice_id",
 		"implementer_subtask_ids",
+		"operator_subtask_ids",
 		"parallel_peak_inflight",
 		"dispatch_plan",
 		"review_phases",
@@ -28,7 +29,15 @@
 	"$defs": {
 		"task_contract": {
 			"type": "object",
-			"required": ["goal", "scope", "constraints", "expected_output", "non_goals"],
+			"required": [
+				"goal",
+				"scope",
+				"constraints",
+				"expected_output",
+				"non_goals",
+				"capabilities",
+				"writes_repo"
+			],
 			"properties": {
 				"goal": {
 					"type": "string",
@@ -58,6 +67,24 @@
 						"type": "string",
 						"minLength": 1
 					}
+				},
+				"capabilities": {
+					"type": "array",
+					"minItems": 1,
+					"items": {
+						"type": "string",
+						"enum": [
+							"code_change",
+							"repo_inspect",
+							"git_ops",
+							"net_fetch",
+							"command_exec",
+							"synthesize"
+						]
+					}
+				},
+				"writes_repo": {
+					"type": "boolean"
 				}
 			},
 			"additionalProperties": false
@@ -97,6 +124,13 @@
 			"minLength": 1
 		},
 		"implementer_subtask_ids": {
+			"type": "array",
+			"items": {
+				"type": "string",
+				"minLength": 1
+			}
+		},
+		"operator_subtask_ids": {
 			"type": "array",
 			"items": {
 				"type": "string",
@@ -172,18 +206,24 @@
 				},
 				"slices": {
 					"type": "array",
+					"minItems": 1,
 					"items": {
 						"type": "object",
 						"required": [
-							"implementer_subtask_id",
+							"leaf_subtask_id",
+							"leaf_agent_type",
 							"domain_id",
 							"ownership_paths",
 							"task_contract"
 						],
 						"properties": {
-							"implementer_subtask_id": {
+							"leaf_subtask_id": {
 								"type": "string",
 								"minLength": 1
+							},
+							"leaf_agent_type": {
+								"type": "string",
+								"enum": ["implementer", "operator"]
 							},
 							"domain_id": {
 								"type": "string",
@@ -376,6 +416,7 @@
 			"routing_mode": "assistant_nested",
 			"slice_id": "slice-orchestrate-prework-a",
 			"implementer_subtask_ids": [],
+			"operator_subtask_ids": ["op-brief-1"],
 			"parallel_peak_inflight": 0,
 			"dispatch_plan": {
 				"independence_assessment": {
@@ -396,7 +437,8 @@
 				},
 				"slices": [
 					{
-						"implementer_subtask_id": "impl-none",
+						"leaf_subtask_id": "op-brief-1",
+						"leaf_agent_type": "operator",
 						"domain_id": "brief",
 						"ownership_paths": ["/abs/repo"],
 						"task_contract": {
@@ -406,7 +448,9 @@
 							"expected_output": [
 								"A concise brief with file paths and acceptance criteria"
 							],
-							"non_goals": ["No implementation"]
+							"non_goals": ["No implementation"],
+							"capabilities": ["repo_inspect", "synthesize"],
+							"writes_repo": false
 						}
 					}
 				]

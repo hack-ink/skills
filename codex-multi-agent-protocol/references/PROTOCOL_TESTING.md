@@ -1,6 +1,6 @@
 # Protocol Testing Methodology
 
-This document defines a repeatable test suite for the Director/Auditor/Orchestrator/Implementer protocol using the packaged schemas in `schemas/`.
+This document defines a repeatable test suite for the Director/Auditor/Orchestrator/leaf-agent protocol using the packaged schemas in `schemas/`.
 
 Operational workflow rules (parallel windowing, spec->quality gates, integration evidence) live in `references/WORKFLOWS.md`.
 
@@ -19,7 +19,7 @@ Notes:
 1. Ensure your working tree includes the latest protocol package updates.
 2. Confirm the runtime is configured for depth=3 nesting (recommended: `max_depth = 3`).
 3. Confirm protocol tokens are present across the packaged schema set:
-    - `rg -n 'assistant_nested|agent-output\\.auditor|agent-output\\.orchestrator|agent-output\\.implementer' schemas/*.json`
+    - `rg -n 'assistant_nested|agent-output\\.auditor|agent-output\\.orchestrator|agent-output\\.(implementer|operator)' schemas/*.json`
     - Confirm legacy routing tokens are absent (should return no matches; exit code 1):
         - `rg -n 'assistant_solo|assistant_direct|assistant_router|agent-output\\.director|director-output|auditor-output|orchestrator-output|implementer-output' schemas/*.json`
 4. Confirm protocol v2 fields are present across the packaged schema set:
@@ -36,7 +36,7 @@ Notes:
 
 Pass criteria:
 
-- Required 4-role protocol tokens appear in packaged schema files.
+- Required protocol tokens appear in packaged schema files (auditor, orchestrator, implementer, operator).
 - Legacy routing labels and assistant-era schema references are absent.
 
 ## 2) Schema Validation (Structural)
@@ -61,6 +61,7 @@ files = [
   'schemas/agent-output.orchestrator.write.schema.json',
   'schemas/agent-output.orchestrator.read_only.schema.json',
   'schemas/agent-output.implementer.schema.json',
+  'schemas/agent-output.operator.schema.json',
 ]
 for f in files:
     d = json.loads(Path(f).read_text())
@@ -77,9 +78,9 @@ PY
 
 Pass criteria:
 
-- All six files return `OK`.
+- All seven files return `OK`.
 
-## 3) E2E Positive Test (v2 chain: Director -> Auditor -> Orchestrator -> Implementer)
+## 3) E2E Positive Test (v2 chain: Director -> Auditor -> Orchestrator -> Implementer (Coder))
 
 Goal:
 

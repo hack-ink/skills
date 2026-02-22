@@ -5,7 +5,7 @@ This directory contains minimal, schema-valid **example payloads** for the proto
 It includes:
 
 - A `write` workflow suite (`*-write.json`)
-- A `read_only research` workflow suite (`*-research.json`)
+- A `read_only research` workflow suite (`*-research.json` + `operator-*.json`)
 
 ## Validate
 

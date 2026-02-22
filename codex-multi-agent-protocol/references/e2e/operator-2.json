@@ -1,0 +1,41 @@
+{
+	"ssot_id": "sso-t-e2e-2026-02-22-research",
+	"protocol_version": "2.0",
+	"task_id": "task-research-001",
+	"subtask_id": "op-2",
+	"agent_type": "operator",
+	"workflow_mode": "parallel_dispatch",
+	"routing_mode": "assistant_nested",
+	"slice_id": "slice-operator-e2e-2",
+	"attempt": 1,
+	"status": "done",
+	"summary": "Analyzed the target repository slice and returned structured findings.",
+	"blocked": false,
+	"self_check": {
+		"status": "pass",
+		"command": "rg -n \"Agent\" -S .",
+		"evidence": "Repository inspection command executed and findings captured."
+	},
+	"task_contract": {
+		"goal": "Analyze the target repository slice and return structured findings.",
+		"scope": "Only repo:obra/superpowers.",
+		"constraints": ["No repo writes", "Do not exceed scope"],
+		"expected_output": ["actions evidence", "summary with risks/unknowns"],
+		"non_goals": ["No unrelated repositories"],
+		"capabilities": ["repo_inspect", "command_exec", "synthesize"],
+		"writes_repo": false
+	},
+	"questions": [],
+	"actions": [
+		{
+			"name": "repo-inspection",
+			"command": "rg -n \"Agent\" -S .",
+			"status": "pass",
+			"evidence": "Relevant files and patterns located for synthesis."
+		}
+	],
+	"rationale": "Stayed within assigned repository analysis scope and returned evidence-backed findings.",
+	"blocking_reason": "not_applicable",
+	"allowed_paths": ["repo:obra/superpowers"]
+}
+
