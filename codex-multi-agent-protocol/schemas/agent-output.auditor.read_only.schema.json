@@ -211,7 +211,7 @@
 			"items": {
 				"type": "string",
 				"minLength": 1,
-				"pattern": "^/"
+				"pattern": "^(/|web:|repo:)"
 			}
 		},
 		"review_loop": {

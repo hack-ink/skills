@@ -1,0 +1,88 @@
+{
+	"ssot_id": "sso-t-e2e-2026-02-22-research",
+	"protocol_version": "2.0",
+	"task_id": "task-research-001",
+	"subtask_id": "s1-research",
+	"agent_type": "orchestrator",
+	"workflow_mode": "parallel_dispatch",
+	"routing_mode": "assistant_nested",
+	"slice_id": "slice-orchestrate-research-e2e",
+	"implementer_subtask_ids": ["res-1", "res-2"],
+	"parallel_peak_inflight": 2,
+	"dispatch_plan": {
+		"independence_assessment": {
+			"conflict_policy": "ownership_lock",
+			"domains": [
+				{
+					"domain_id": "web-angle-a",
+					"description": "Independent web research angle A",
+					"can_parallelize": true,
+					"shared_state_risks": []
+				},
+				{
+					"domain_id": "repo-analysis",
+					"description": "Independent repository analysis slice",
+					"can_parallelize": true,
+					"shared_state_risks": []
+				}
+			]
+		},
+		"windowing": {
+			"plan": "windowed",
+			"window_size": 2,
+			"wait_strategy": "wait_any"
+		},
+		"slices": [
+			{
+				"implementer_subtask_id": "res-1",
+				"domain_id": "web-angle-a",
+				"ownership_paths": ["web:topic/research-e2e/angle-a"],
+				"task_contract": {
+					"goal": "Research angle A and return evidence-rich summary.",
+					"scope": "Only web:topic/research-e2e/angle-a.",
+					"constraints": ["No repo writes", "Do not exceed scope"],
+					"expected_output": ["verification_steps evidence", "summary with sources/unknowns"],
+					"non_goals": ["No implementation work"]
+				}
+			},
+			{
+				"implementer_subtask_id": "res-2",
+				"domain_id": "repo-analysis",
+				"ownership_paths": ["repo:obra/superpowers"],
+				"task_contract": {
+					"goal": "Analyze the target repository slice and return structured findings.",
+					"scope": "Only repo:obra/superpowers.",
+					"constraints": ["No repo writes", "Do not exceed scope"],
+					"expected_output": ["verification_steps evidence", "summary with risks/unknowns"],
+					"non_goals": ["No unrelated repositories"]
+				}
+			}
+		]
+	},
+	"review_phases": [
+		{
+			"phase": "dispatch_safety",
+			"status": "pass",
+			"notes": "Ownership scopes are disjoint across concurrent slices."
+		},
+		{
+			"phase": "finalization",
+			"status": "pass",
+			"notes": "Read-only research slices completed with required evidence."
+		}
+	],
+	"status": "done",
+	"blocked": false,
+	"rationale": "Coordinated windowed dispatch with disjoint scopes; reviewed outputs for evidence quality.",
+	"review_only": false,
+	"blocking_reason": "not_applicable",
+	"allowed_paths": ["web:topic/research-e2e", "repo:obra/superpowers"],
+	"review_loop": {
+		"policy": "adaptive_min2_max3_second_pass_stable",
+		"self_passes": 2,
+		"converged": true,
+		"new_issues_found_in_last_self_pass": false,
+		"escalation_reason": "none"
+	}
+}
+

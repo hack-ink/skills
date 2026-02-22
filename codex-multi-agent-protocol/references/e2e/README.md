@@ -2,6 +2,11 @@
 
 This directory contains minimal, schema-valid **example payloads** for the protocol v2 E2E test.
 
+It includes:
+
+- A `write` workflow suite (`*-write.json`)
+- A `read_only research` workflow suite (`*-research.json`)
+
 ## Validate
 
 From the skill root:
@@ -15,4 +20,3 @@ python3 references/e2e/validate_payloads.py
 
 - These fixtures validate schema shape and required fields.
 - They do not prove runtime behavior (actual spawning, wait-any, close_agent hygiene).
-

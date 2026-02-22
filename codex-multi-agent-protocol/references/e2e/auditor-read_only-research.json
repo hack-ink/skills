@@ -1,0 +1,48 @@
+{
+	"ssot_id": "sso-t-e2e-2026-02-22-research",
+	"protocol_version": "2.0",
+	"task_id": "task-research-001",
+	"subtask_id": "s1-research",
+	"agent_type": "auditor",
+	"workflow_mode": "parallel_dispatch",
+	"routing_mode": "assistant_nested",
+	"slice_id": "slice-audit-research-e2e",
+	"implementer_subtask_ids": ["res-1", "res-2"],
+	"parallel_peak_inflight": 2,
+	"audit_phases": [
+		{
+			"phase": "spec",
+			"status": "pass",
+			"findings": [],
+			"evidence": "Spec: scope respected; outputs match task_contract; no writes attempted."
+		},
+		{
+			"phase": "quality",
+			"status": "pass",
+			"findings": [],
+			"evidence": "Quality: evidence present; disjoint ownership scopes; summaries include unknowns."
+		}
+	],
+	"diff_review": {
+		"status": "not_applicable",
+		"base_ref": "not_applicable",
+		"head_ref": "not_applicable",
+		"command": "not_applicable",
+		"evidence": "Read-only research fixture payloads are standalone examples."
+	},
+	"status": "done",
+	"blocked": false,
+	"rationale": "Completed spec-first then quality review for read-only research workflow.",
+	"review_only": false,
+	"blocking_reason": "not_applicable",
+	"allowed_paths": ["web:topic/research-e2e", "repo:obra/superpowers"],
+	"review_loop": {
+		"policy": "adaptive_min2_max3_second_pass_stable",
+		"auditor_passes": 2,
+		"orchestrator_self_passes": 2,
+		"converged": true,
+		"new_issues_found_in_last_audit_pass": false,
+		"escalation_reason": "none"
+	}
+}
+

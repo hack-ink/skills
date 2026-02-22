@@ -1,0 +1,43 @@
+{
+	"ssot_id": "sso-t-e2e-2026-02-22-research",
+	"protocol_version": "2.0",
+	"task_id": "task-research-001",
+	"subtask_id": "res-1",
+	"agent_type": "implementer",
+	"workflow_mode": "parallel_dispatch",
+	"routing_mode": "assistant_nested",
+	"slice_id": "slice-implementer-research-e2e-1",
+	"attempt": 1,
+	"status": "done",
+	"summary": "Completed web research angle A and returned evidence-rich summary.",
+	"blocked": false,
+	"self_check": {
+		"status": "pass",
+		"command": "web.search_query q='multi-agent parallel dispatch best practices'",
+		"evidence": "Search executed; results reviewed and summarized."
+	},
+	"task_contract": {
+		"goal": "Research angle A and return evidence-rich summary.",
+		"scope": "Only web:topic/research-e2e/angle-a.",
+		"constraints": ["No repo writes", "Do not exceed scope"],
+		"expected_output": ["verification_steps evidence", "summary with sources/unknowns"],
+		"non_goals": ["No implementation work"]
+	},
+	"questions": [],
+	"changeset": {
+		"touched_paths": ["web:topic/research-e2e/angle-a"],
+		"notes": "Read-only research; no filesystem changes."
+	},
+	"verification_steps": [
+		{
+			"name": "query-execution",
+			"command": "web.search_query q='multi-agent parallel dispatch best practices'",
+			"status": "pass",
+			"evidence": "Executed search and captured notes."
+		}
+	],
+	"rationale": "Stayed within assigned web research scope and provided evidence for the performed query.",
+	"blocking_reason": "not_applicable",
+	"allowed_paths": ["web:topic/research-e2e/angle-a"]
+}
+

@@ -193,19 +193,19 @@
 								"type": "string",
 								"minLength": 1
 							},
-							"ownership_paths": {
-								"type": "array",
-								"minItems": 1,
-								"items": {
-									"type": "string",
-									"minLength": 1,
-									"pattern": "^/"
+								"ownership_paths": {
+									"type": "array",
+									"minItems": 1,
+									"items": {
+										"type": "string",
+										"minLength": 1,
+										"pattern": "^(/|web:|repo:)"
+									}
+								},
+								"task_contract": {
+									"$ref": "#/$defs/task_contract"
 								}
 							},
-							"task_contract": {
-								"$ref": "#/$defs/task_contract"
-							}
-						},
 						"additionalProperties": false
 					}
 				}
@@ -282,7 +282,7 @@
 			"items": {
 				"type": "string",
 				"minLength": 1,
-				"pattern": "^/"
+				"pattern": "^(/|web:|repo:)"
 			}
 		},
 		"review_loop": {

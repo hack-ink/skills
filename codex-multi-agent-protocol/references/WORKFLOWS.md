@@ -21,6 +21,9 @@ Return a blocked/redirected result that recommends `micro_solo` execution.
 
 Use when you have **2+ independent domains** (different failing tests, subsystems, or files) where fixes can proceed without shared state.
 
+This workflow also applies to **read-only research** where independent slices improve coverage (e.g., multiple web queries, or parallel analysis across multiple repositories).
+It also applies to **repeatable operational work** split across multiple independent targets (for example, running the same `git` workflow in several repositories).
+
 ### 1.1 Independence assessment (required)
 
 Before spawning implementers:
@@ -36,6 +39,13 @@ When `conflict_policy="ownership_lock"`:
 - Each implementer slice has `ownership_paths`.
 - No two concurrent implementers may have overlapping `ownership_paths`.
 - Shared files are handled by a dedicated single slice (or forced sequential execution).
+
+For read-only research, treat `ownership_paths` as **scopes** (not just filesystem paths), for example:
+
+- `web:topic/<slice_id>` for web research slices
+- `repo:<owner>/<repo>` for multi-repo analysis slices
+
+For multi-repo operational slices (commit/push, version bumps, config sync), treat each repo as its own scope (e.g., `repo:<owner>/<repo>`) and include the concrete working directory (e.g., `/abs/path/to/repo`) in `allowed_paths`.
 
 ### 1.3 Windowed concurrency (required)
 
@@ -111,6 +121,16 @@ Recommended additions (encode either in the message or in schema fields):
 - Relevant error messages / failing test names
 - Ownership paths (what files the implementer may touch)
 
+For web research slices, include:
+
+- The exact query set / angles
+- The expected output format (e.g., bullet summary + links + risks/unknowns)
+
+For operational slices, include:
+
+- The exact commands to run (and which directory each runs in)
+- Safety constraints (no history rewrites unless requested, stop on conflicts, report evidence)
+
 ## 4) Evidence standard (minimum)
 
 ### Implementer
@@ -137,4 +157,3 @@ Recommended additions (encode either in the message or in schema fields):
 - Running quality review before spec review passes.
 - Proceeding after any reviewer marks `blocked=true`.
 - Leaving completed agents unclosed (thread starvation risk).
-

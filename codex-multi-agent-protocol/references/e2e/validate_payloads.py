@@ -34,22 +34,39 @@ def assert_invariants(orchestrator: dict) -> None:
 
 
 def main() -> None:
-	payloads = {
-		"dispatch-preflight.json": "schemas/dispatch-preflight.schema.json",
-		"orchestrator-write.json": "schemas/agent-output.orchestrator.write.schema.json",
-		"auditor-write.json": "schemas/agent-output.auditor.write.schema.json",
-		"implementer-1.json": "schemas/agent-output.implementer.schema.json",
-		"implementer-2.json": "schemas/agent-output.implementer.schema.json",
-	}
+	suites = [
+		{
+			"name": "write",
+			"payloads": {
+				"dispatch-preflight.json": "schemas/dispatch-preflight.schema.json",
+				"orchestrator-write.json": "schemas/agent-output.orchestrator.write.schema.json",
+				"auditor-write.json": "schemas/agent-output.auditor.write.schema.json",
+				"implementer-1.json": "schemas/agent-output.implementer.schema.json",
+				"implementer-2.json": "schemas/agent-output.implementer.schema.json",
+			},
+			"orchestrator_payload": "orchestrator-write.json",
+		},
+		{
+			"name": "read_only_research",
+			"payloads": {
+				"dispatch-preflight-research.json": "schemas/dispatch-preflight.schema.json",
+				"orchestrator-read_only-research.json": "schemas/agent-output.orchestrator.read_only.schema.json",
+				"auditor-read_only-research.json": "schemas/agent-output.auditor.read_only.schema.json",
+				"implementer-research-1.json": "schemas/agent-output.implementer.schema.json",
+				"implementer-research-2.json": "schemas/agent-output.implementer.schema.json",
+			},
+			"orchestrator_payload": "orchestrator-read_only-research.json",
+		},
+	]
 
-	for payload_name, schema_rel in payloads.items():
-		validate(ROOT / schema_rel, E2E_DIR / payload_name)
+	for suite in suites:
+		for payload_name, schema_rel in suite["payloads"].items():
+			validate(ROOT / schema_rel, E2E_DIR / payload_name)
 
-	orchestrator = load_json(E2E_DIR / "orchestrator-write.json")
-	assert_invariants(orchestrator)
-	print("OK: invariants")
+		orchestrator = load_json(E2E_DIR / suite["orchestrator_payload"])
+		assert_invariants(orchestrator)
+		print(f"OK: invariants ({suite['name']})")
 
 
 if __name__ == "__main__":
 	main()
-
