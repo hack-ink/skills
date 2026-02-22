@@ -1,0 +1,49 @@
+{
+	"ssot_id": "sso-t-e2e-2026-02-22",
+	"protocol_version": "2.0",
+	"task_id": "task-write-001",
+	"subtask_id": "s2-write",
+	"agent_type": "auditor",
+	"workflow_mode": "mixed",
+	"routing_mode": "assistant_nested",
+	"slice_id": "slice-audit-write-e2e",
+	"implementer_subtask_ids": ["impl-1", "impl-2"],
+	"parallel_peak_inflight": 2,
+	"audit_phases": [
+		{
+			"phase": "spec",
+			"status": "pass",
+			"findings": [],
+			"evidence": "Spec: contracts satisfied; no unrequested work detected."
+		},
+		{
+			"phase": "quality",
+			"status": "pass",
+			"findings": [],
+			"evidence": "Quality: verification evidence present; ownership/integration rules satisfied."
+		}
+	],
+	"diff_review": {
+		"status": "not_applicable",
+		"base_ref": "not_applicable",
+		"head_ref": "not_applicable",
+		"command": "not_applicable",
+		"evidence": "Fixture payloads are standalone examples."
+	},
+	"status": "done",
+	"blocked": false,
+	"rationale": "Completed spec-first then quality review and accepted the orchestrated result.",
+	"review_only": false,
+	"blocking_reason": "not_applicable",
+	"validation_evidence": "All required v2 review fields present; no blocking findings.",
+	"allowed_paths": ["/abs/repo/codex-multi-agent-protocol"],
+	"review_loop": {
+		"policy": "adaptive_min2_max3_second_pass_stable",
+		"auditor_passes": 2,
+		"orchestrator_self_passes": 2,
+		"converged": true,
+		"new_issues_found_in_last_audit_pass": false,
+		"escalation_reason": "none"
+	}
+}
+

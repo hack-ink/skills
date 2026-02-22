@@ -1,0 +1,43 @@
+{
+	"ssot_id": "sso-t-e2e-2026-02-22",
+	"protocol_version": "2.0",
+	"task_id": "task-write-001",
+	"subtask_id": "impl-2",
+	"agent_type": "implementer",
+	"workflow_mode": "parallel_dispatch",
+	"routing_mode": "assistant_nested",
+	"slice_id": "slice-implementer-e2e-2",
+	"attempt": 1,
+	"status": "done",
+	"summary": "Completed slice B work and returned evidence.",
+	"blocked": false,
+	"self_check": {
+		"status": "pass",
+		"command": "python3 -c \"print('ok')\"",
+		"evidence": "ok"
+	},
+	"task_contract": {
+		"goal": "Complete slice B work and return evidence.",
+		"scope": "Only ownership_paths for slice B.",
+		"constraints": ["No changes outside ownership_paths"],
+		"expected_output": ["verification_steps evidence"],
+		"non_goals": ["No unrelated refactors"]
+	},
+	"questions": [],
+	"changeset": {
+		"touched_paths": ["/abs/repo/fixture/b"],
+		"notes": "Fixture example for slice B."
+	},
+	"verification_steps": [
+		{
+			"name": "smoke",
+			"command": "python3 -c \"print('ok')\"",
+			"status": "pass",
+			"evidence": "ok"
+		}
+	],
+	"rationale": "Kept changes within ownership and produced verification evidence.",
+	"blocking_reason": "not_applicable",
+	"allowed_paths": ["/abs/repo/fixture/b"]
+}
+

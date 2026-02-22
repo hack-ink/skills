@@ -1,0 +1,57 @@
+{
+	"ssot_id": "sso-t-e2e-2026-02-22",
+	"protocol_version": "2.0",
+	"workflow_mode": "mixed",
+	"task_kind": "multi_file_or_ambiguous_or_risky",
+	"sizing": {
+		"class": "medium",
+		"rationale": "E2E sample fixtures for protocol v2 validation.",
+		"timebox_minutes": 30
+	},
+	"routing_decision": "multi_agent",
+	"ssot": {
+		"goal": "Run the v2 E2E chain and produce schema-valid payloads with required evidence.",
+		"non_goals": ["No unrelated refactors"],
+		"constraints": [
+			"routing_mode must remain assistant_nested",
+			"spec phase must complete before quality phase"
+		],
+		"acceptance_criteria": [
+			"All payloads validate against packaged schemas",
+			"Orchestrator provides integration_report evidence"
+		],
+		"decisions": ["Use windowed wait_any dispatch with ownership_lock"]
+	},
+	"routing_mode": "assistant_nested",
+	"subtasks": [
+		{
+			"task_id": "task-brief-001",
+			"subtask_id": "s1-brief",
+			"type": "read_only",
+			"delegate_target": "auditor",
+			"allowed_paths": ["/abs/repo"],
+			"deliverable": "Implementer-ready execution brief."
+		},
+		{
+			"task_id": "task-write-001",
+			"subtask_id": "s2-write",
+			"type": "write",
+			"delegate_target": "auditor",
+			"allowed_paths": ["/abs/repo/codex-multi-agent-protocol"],
+			"deliverable": "Auditor/Orchestrator-reviewed Implementer execution with evidence."
+		}
+	],
+	"scheduler_plan": "windowed",
+	"review_policy": {
+		"phase_order": ["spec", "quality"],
+		"auditor_passes_target": 2,
+		"auditor_passes_max": 3
+	},
+	"parallel_policy": {
+		"scheduler_plan": "windowed",
+		"wait_strategy": "wait_any",
+		"conflict_policy": "ownership_lock",
+		"window_size": 2
+	}
+}
+

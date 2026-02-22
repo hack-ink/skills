@@ -2,6 +2,8 @@
 
 This document defines a repeatable test suite for the Director/Auditor/Orchestrator/Implementer protocol using the packaged schemas in `schemas/`.
 
+Operational workflow rules (parallel windowing, spec→quality gates, integration evidence) live in `references/WORKFLOWS.md`.
+
 ## Test tiers (recommended)
 
 - **Smoke (default, < 2 min):** Run sections **1–3** with **2 implementers** and a small window (2). This validates depth=3 nesting + wait-any behavior without stressing the thread pool.
@@ -18,6 +20,8 @@ Notes:
 2. Confirm protocol tokens are present across the packaged schema set:
    - `rg -n 'assistant_nested|agent-output\\.auditor|agent-output\\.orchestrator|agent-output\\.implementer' schemas/*.json`
    - Run a second check to confirm legacy routing tokens are absent from the same paths.
+3. Confirm protocol v2 fields are present across the packaged schema set:
+   - `rg -n '\"protocol_version\"|\"workflow_mode\"|\"task_kind\"|\"routing_decision\"' schemas/*.json`
 3. (Recommended for stress runs) Confirm open-files limits are not at the macOS default:
    - `launchctl limit maxfiles`
    - `ulimit -Sn` and `ulimit -Hn`
@@ -73,18 +77,75 @@ Pass criteria:
 
 - All six files return `OK`.
 
-## 3) E2E Positive Test (Director -> Auditor -> Orchestrator -> Implementer)
+## 3) E2E Positive Test (v2 chain: Director -> Auditor -> Orchestrator -> Implementer)
 
-Method:
+Goal:
 
-1. Create two independent sandbox files.
-2. Director delegates a write planning subtask to Auditor.
-3. Auditor validates and delegates to Orchestrator.
-4. Orchestrator spawns multiple Implementer slices in a windowed pattern (`spawn-first -> wait-any -> review -> spawn-next`) with at least 2 overlapping implementers.
-   - Smoke default: **2 implementers**, window size **2**.
-5. Orchestrator routes implementer outputs to Auditor.
-6. Auditor performs review passes and accepts the result.
-7. Orchestrator closes implementer agents; Auditor closes Orchestrator; Director closes Auditor.
+- Exercise **windowed** parallel dispatch (`wait_any`) with ownership lock.
+- Exercise **spec → quality** audit phases.
+- Exercise Orchestrator **integration evidence** (`integration_report`).
+
+### Setup
+
+1. Create a run dir and two independent sandbox files:
+   - `RUN_DIR=$(mktemp -d)`
+   - `printf 'a\n' > \"$RUN_DIR/a.txt\"`
+   - `printf 'b\n' > \"$RUN_DIR/b.txt\"`
+2. Produce a v2 `dispatch-preflight` with:
+   - `protocol_version="2.0"`
+   - `routing_mode="assistant_nested"`
+   - `routing_decision="multi_agent"`
+   - `review_policy.phase_order=["spec","quality"]`
+   - `parallel_policy.wait_strategy="wait_any"`, `parallel_policy.conflict_policy="ownership_lock"`, `parallel_policy.window_size=2`
+3. Execute the chain in your runtime:
+   - Director delegates to Auditor
+   - Auditor delegates to Orchestrator
+   - Orchestrator runs **2+ implementers** in a **windowed** pattern (`spawn-first -> wait-any -> review -> spawn-next`)
+   - Orchestrator closes implementers; Auditor closes Orchestrator; Director closes Auditor
+
+### Artifacts to capture
+
+Save the final JSON payloads for:
+
+- Dispatch preflight: `dispatch-preflight.json`
+- Each implementer payload: `implementer-*.json` (at least 2)
+- Orchestrator write payload: `orchestrator-write.json`
+- Auditor write payload: `auditor-write.json`
+
+### Validation
+
+1. Validate each payload against the packaged schemas:
+
+```sh
+python3 - <<'PY'
+import json
+from pathlib import Path
+from jsonschema import Draft202012Validator
+
+def validate(schema_path: str, payload_path: str) -> None:
+    schema = json.loads(Path(schema_path).read_text())
+    payload = json.loads(Path(payload_path).read_text())
+    Draft202012Validator.check_schema(schema)
+    Draft202012Validator(schema).validate(payload)
+    print("OK:", payload_path, "against", schema_path)
+
+# Adjust payload paths as needed.
+validate("schemas/dispatch-preflight.schema.json", "dispatch-preflight.json")
+validate("schemas/agent-output.orchestrator.write.schema.json", "orchestrator-write.json")
+validate("schemas/agent-output.auditor.write.schema.json", "auditor-write.json")
+PY
+```
+
+2. Confirm runtime invariants (not just schema):
+
+- Orchestrator uses `conflict_policy="ownership_lock"` and does not run overlapping `ownership_paths` concurrently.
+- `parallel_peak_inflight >= 2` (smoke target: 2).
+- Orchestrator write payload includes `dispatch_plan`, `review_phases`, and `integration_report` with non-empty evidence.
+- Auditor write payload has exactly two `audit_phases` in order: spec first, quality second.
+
+Optional quick check:
+
+- Validate the bundled sample fixtures: `python3 references/e2e/validate_payloads.py`
 
 Pass criteria:
 
@@ -92,12 +153,13 @@ Pass criteria:
 - `routing_mode="assistant_nested"`.
 - `parallel_peak_inflight >= 2`.
 - `implementer_subtask_ids` is non-empty.
-- Every referenced implementer payload is schema-valid and includes required fields (`summary`, `self_check.command`, `self_check.evidence`).
+- Every referenced implementer payload is schema-valid and includes required v2 fields (`protocol_version`, `workflow_mode`, `task_contract`, `verification_steps`).
 - Orchestrator and Director do not finalize completion before Auditor review verdict.
 - `review_loop.policy` is `adaptive_min2_max3_second_pass_stable`.
 - `review_loop.auditor_passes` is between 2 and 3 inclusive.
 - `review_loop.orchestrator_self_passes >= 2`.
-- `validation_evidence` present and non-empty in both Orchestrator and Auditor write outputs.
+- Orchestrator write output includes `dispatch_plan`, `review_phases`, and `integration_report` with non-empty evidence.
+- Auditor write output includes `audit_phases` (spec first, quality second) and a populated `diff_review` (or `not_applicable` with evidence).
 
 ## 4) Negative Tests
 
@@ -135,7 +197,7 @@ Pass criteria:
 
 Method:
 
-- Provide a payload missing required implementer-schema fields (for example missing `summary` or `self_check.command`).
+- Provide a payload missing required implementer-schema fields (for example missing `task_contract` or `verification_steps`).
 
 Pass criteria:
 
@@ -174,6 +236,28 @@ Pass criteria:
 - Attempt is blocked.
 - Runtime output is schema-valid.
 - `validation_evidence` is present and non-empty.
+
+### H) Routing short-circuit (non-multi-agent)
+
+Method:
+
+- Provide a `dispatch-preflight` with `routing_decision` set to `micro_solo` or `single_agent`.
+- Attempt to proceed with spawning implementers anyway.
+
+Pass criteria:
+
+- Chain must short-circuit: no implementer spawns.
+- Output indicates blocked/redirected routing with explicit reason.
+
+### I) Ownership overlap in parallel slices
+
+Method:
+
+- Orchestrator attempts to run two concurrent implementers with overlapping `ownership_paths`.
+
+Pass criteria:
+
+- Result is blocked (Orchestrator or Auditor) with an explicit ownership/conflict-policy violation.
 
 ## 5) Concurrency Limit Test
 

@@ -6,12 +6,17 @@
 	"type": "object",
 	"required": [
 		"ssot_id",
+		"protocol_version",
 		"task_id",
 		"subtask_id",
 		"agent_type",
+		"workflow_mode",
 		"routing_mode",
 		"slice_id",
 		"implementer_subtask_ids",
+		"parallel_peak_inflight",
+		"dispatch_plan",
+		"review_phases",
 		"status",
 		"blocked",
 		"rationale",
@@ -20,10 +25,52 @@
 		"allowed_paths",
 		"review_loop"
 	],
+	"$defs": {
+		"task_contract": {
+			"type": "object",
+			"required": ["goal", "scope", "constraints", "expected_output", "non_goals"],
+			"properties": {
+				"goal": {
+					"type": "string",
+					"minLength": 1
+				},
+				"scope": {
+					"type": "string",
+					"minLength": 1
+				},
+				"constraints": {
+					"type": "array",
+					"items": {
+						"type": "string",
+						"minLength": 1
+					}
+				},
+				"expected_output": {
+					"type": "array",
+					"items": {
+						"type": "string",
+						"minLength": 1
+					}
+				},
+				"non_goals": {
+					"type": "array",
+					"items": {
+						"type": "string",
+						"minLength": 1
+					}
+				}
+			},
+			"additionalProperties": false
+		}
+	},
 	"properties": {
 		"ssot_id": {
 			"type": "string",
 			"minLength": 1
+		},
+		"protocol_version": {
+			"type": "string",
+			"const": "2.0"
 		},
 		"task_id": {
 			"type": "string",
@@ -36,6 +83,10 @@
 		"agent_type": {
 			"type": "string",
 			"const": "orchestrator"
+		},
+		"workflow_mode": {
+			"type": "string",
+			"enum": ["parallel_dispatch", "subagent_task_execution", "mixed"]
 		},
 		"routing_mode": {
 			"type": "string",
@@ -51,6 +102,161 @@
 				"type": "string",
 				"minLength": 1
 			}
+		},
+		"parallel_peak_inflight": {
+			"type": "integer",
+			"minimum": 0
+		},
+		"dispatch_plan": {
+			"type": "object",
+			"required": ["independence_assessment", "windowing", "slices"],
+			"properties": {
+				"independence_assessment": {
+					"type": "object",
+					"required": ["conflict_policy", "domains"],
+					"properties": {
+						"conflict_policy": {
+							"type": "string",
+							"const": "ownership_lock"
+						},
+						"domains": {
+							"type": "array",
+							"minItems": 1,
+							"items": {
+								"type": "object",
+								"required": [
+									"domain_id",
+									"description",
+									"can_parallelize"
+								],
+								"properties": {
+									"domain_id": {
+										"type": "string",
+										"minLength": 1
+									},
+									"description": {
+										"type": "string",
+										"minLength": 1
+									},
+									"can_parallelize": {
+										"type": "boolean"
+									},
+									"shared_state_risks": {
+										"type": "array",
+										"items": {
+											"type": "string",
+											"minLength": 1
+										}
+									}
+								},
+								"additionalProperties": false
+							}
+						}
+					},
+					"additionalProperties": false
+				},
+				"windowing": {
+					"type": "object",
+					"required": ["plan", "window_size", "wait_strategy"],
+					"properties": {
+						"plan": {
+							"type": "string",
+							"const": "windowed"
+						},
+						"window_size": {
+							"type": "integer",
+							"minimum": 1
+						},
+						"wait_strategy": {
+							"type": "string",
+							"const": "wait_any"
+						}
+					},
+					"additionalProperties": false
+				},
+				"slices": {
+					"type": "array",
+					"items": {
+						"type": "object",
+						"required": [
+							"implementer_subtask_id",
+							"domain_id",
+							"ownership_paths",
+							"task_contract"
+						],
+						"properties": {
+							"implementer_subtask_id": {
+								"type": "string",
+								"minLength": 1
+							},
+							"domain_id": {
+								"type": "string",
+								"minLength": 1
+							},
+							"ownership_paths": {
+								"type": "array",
+								"minItems": 1,
+								"items": {
+									"type": "string",
+									"minLength": 1,
+									"pattern": "^/"
+								}
+							},
+							"task_contract": {
+								"$ref": "#/$defs/task_contract"
+							}
+						},
+						"additionalProperties": false
+					}
+				}
+			},
+			"additionalProperties": false
+		},
+		"review_phases": {
+			"type": "array",
+			"minItems": 2,
+			"maxItems": 2,
+			"prefixItems": [
+				{
+					"type": "object",
+					"required": ["phase", "status", "notes"],
+					"properties": {
+						"phase": {
+							"type": "string",
+							"const": "dispatch_safety"
+						},
+						"status": {
+							"type": "string",
+							"enum": ["pass", "fail"]
+						},
+						"notes": {
+							"type": "string",
+							"minLength": 1
+						}
+					},
+					"additionalProperties": false
+				},
+				{
+					"type": "object",
+					"required": ["phase", "status", "notes"],
+					"properties": {
+						"phase": {
+							"type": "string",
+							"const": "finalization"
+						},
+						"status": {
+							"type": "string",
+							"enum": ["pass", "fail"]
+						},
+						"notes": {
+							"type": "string",
+							"minLength": 1
+						}
+					},
+					"additionalProperties": false
+				}
+			],
+			"items": false
 		},
 		"status": {
 			"type": "string",
@@ -147,21 +353,66 @@
 	],
 	"examples": [
 		{
-			"ssot_id": "sso-t-2026-02-18",
+			"ssot_id": "sso-t-2026-02-22",
+			"protocol_version": "2.0",
 			"task_id": "task-brief-001",
 			"subtask_id": "s1-brief",
 			"agent_type": "orchestrator",
+			"workflow_mode": "parallel_dispatch",
 			"routing_mode": "assistant_nested",
 			"slice_id": "slice-orchestrate-prework-a",
 			"implementer_subtask_ids": [],
+			"parallel_peak_inflight": 0,
+			"dispatch_plan": {
+				"independence_assessment": {
+					"conflict_policy": "ownership_lock",
+					"domains": [
+						{
+							"domain_id": "brief",
+							"description": "Prework brief generation",
+							"can_parallelize": false,
+							"shared_state_risks": ["No implementers dispatched in this slice"]
+						}
+					]
+				},
+				"windowing": {
+					"plan": "windowed",
+					"window_size": 1,
+					"wait_strategy": "wait_any"
+				},
+				"slices": [
+					{
+						"implementer_subtask_id": "impl-none",
+						"domain_id": "brief",
+						"ownership_paths": ["/abs/repo"],
+						"task_contract": {
+							"goal": "Produce an implementer-ready execution brief for the requested change.",
+							"scope": "Read-only analysis; no repo writes.",
+							"constraints": ["Do not modify files"],
+							"expected_output": ["A concise brief with file paths and acceptance criteria"],
+							"non_goals": ["No implementation"]
+						}
+					}
+				]
+			},
+			"review_phases": [
+				{
+					"phase": "dispatch_safety",
+					"status": "pass",
+					"notes": "No concurrent implementers; no ownership conflicts."
+				},
+				{
+					"phase": "finalization",
+					"status": "pass",
+					"notes": "Read-only orchestrator slice finalized."
+				}
+			],
 			"status": "done",
 			"blocked": false,
 			"rationale": "REVIEW_ONLY: Orchestrator prework completed.",
 			"review_only": true,
 			"blocking_reason": "not_applicable",
-			"allowed_paths": [
-				"/abs/runtime/.codex/dispatch-preflight.schema.json"
-			],
+			"allowed_paths": ["/abs/runtime/.codex/dispatch-preflight.schema.json"],
 			"review_loop": {
 				"policy": "adaptive_min2_max3_second_pass_stable",
 				"self_passes": 2,

@@ -6,12 +6,17 @@
 	"type": "object",
 	"required": [
 		"ssot_id",
+		"protocol_version",
 		"task_id",
 		"subtask_id",
 		"agent_type",
+		"workflow_mode",
 		"routing_mode",
 		"slice_id",
 		"implementer_subtask_ids",
+		"parallel_peak_inflight",
+		"audit_phases",
+		"diff_review",
 		"status",
 		"blocked",
 		"rationale",
@@ -20,10 +25,91 @@
 		"allowed_paths",
 		"review_loop"
 	],
+	"$defs": {
+		"finding": {
+			"type": "object",
+			"required": ["severity", "title", "details", "action_required"],
+			"properties": {
+				"severity": {
+					"type": "string",
+					"enum": ["critical", "important", "minor"]
+				},
+				"title": {
+					"type": "string",
+					"minLength": 1
+				},
+				"details": {
+					"type": "string",
+					"minLength": 1
+				},
+				"action_required": {
+					"type": "boolean"
+				}
+			},
+			"additionalProperties": false
+		},
+		"audit_phase_base": {
+			"type": "object",
+			"required": ["phase", "status", "findings", "evidence"],
+			"properties": {
+				"phase": {
+					"type": "string",
+					"enum": ["spec", "quality"]
+				},
+				"status": {
+					"type": "string",
+					"enum": ["pass", "fail"]
+				},
+				"findings": {
+					"type": "array",
+					"items": {
+						"$ref": "#/$defs/finding"
+					}
+				},
+				"evidence": {
+					"type": "string",
+					"minLength": 1
+				}
+			},
+			"additionalProperties": false
+		},
+		"audit_phase_spec": {
+			"allOf": [
+				{
+					"$ref": "#/$defs/audit_phase_base"
+				},
+				{
+					"properties": {
+						"phase": {
+							"const": "spec"
+						}
+					}
+				}
+			]
+		},
+		"audit_phase_quality": {
+			"allOf": [
+				{
+					"$ref": "#/$defs/audit_phase_base"
+				},
+				{
+					"properties": {
+						"phase": {
+							"const": "quality"
+						}
+					}
+				}
+			]
+		}
+	},
 	"properties": {
 		"ssot_id": {
 			"type": "string",
 			"minLength": 1
+		},
+		"protocol_version": {
+			"type": "string",
+			"const": "2.0"
 		},
 		"task_id": {
 			"type": "string",
@@ -36,6 +122,10 @@
 		"agent_type": {
 			"type": "string",
 			"const": "auditor"
+		},
+		"workflow_mode": {
+			"type": "string",
+			"enum": ["parallel_dispatch", "subagent_task_execution", "mixed"]
 		},
 		"routing_mode": {
 			"type": "string",
@@ -51,6 +141,51 @@
 				"type": "string",
 				"minLength": 1
 			}
+		},
+		"parallel_peak_inflight": {
+			"type": "integer",
+			"minimum": 0
+		},
+		"audit_phases": {
+			"type": "array",
+			"minItems": 2,
+			"maxItems": 2,
+			"prefixItems": [
+				{
+					"$ref": "#/$defs/audit_phase_spec"
+				},
+				{
+					"$ref": "#/$defs/audit_phase_quality"
+				}
+			],
+			"items": false
+		},
+		"diff_review": {
+			"type": "object",
+			"required": ["status", "base_ref", "head_ref", "command", "evidence"],
+			"properties": {
+				"status": {
+					"type": "string",
+					"enum": ["pass", "fail", "not_applicable"]
+				},
+				"base_ref": {
+					"type": "string",
+					"minLength": 1
+				},
+				"head_ref": {
+					"type": "string",
+					"minLength": 1
+				},
+				"command": {
+					"type": "string",
+					"minLength": 1
+				},
+				"evidence": {
+					"type": "string",
+					"minLength": 1
+				}
+			},
+			"additionalProperties": false
 		},
 		"status": {
 			"type": "string",
@@ -153,21 +288,43 @@
 	],
 	"examples": [
 		{
-			"ssot_id": "sso-t-2026-02-18",
+			"ssot_id": "sso-t-2026-02-22",
+			"protocol_version": "2.0",
 			"task_id": "task-brief-001",
 			"subtask_id": "s1-brief",
 			"agent_type": "auditor",
+			"workflow_mode": "parallel_dispatch",
 			"routing_mode": "assistant_nested",
 			"slice_id": "slice-audit-prework-a",
 			"implementer_subtask_ids": [],
+			"parallel_peak_inflight": 0,
+			"audit_phases": [
+				{
+					"phase": "spec",
+					"status": "pass",
+					"findings": [],
+					"evidence": "Spec: read-only brief meets deliverable requirements."
+				},
+				{
+					"phase": "quality",
+					"status": "pass",
+					"findings": [],
+					"evidence": "Quality: brief is clear and actionable."
+				}
+			],
+			"diff_review": {
+				"status": "not_applicable",
+				"base_ref": "not_applicable",
+				"head_ref": "not_applicable",
+				"command": "not_applicable",
+				"evidence": "Diff review not applicable for read-only brief."
+			},
 			"status": "done",
 			"blocked": false,
 			"rationale": "REVIEW_ONLY: Audit prework completed.",
 			"review_only": true,
 			"blocking_reason": "not_applicable",
-			"allowed_paths": [
-				"/abs/runtime/.codex/dispatch-preflight.schema.json"
-			],
+			"allowed_paths": ["/abs/runtime/.codex/dispatch-preflight.schema.json"],
 			"review_loop": {
 				"policy": "adaptive_min2_max3_second_pass_stable",
 				"auditor_passes": 2,

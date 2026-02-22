@@ -6,13 +6,17 @@
 	"type": "object",
 	"required": [
 		"ssot_id",
+		"protocol_version",
 		"task_id",
 		"subtask_id",
 		"agent_type",
+		"workflow_mode",
 		"routing_mode",
 		"slice_id",
 		"implementer_subtask_ids",
 		"parallel_peak_inflight",
+		"audit_phases",
+		"diff_review",
 		"status",
 		"blocked",
 		"rationale",
@@ -22,10 +26,91 @@
 		"allowed_paths",
 		"review_loop"
 	],
+	"$defs": {
+		"finding": {
+			"type": "object",
+			"required": ["severity", "title", "details", "action_required"],
+			"properties": {
+				"severity": {
+					"type": "string",
+					"enum": ["critical", "important", "minor"]
+				},
+				"title": {
+					"type": "string",
+					"minLength": 1
+				},
+				"details": {
+					"type": "string",
+					"minLength": 1
+				},
+				"action_required": {
+					"type": "boolean"
+				}
+			},
+			"additionalProperties": false
+		},
+		"audit_phase_base": {
+			"type": "object",
+			"required": ["phase", "status", "findings", "evidence"],
+			"properties": {
+				"phase": {
+					"type": "string",
+					"enum": ["spec", "quality"]
+				},
+				"status": {
+					"type": "string",
+					"enum": ["pass", "fail"]
+				},
+				"findings": {
+					"type": "array",
+					"items": {
+						"$ref": "#/$defs/finding"
+					}
+				},
+				"evidence": {
+					"type": "string",
+					"minLength": 1
+				}
+			},
+			"additionalProperties": false
+		},
+		"audit_phase_spec": {
+			"allOf": [
+				{
+					"$ref": "#/$defs/audit_phase_base"
+				},
+				{
+					"properties": {
+						"phase": {
+							"const": "spec"
+						}
+					}
+				}
+			]
+		},
+		"audit_phase_quality": {
+			"allOf": [
+				{
+					"$ref": "#/$defs/audit_phase_base"
+				},
+				{
+					"properties": {
+						"phase": {
+							"const": "quality"
+						}
+					}
+				}
+			]
+		}
+	},
 	"properties": {
 		"ssot_id": {
 			"type": "string",
 			"minLength": 1
+		},
+		"protocol_version": {
+			"type": "string",
+			"const": "2.0"
 		},
 		"task_id": {
 			"type": "string",
@@ -38,6 +123,10 @@
 		"agent_type": {
 			"type": "string",
 			"const": "auditor"
+		},
+		"workflow_mode": {
+			"type": "string",
+			"enum": ["parallel_dispatch", "subagent_task_execution", "mixed"]
 		},
 		"routing_mode": {
 			"type": "string",
@@ -58,6 +147,47 @@
 		"parallel_peak_inflight": {
 			"type": "integer",
 			"minimum": 1
+		},
+		"audit_phases": {
+			"type": "array",
+			"minItems": 2,
+			"maxItems": 2,
+			"prefixItems": [
+				{
+					"$ref": "#/$defs/audit_phase_spec"
+				},
+				{
+					"$ref": "#/$defs/audit_phase_quality"
+				}
+			],
+			"items": false
+		},
+		"diff_review": {
+			"type": "object",
+			"required": ["status", "base_ref", "head_ref", "command", "evidence"],
+			"properties": {
+				"status": {
+					"type": "string",
+					"enum": ["pass", "fail", "not_applicable"]
+				},
+				"base_ref": {
+					"type": "string",
+					"minLength": 1
+				},
+				"head_ref": {
+					"type": "string",
+					"minLength": 1
+				},
+				"command": {
+					"type": "string",
+					"minLength": 1
+				},
+				"evidence": {
+					"type": "string",
+					"minLength": 1
+				}
+			},
+			"additionalProperties": false
 		},
 		"status": {
 			"type": "string",
@@ -164,20 +294,43 @@
 	],
 	"examples": [
 		{
-			"ssot_id": "sso-t-2026-02-18",
+			"ssot_id": "sso-t-2026-02-22",
+			"protocol_version": "2.0",
 			"task_id": "task-write-001",
 			"subtask_id": "s2-write",
 			"agent_type": "auditor",
+			"workflow_mode": "mixed",
 			"routing_mode": "assistant_nested",
 			"slice_id": "slice-audit-write-a",
-			"implementer_subtask_ids": ["impl-1", "implementer-2"],
+			"implementer_subtask_ids": ["impl-1", "impl-2"],
 			"parallel_peak_inflight": 2,
+			"audit_phases": [
+				{
+					"phase": "spec",
+					"status": "pass",
+					"findings": [],
+					"evidence": "Spec: contract scope/constraints matched; no extra work detected."
+				},
+				{
+					"phase": "quality",
+					"status": "pass",
+					"findings": [],
+					"evidence": "Quality: evidence present; ownership and integration checks satisfied."
+				}
+			],
+			"diff_review": {
+				"status": "not_applicable",
+				"base_ref": "not_applicable",
+				"head_ref": "not_applicable",
+				"command": "not_applicable",
+				"evidence": "Diff review skipped in example payload."
+			},
 			"status": "done",
 			"blocked": false,
-			"rationale": "Auditor review completed and passed.",
+			"rationale": "Auditor completed spec-first then quality review and accepted the result.",
 			"review_only": false,
 			"blocking_reason": "not_applicable",
-			"validation_evidence": "Auditor independently validated all implementer payloads and completed required audit passes.",
+			"validation_evidence": "Auditor independently validated implementer outputs and required review phases.",
 			"allowed_paths": ["/abs/runtime/.codex/AGENTS.md"],
 			"review_loop": {
 				"policy": "adaptive_min2_max3_second_pass_stable",

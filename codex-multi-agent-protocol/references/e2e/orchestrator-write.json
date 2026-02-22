@@ -1,0 +1,102 @@
+{
+	"ssot_id": "sso-t-e2e-2026-02-22",
+	"protocol_version": "2.0",
+	"task_id": "task-write-001",
+	"subtask_id": "s2-write",
+	"agent_type": "orchestrator",
+	"workflow_mode": "mixed",
+	"routing_mode": "assistant_nested",
+	"slice_id": "slice-orchestrate-write-e2e",
+	"implementer_subtask_ids": ["impl-1", "impl-2"],
+	"parallel_peak_inflight": 2,
+	"dispatch_plan": {
+		"independence_assessment": {
+			"conflict_policy": "ownership_lock",
+			"domains": [
+				{
+					"domain_id": "fixture-a",
+					"description": "Independent slice A",
+					"can_parallelize": true,
+					"shared_state_risks": []
+				},
+				{
+					"domain_id": "fixture-b",
+					"description": "Independent slice B",
+					"can_parallelize": true,
+					"shared_state_risks": []
+				}
+			]
+		},
+		"windowing": {
+			"plan": "windowed",
+			"window_size": 2,
+			"wait_strategy": "wait_any"
+		},
+		"slices": [
+			{
+				"implementer_subtask_id": "impl-1",
+				"domain_id": "fixture-a",
+				"ownership_paths": ["/abs/repo/fixture/a"],
+				"task_contract": {
+					"goal": "Complete slice A work and return evidence.",
+					"scope": "Only ownership_paths for slice A.",
+					"constraints": ["No changes outside ownership_paths"],
+					"expected_output": ["verification_steps evidence", "no ownership overlap"],
+					"non_goals": ["No unrelated refactors"]
+				}
+			},
+			{
+				"implementer_subtask_id": "impl-2",
+				"domain_id": "fixture-b",
+				"ownership_paths": ["/abs/repo/fixture/b"],
+				"task_contract": {
+					"goal": "Complete slice B work and return evidence.",
+					"scope": "Only ownership_paths for slice B.",
+					"constraints": ["No changes outside ownership_paths"],
+					"expected_output": ["verification_steps evidence", "no ownership overlap"],
+					"non_goals": ["No unrelated refactors"]
+				}
+			}
+		]
+	},
+	"review_phases": [
+		{
+			"phase": "dispatch_safety",
+			"status": "pass",
+			"notes": "Ownership paths are disjoint across concurrent slices."
+		},
+		{
+			"phase": "integration",
+			"status": "pass",
+			"notes": "Conflict check and full test evidence recorded."
+		}
+	],
+	"integration_report": {
+		"conflict_check": {
+			"command": "git status --porcelain",
+			"status": "pass",
+			"evidence": "Working tree clean."
+		},
+		"full_test": {
+			"command": "python3 -c \"print('ok')\"",
+			"status": "pass",
+			"evidence": "ok"
+		},
+		"notes": "Integrated slice results and verified required checks."
+	},
+	"status": "done",
+	"blocked": false,
+	"rationale": "Coordinated windowed dispatch with ownership lock; performed integration checks.",
+	"review_only": false,
+	"blocking_reason": "not_applicable",
+	"validation_evidence": "dispatch_plan + review_phases + integration_report present and schema-valid.",
+	"allowed_paths": ["/abs/repo/codex-multi-agent-protocol"],
+	"review_loop": {
+		"policy": "adaptive_min2_max3_second_pass_stable",
+		"self_passes": 2,
+		"converged": true,
+		"new_issues_found_in_last_self_pass": false,
+		"escalation_reason": "none"
+	}
+}
+
