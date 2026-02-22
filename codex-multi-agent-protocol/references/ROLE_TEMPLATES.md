@@ -26,7 +26,6 @@ Use for code/config changes.
   - `verification_steps`: commands + observed results.
   - Risk notes + rollback suggestion (if applicable).
 - **non_goals**: <explicit exclusions>
-- **capabilities**: `["code_change"]` (required by schema)
 - **writes_repo**: `true` (required by schema)
 
 Implementer (Coder) output checklist:
@@ -53,7 +52,6 @@ Use for command execution, fetching, inspection, and research that feeds decisio
   - Evidence map: claim -> evidence -> source link (for web research).
   - Open questions + what would resolve them.
 - **non_goals**: <explicit exclusions>
-- **capabilities**: <choose from `repo_inspect`, `git_ops`, `net_fetch`, `command_exec`, `synthesize`> (required by schema)
 - **writes_repo**: `false` (required by schema)
 
 Operator output checklist:

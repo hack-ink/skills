@@ -22,7 +22,6 @@
 		"constraints": ["No repo writes", "Do not exceed scope"],
 		"expected_output": ["actions evidence", "summary with sources/unknowns"],
 		"non_goals": ["No implementation work"],
-		"capabilities": ["net_fetch", "synthesize"],
 		"writes_repo": false
 	},
 	"questions": [],
@@ -38,4 +37,3 @@
 	"blocking_reason": "not_applicable",
 	"allowed_paths": ["web:topic/research-e2e/angle-a"]
 }
-

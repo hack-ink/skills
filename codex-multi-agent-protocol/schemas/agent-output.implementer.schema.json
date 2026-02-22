@@ -35,7 +35,6 @@
 				"constraints",
 				"expected_output",
 				"non_goals",
-				"capabilities",
 				"writes_repo"
 			],
 			"properties": {
@@ -67,25 +66,6 @@
 						"type": "string",
 						"minLength": 1
 					}
-				},
-				"capabilities": {
-					"type": "array",
-					"minItems": 1,
-					"items": {
-						"type": "string",
-						"enum": [
-							"code_change",
-							"repo_inspect",
-							"git_ops",
-							"net_fetch",
-							"command_exec",
-							"synthesize"
-						]
-					},
-					"contains": {
-						"const": "code_change"
-					},
-					"minContains": 1
 				},
 				"writes_repo": {
 					"type": "boolean",
@@ -128,7 +108,7 @@
 					"items": {
 						"type": "string",
 						"minLength": 1,
-						"pattern": "^(/|web:|repo:)"
+						"pattern": "^(/|repo:)"
 					}
 				},
 				"notes": {
@@ -316,7 +296,6 @@
 					"Updated examples matching new required fields"
 				],
 				"non_goals": ["No new product features outside the protocol package"],
-				"capabilities": ["code_change", "synthesize"],
 				"writes_repo": true
 			},
 			"questions": [],

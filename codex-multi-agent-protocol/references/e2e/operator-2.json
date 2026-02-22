@@ -22,7 +22,6 @@
 		"constraints": ["No repo writes", "Do not exceed scope"],
 		"expected_output": ["actions evidence", "summary with risks/unknowns"],
 		"non_goals": ["No unrelated repositories"],
-		"capabilities": ["repo_inspect", "command_exec", "synthesize"],
 		"writes_repo": false
 	},
 	"questions": [],
@@ -38,4 +37,3 @@
 	"blocking_reason": "not_applicable",
 	"allowed_paths": ["repo:obra/superpowers"]
 }
-

@@ -48,7 +48,6 @@
 						"summary with sources/unknowns"
 					],
 					"non_goals": ["No implementation work"],
-					"capabilities": ["net_fetch", "synthesize"],
 					"writes_repo": false
 				}
 			},
@@ -66,7 +65,6 @@
 						"summary with risks/unknowns"
 					],
 					"non_goals": ["No unrelated repositories"],
-					"capabilities": ["repo_inspect", "synthesize"],
 					"writes_repo": false
 				}
 			}

@@ -45,7 +45,6 @@
 					"constraints": ["No changes outside ownership_paths"],
 					"expected_output": ["verification_steps evidence", "no ownership overlap"],
 					"non_goals": ["No unrelated refactors"],
-					"capabilities": ["code_change"],
 					"writes_repo": true
 				}
 			},
@@ -60,7 +59,6 @@
 					"constraints": ["No changes outside ownership_paths"],
 					"expected_output": ["verification_steps evidence", "no ownership overlap"],
 					"non_goals": ["No unrelated refactors"],
-					"capabilities": ["code_change"],
 					"writes_repo": true
 				}
 			}
