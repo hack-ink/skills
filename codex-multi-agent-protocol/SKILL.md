@@ -36,3 +36,22 @@ description: Use when a task requires multi-agent execution with Director/Audito
 
 - These schemas are structural. Cross-field/runtime invariants remain enforced by the active AGENTS protocol (or the protocol section of this skill when it is used).
 - Keep `routing_mode` as `assistant_nested` unless the protocol SSOT explicitly changes.
+
+## Concurrency budgets (practical)
+
+There are two independent bottlenecks:
+
+- **Agent threads** (e.g. `max_threads=24`): how many subagents can be alive concurrently.
+- **Tool/process resources** (FDs, processes, CPU): how many concurrent `exec_command`-style shell actions can run without destabilizing the runner.
+
+Rules of thumb:
+
+- Keep **agent concurrency aggressive** (use windowed dispatch and replenish; aim to saturate `max_threads` when you have independent slices).
+- Keep **tool concurrency opportunistic**:
+  - If `ulimit -Sn` is high (typically `>= 4096`) and tool steps are short, you can usually run many `exec_command` calls concurrently (often up to `max_threads`) without special throttling.
+  - If you see `os error 24` / “Too many open files”, tool timeouts, or general runner instability, back off to a *temporary* window for shell-heavy phases (common windows: 8–16) and ramp back up after stability returns.
+  - Prefer **short** tool steps; avoid long `sleep` inside `exec_command` for stress tests (keep agents alive by not closing them instead).
+
+Spawn hygiene:
+
+- Always pass a non-empty initial `message` to `spawn_agent` (some runners fail closed with “Provide one of: message or items” if it’s omitted).

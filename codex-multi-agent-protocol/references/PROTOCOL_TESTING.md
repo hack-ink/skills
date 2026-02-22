@@ -2,12 +2,30 @@
 
 This document defines a repeatable test suite for the Director/Auditor/Orchestrator/Implementer protocol using the packaged schemas in `schemas/`.
 
+## Test tiers (recommended)
+
+- **Smoke (default, < 2 min):** Run sections **1–3** with **2 implementers** and a small window (2). This validates depth=3 nesting + wait-any behavior without stressing the thread pool.
+- **Stress (on-demand, can be slow):** Run sections **5–7** only when you change runtime concurrency settings (`max_threads`, scheduler) or when debugging liveness/timeout issues.
+
+Notes:
+
+- `codex exec` is **not required** to run these tests. It is only useful when you want a **clean, ephemeral, non-interactive** reproduction (e.g., regression runs) and a single captured final JSON output.
+- Always **`close_agent` for completed children**. Finished-but-not-closed agents continue consuming thread slots and can make later tasks appear “stuck” due to thread starvation.
+
 ## 1) Preconditions
 
 1. Ensure your working tree includes the latest protocol package updates.
 2. Confirm protocol tokens are present across the packaged schema set:
    - `rg -n 'assistant_nested|agent-output\\.auditor|agent-output\\.orchestrator|agent-output\\.implementer' schemas/*.json`
    - Run a second check to confirm legacy routing tokens are absent from the same paths.
+3. (Recommended for stress runs) Confirm open-files limits are not at the macOS default:
+   - `launchctl limit maxfiles`
+   - `ulimit -Sn` and `ulimit -Hn`
+   - If soft is `256`, expect high-concurrency `exec_command` runs to be flaky or fail with `os error 24`.
+   - Note: `launchctl limit` can be higher than the per-shell soft limit (`ulimit -Sn`). Prefer checking both.
+4. (Recommended for stress runs) Ensure no other long-running Codex sessions are consuming agent threads:
+   - `ps -Ao pid,etime,command | rg '\\bcodex( resume)?\\b'`
+   - Close/exit other interactive sessions before trying to saturate `max_threads`.
 
 Pass criteria:
 
@@ -62,8 +80,10 @@ Method:
 2. Director delegates a write planning subtask to Auditor.
 3. Auditor validates and delegates to Orchestrator.
 4. Orchestrator spawns multiple Implementer slices in a windowed pattern (`spawn-first -> wait-any -> review -> spawn-next`) with at least 2 overlapping implementers.
+   - Smoke default: **2 implementers**, window size **2**.
 5. Orchestrator routes implementer outputs to Auditor.
 6. Auditor performs review passes and accepts the result.
+7. Orchestrator closes implementer agents; Auditor closes Orchestrator; Director closes Auditor.
 
 Pass criteria:
 
@@ -168,6 +188,39 @@ Expected:
 - Failure at configured thread limit (currently observed: 24).
 - Completed implementers hold slots until `close_agent`.
 - New spawn succeeds after close.
+
+Practical guidance:
+
+- Run this as **Stress** only (it can take minutes and will amplify any missing `close_agent` hygiene).
+- If you see slowdowns, first confirm no completed agents are left unclosed (thread starvation).
+- Always pass a non-empty `message` to `spawn_agent` (omit it and you may get a tool-level failure that looks like a concurrency issue).
+
+## 5b) Mixed-Depth Fill Test (depth1/2/3 mix)
+
+Purpose:
+
+- Validate nested spawning (depth=3) while saturating `max_threads` with a mixed topology.
+
+Method (example for `max_threads=24`):
+
+1. Director spawns 4 Auditors total:
+   - 1x Auditor root (will spawn orchestrators)
+   - 3x idle Auditors (depth1 leaves)
+2. Auditor root spawns 4 Orchestrators:
+   - ORCH_IDLE spawns 0 implementers (depth2 leaf)
+   - ORCH_A spawns 5 implementers (impl_1..impl_5)
+   - ORCH_B spawns 5 implementers (impl_6..impl_10)
+   - ORCH_C spawns 6 implementers (impl_11..impl_16)
+3. Each implementer runs one short marker command (no need for agent_id env vars):
+   - `bash -lc 'echo \"label=impl_N\" > <run_dir>/impl_N.txt; date >> <run_dir>/impl_N.txt; ulimit -Sn >> <run_dir>/impl_N.txt'`
+4. After the target population is reached, attempt 1 extra spawn (e.g. from ORCH_C). Record the exact failure text.
+5. Close all implementers, then orchestrators, then auditors.
+
+Pass criteria:
+
+- Exactly `max_threads` live subagents are reached (example: `4 + 4 + 16 = 24`).
+- Extra spawn fails with `agent thread limit reached (max 24)` (or equivalent runtime message).
+- All marker files exist under the run dir.
 
 ## 6) Wait-Any Test
 
