@@ -48,6 +48,15 @@ Guidelines:
 - Recommended: set `max_depth = 3` and treat it as a **hard cap**. Deeper nesting tends to reduce clarity and makes failure modes harder to debug.
 - If your runtime cannot support depth=3, do not force it: switch to a flattened topology (Director directly spawns Orchestrator and leaf agents, with Auditor review gates) and update the SSOT accordingly.
 
+## 0.3) `ssot_id` convention (recommended)
+
+Use `ssot_id = <scenario>-<id>` (short, ASCII, kebab-case):
+
+- Examples: `dev-01J...`, `ops-01J...`, `research-01J...`, `e2e-2026-02-22`
+- Requirements:
+  - One run -> one `ssot_id` shared across all payloads
+  - Different runs -> different `ssot_id` (avoid collisions)
+
 ## 1) Parallel dispatch workflow (independent domains)
 
 Use when you have **2+ independent domains** (different failing tests, subsystems, or files) where fixes can proceed without shared state.
