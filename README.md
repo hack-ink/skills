@@ -19,12 +19,6 @@ To add or update a skill:
 2. Keep instructions concise, testable, and narrowly scoped.
 3. Update this `README.md` catalog when new skills are added.
 
-## Repository policies
-
-- **Commit messages**: use the `cmsg/1` single-line JSON format used throughout `git log`.
-- **Language**: do not add CJK characters to tracked files.
-- **Integration**: prefer PR + merge queue and avoid bypassing branch protection or force-pushing.
-
 ## Repository layout
 
 - `AGENTS.md` — repository-specific operating instructions.
