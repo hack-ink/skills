@@ -4,7 +4,7 @@ This repository hosts reusable agent skills for Codex workflows.
 
 ## Available skills
 
-- `codex-multi-agent-protocol` - canonical 4-role protocol package with Director/Auditor/Orchestrator/Implementer schemas and test methodology (`codex-multi-agent-protocol/SKILL.md`).
+- `codex-multi-agent-protocol` - canonical 5-role protocol package with Main (Director)/Auditor/Orchestrator/Coder/Operator schemas and test methodology (`codex-multi-agent-protocol/SKILL.md`).
 - `dep-roll` - controlled dependency-upgrade workflow for pnpm, Poetry, Cargo, verification, and Dependabot alignment (`dep-roll/SKILL.md`).
 - `python-style` - mandatory Python conventions for shared workspace virtualenv setup and Poetry workflow (`python-style/SKILL.md`).
 - `research` - research/investigation workflow that reads existing materials, clarifies unknowns with the user, and makes evidence-backed recommendations with websearch (`research/SKILL.md`).

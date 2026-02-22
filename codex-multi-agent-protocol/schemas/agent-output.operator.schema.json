@@ -244,7 +244,7 @@
 					"name": "Locate relevant schemas",
 					"command": "ls codex-multi-agent-protocol/schemas",
 					"status": "pass",
-					"evidence": "Found orchestrator/auditor/implementer schemas."
+					"evidence": "Found orchestrator/auditor/coder schemas."
 				}
 			],
 			"rationale": "Evidence captured for orchestrator synthesis.",

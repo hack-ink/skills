@@ -5,12 +5,12 @@ This document provides copy-pastable templates for the 5-role workflow:
 - Director (main)
 - Auditor
 - Orchestrator
-- Implementer (Coder)
+- Coder
 - Operator
 
 Goal: keep runs fast while preserving reliability via explicit contracts, evidence, and rerun escalation.
 
-## Implementer (Coder) `task_contract` template (write)
+## Coder `task_contract` template (write)
 
 Use for code/config changes.
 
@@ -28,7 +28,7 @@ Use for code/config changes.
 - **non_goals**: <explicit exclusions>
 - **writes_repo**: `true` (required by schema)
 
-Implementer (Coder) output checklist:
+Coder output checklist:
 
 - List touched file paths (or `not_applicable`).
 - Provide concrete verification evidence (stdout snippets or exit codes).
@@ -64,7 +64,7 @@ Operator output checklist:
 
 ### Spec phase (must pass first)
 
-- Is the implementer output aligned with the `task_contract` goal and scope?
+- Is the coder output aligned with the `task_contract` goal and scope?
 - Any unrequested extras or scope creep?
 - Are constraints respected (no unrelated edits, no risky operations)?
 - Is the evidence sufficient to accept as "done" for this task kind?

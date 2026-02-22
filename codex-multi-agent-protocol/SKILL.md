@@ -1,6 +1,6 @@
 ---
 name: codex-multi-agent-protocol
-description: Use when a task requires multi-agent execution with Director/Auditor/Orchestrator and leaf-role routing (Implementer for coding, Operator for non-coding) with schema-validated outputs.
+description: Use when a task requires multi-agent execution with Main (Director)/Auditor/Orchestrator and leaf-role routing (Coder for coding, Operator for non-coding) with schema-validated outputs.
 ---
 
 # Codex Multi-Agent Protocol
@@ -27,7 +27,7 @@ Provide a reliable, auditable slow-path workflow for multi-agent execution: expl
 - If `dispatch-preflight.routing_decision != "multi_agent"`, short-circuit and do not spawn leaf agents.
 - Do not run parallel leaf agents unless independence assessment + ownership lock policy are satisfied.
 - Auditor review must be spec-first, then quality. Quality review must not run before spec passes.
-- No evidence, no completion: implementers must provide `verification_steps`; operators must provide `actions`; orchestrator must provide `integration_report` evidence for write workflows.
+- No evidence, no completion: coders must provide `verification_steps`; operators must provide `actions`; orchestrator must provide `integration_report` evidence for write workflows.
 - Do not proceed if any reviewer sets `blocked=true`.
 - Close completed agents to avoid thread starvation.
 

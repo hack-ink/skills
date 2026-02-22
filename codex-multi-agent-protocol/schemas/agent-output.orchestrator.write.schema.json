@@ -2,7 +2,7 @@
 	"$schema": "https://json-schema.org/draft/2020-12/schema",
 	"$id": "file:///.codex/agent-output-orchestrator-write.schema.json",
 	"title": "Codex Orchestrator Output (Write)",
-	"description": "Structural schema for orchestrator outputs that report completion of write subtasks. Write workflows may dispatch a mix of coding Implementer (Coder) slices and non-coding Operator slices.",
+	"description": "Structural schema for orchestrator outputs that report completion of write subtasks. Write workflows may dispatch a mix of coding Coder slices and non-coding Operator slices.",
 	"type": "object",
 	"required": [
 		"ssot_id",
@@ -13,7 +13,7 @@
 		"workflow_mode",
 		"routing_mode",
 		"slice_id",
-		"implementer_subtask_ids",
+		"coder_subtask_ids",
 		"operator_subtask_ids",
 		"parallel_peak_inflight",
 		"dispatch_plan",
@@ -128,7 +128,7 @@
 			"type": "string",
 			"minLength": 1
 		},
-		"implementer_subtask_ids": {
+		"coder_subtask_ids": {
 			"type": "array",
 			"minItems": 1,
 			"items": {
@@ -229,7 +229,7 @@
 							},
 							"leaf_agent_type": {
 								"type": "string",
-								"enum": ["implementer", "operator"]
+								"enum": ["coder", "operator"]
 							},
 							"domain_id": {
 								"type": "string",
@@ -442,7 +442,7 @@
 			"workflow_mode": "mixed",
 			"routing_mode": "assistant_nested",
 			"slice_id": "slice-orchestrate-write-a",
-			"implementer_subtask_ids": ["impl-1", "impl-2"],
+			"coder_subtask_ids": ["coder-1", "coder-2"],
 			"operator_subtask_ids": [],
 			"parallel_peak_inflight": 2,
 			"dispatch_plan": {
@@ -464,8 +464,8 @@
 				},
 				"slices": [
 					{
-						"leaf_subtask_id": "impl-1",
-						"leaf_agent_type": "implementer",
+						"leaf_subtask_id": "coder-1",
+						"leaf_agent_type": "coder",
 						"domain_id": "schemas",
 						"ownership_paths": ["/abs/repo/codex-multi-agent-protocol/schemas"],
 						"task_contract": {
@@ -505,11 +505,11 @@
 					"status": "pass",
 					"evidence": "ok"
 				},
-				"notes": "Integrated implementer outputs and verified schema validity."
+				"notes": "Integrated coder outputs and verified schema validity."
 			},
 			"status": "done",
 			"blocked": false,
-			"rationale": "Orchestrator coordinated windowed implementer execution and ran integration checks.",
+			"rationale": "Orchestrator coordinated windowed coder execution and ran integration checks.",
 			"review_only": false,
 			"blocking_reason": "not_applicable",
 			"validation_evidence": "All orchestrator invariants satisfied; integration report attached.",

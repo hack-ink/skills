@@ -8,7 +8,7 @@ If the schemas answer **"what JSON must look like"**, this answers **"how the wo
 - If `dispatch-preflight.routing_decision != "multi_agent"`, short-circuit (no leaf spawns).
 - Do not parallelize without an explicit independence assessment and an ownership lock policy.
 - Auditor review is two-phase: spec must pass before quality runs.
-- No evidence, no completion: implementers must return `verification_steps`; operators must return `actions`; orchestrator must return integration evidence for write workflows.
+- No evidence, no completion: coders must return `verification_steps`; operators must return `actions`; orchestrator must return integration evidence for write workflows.
 - Stop on `blocked=true` from any review phase.
 - Close completed agents (thread starvation is a real failure mode).
 
@@ -28,7 +28,7 @@ Return a blocked/redirected result that recommends `micro_solo` execution.
 
 Terminology note:
 
-- This protocol keeps the schema role name `implementer` for the coding leaf role, but it is often clearer to think of it as **Coder**.
+- `coder` is the coding leaf role for repo write work (code/config changes with verification evidence).
 - `operator` is the non-coding leaf role for command execution, fetching, and inspection tasks without repo writes.
 
 ## 0.1) `review_only` flag (briefs vs work)
@@ -44,7 +44,7 @@ Guidelines:
 ## 0.2) Runtime preconditions (depth + threads)
 
 - This workflow assumes the runtime supports **depth=3** nesting for the leaf dispatch chain:
-  - Director (main) -> Auditor -> Orchestrator -> (Implementer | Operator)
+  - Director (main) -> Auditor -> Orchestrator -> (Coder | Operator)
 - Recommended: set `max_depth = 3` and treat it as a **hard cap**. Deeper nesting tends to reduce clarity and makes failure modes harder to debug.
 - If your runtime cannot support depth=3, do not force it: switch to a flattened topology (Director directly spawns Orchestrator and leaf agents, with Auditor review gates) and update the SSOT accordingly.
 
@@ -106,7 +106,7 @@ Recommended default:
 After slice results return:
 
 1. Read every leaf agent `summary` plus evidence:
-    - Implementer (Coder): `verification_steps`
+    - Coder: `verification_steps`
     - Operator: `actions`
 2. Check for ownership/overlap violations.
 3. Perform `integration_report.conflict_check`.
@@ -125,7 +125,7 @@ Dynamic parallelism is allowed and recommended:
 
 Hard rules still apply:
 
-- Coder/Implementer slices are `code_change` only.
+- Coder slices are `code_change` only.
 - Operator slices may run tool/command actions but must not write the repo (`writes_repo=false`).
 - Close completed children to reclaim thread slots.
 
@@ -148,11 +148,11 @@ Use when you have an implementation plan with multiple tasks that are **mostly i
 
 ### 2.2 Q&A gate (required)
 
-If an implementer asks a clarifying question:
+If a coder asks a clarifying question:
 
 1. Answer clearly and completely.
 2. If the answer changes scope/constraints, update the slice `task_contract`.
-3. Re-dispatch the implementer with the updated contract.
+3. Re-dispatch the coder with the updated contract.
 
 ### 2.3 Two-phase audit gate (required): spec -> quality
 
@@ -171,11 +171,11 @@ Hard rule: **quality must not run before spec passes**.
 
 If any phase finds issues:
 
-1. The implementer fixes.
+1. The coder fixes.
 2. The same phase re-reviews.
 3. Repeat until pass (bounded by your protocol's pass limits).
 
-### 2.5 Implementer provider fallback (recommended)
+### 2.5 Coder provider fallback (recommended)
 
 Keep tiering minimal to avoid over-design:
 
@@ -193,11 +193,11 @@ Fallback trigger (example):
 
 Execution policy (minimal state machine):
 
-1. Start at `implementer_spark` (high reasoning).
-2. If **availability** triggers, switch provider: `implementer_spark` -> `implementer_codex`.
+1. Start at `coder_spark` (high reasoning).
+2. If **availability** triggers, switch provider: `coder_spark` -> `coder_codex`.
 3. If **quality** triggers, rerun with a tighter `task_contract` and better verification (do not change provider).
 
-If your runtime does not support multiple implementer agent types, approximate this by rerunning with a stronger model tier (SSOT-controlled) rather than inventing deeper nesting.
+If your runtime does not support multiple coder agent types, approximate this by rerunning with a stronger model tier (SSOT-controlled) rather than inventing deeper nesting.
 
 ### 2.6 Operator model policy (recommended)
 
@@ -206,22 +206,22 @@ Keep Operator single-tier by default to reduce complexity:
 - Use **high** reasoning effort.
 - Do not design an Operator-specific fallback unless you have a real operational need.
 
-## 3) Prompt contract template (Orchestrator -> Implementer (Coder))
+## 3) Prompt contract template (Orchestrator -> Coder)
 
 Every slice must include a `task_contract` with at least:
 
 - `goal`: what to accomplish
 - `scope`: the boundaries (what area/file/subsystem)
 - `constraints`: what not to do (no refactors, touch only X, etc.)
-- `expected_output`: what the implementer must return (and what "done" means)
+- `expected_output`: what the coder must return (and what "done" means)
 - `non_goals`: explicitly excluded work
-- `writes_repo`: must be `true` for Implementer (Coder) slices
+- `writes_repo`: must be `true` for Coder slices
 
 Recommended additions (encode either in the message or in schema fields):
 
 - Minimal verification command(s) to run and expected signal
 - Relevant error messages / failing test names
-- Ownership paths (what files the implementer may touch)
+- Ownership paths (what files the coder may touch)
 
 For web research slices, include:
 
@@ -251,7 +251,7 @@ Operator evidence requirements:
 
 ## 4) Evidence standard (minimum)
 
-### Implementer
+### Coder
 
 - Must provide `verification_steps` with concrete commands and evidence.
 - If no verification is possible, mark status `not_applicable` and explain why, plus a best-effort alternative.

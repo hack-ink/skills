@@ -107,13 +107,13 @@ def assert_auditor_invariants(auditor: dict) -> None:
     assert_equal(phases[1]["status"], "pass", "auditor.audit_phases[1].status")
 
 
-def assert_implementer_invariants(implementer: dict) -> None:
-    touched = implementer["changeset"]["touched_paths"]
-    allowed = implementer["allowed_paths"]
+def assert_coder_invariants(coder: dict) -> None:
+    touched = coder["changeset"]["touched_paths"]
+    allowed = coder["allowed_paths"]
     for p in touched:
         if not is_within_allowed_paths(p, allowed):
             raise AssertionError(
-                f"Implementer touched path outside allowed_paths: {p!r} not within {allowed!r}"
+                f"Coder touched path outside allowed_paths: {p!r} not within {allowed!r}"
             )
 
 
@@ -137,18 +137,18 @@ def assert_orchestrator_slice_alignment(orchestrator: dict) -> None:
     if len(slice_leaf_ids) != len(set(slice_leaf_ids)):
         raise AssertionError("dispatch_plan.slices leaf_subtask_id values must be unique")
 
-    impl_from_slices = {
+    coder_from_slices = {
         s["leaf_subtask_id"]
         for s in slices
-        if s.get("leaf_agent_type") == "implementer"
+        if s.get("leaf_agent_type") == "coder"
     }
     ops_from_slices = {
         s["leaf_subtask_id"] for s in slices if s.get("leaf_agent_type") == "operator"
     }
     assert_equal(
-        set(orchestrator["implementer_subtask_ids"]),
-        impl_from_slices,
-        "orchestrator.implementer_subtask_ids vs slices",
+        set(orchestrator["coder_subtask_ids"]),
+        coder_from_slices,
+        "orchestrator.coder_subtask_ids vs slices",
     )
     assert_equal(
         set(orchestrator["operator_subtask_ids"]),
@@ -161,7 +161,7 @@ def assert_cross_payload_invariants(
     dispatch: dict,
     orchestrator: dict,
     auditor: dict,
-    implementers: list[dict],
+    coders: list[dict],
     operators: list[dict],
 ) -> None:
     ssot_id = dispatch["ssot_id"]
@@ -180,31 +180,31 @@ def assert_cross_payload_invariants(
 
     assert_equal(orchestrator["ssot_id"], ssot_id, "orchestrator.ssot_id")
     assert_equal(auditor["ssot_id"], ssot_id, "auditor.ssot_id")
-    for impl in implementers:
-        assert_equal(impl["ssot_id"], ssot_id, "implementer.ssot_id")
+    for coder in coders:
+        assert_equal(coder["ssot_id"], ssot_id, "coder.ssot_id")
     for op in operators:
         assert_equal(op["ssot_id"], ssot_id, "operator.ssot_id")
 
     assert_equal(orchestrator["task_id"], task_id, "orchestrator.task_id")
     assert_equal(auditor["task_id"], task_id, "auditor.task_id")
-    for impl in implementers:
-        assert_equal(impl["task_id"], task_id, "implementer.task_id")
+    for coder in coders:
+        assert_equal(coder["task_id"], task_id, "coder.task_id")
     for op in operators:
         assert_equal(op["task_id"], task_id, "operator.task_id")
 
     assert_equal(orchestrator["subtask_id"], subtask_id, "orchestrator.subtask_id")
     assert_equal(auditor["subtask_id"], subtask_id, "auditor.subtask_id")
 
-    impl_ids = {impl["subtask_id"] for impl in implementers}
+    coder_ids = {coder["subtask_id"] for coder in coders}
     assert_equal(
-        set(orchestrator["implementer_subtask_ids"]),
-        impl_ids,
-        "orchestrator.implementer_subtask_ids",
+        set(orchestrator["coder_subtask_ids"]),
+        coder_ids,
+        "orchestrator.coder_subtask_ids",
     )
     assert_equal(
-        set(auditor["implementer_subtask_ids"]),
-        impl_ids,
-        "auditor.implementer_subtask_ids",
+        set(auditor["coder_subtask_ids"]),
+        coder_ids,
+        "auditor.coder_subtask_ids",
     )
 
     op_ids = {op["subtask_id"] for op in operators}
@@ -222,7 +222,7 @@ def assert_cross_payload_invariants(
 
 
 def assert_negative_invariants_examples(
-    dispatch: dict, orchestrator: dict, implementers: list[dict], operators: list[dict]
+    dispatch: dict, orchestrator: dict, coders: list[dict], operators: list[dict]
 ) -> None:
     # Ownership overlap must fail.
     bad_orch = json.loads(json.dumps(orchestrator))
@@ -249,19 +249,19 @@ def assert_negative_invariants_examples(
             "Negative test failed: parallel_peak_inflight < 2 not detected"
         )
 
-    # Implementer touched path outside allowed_paths must fail.
-    if implementers:
-        bad_impl = json.loads(json.dumps(implementers[0]))
-        bad_impl["changeset"]["touched_paths"] = bad_impl["changeset"][
+    # Coder touched path outside allowed_paths must fail.
+    if coders:
+        bad_coder = json.loads(json.dumps(coders[0]))
+        bad_coder["changeset"]["touched_paths"] = bad_coder["changeset"][
             "touched_paths"
         ] + ["/abs/repo/fixture/outside"]
         try:
-            assert_implementer_invariants(bad_impl)
+            assert_coder_invariants(bad_coder)
         except AssertionError:
             pass
         else:
             raise AssertionError(
-                "Negative test failed: implementer touched_paths outside allowed_paths not detected"
+                "Negative test failed: coder touched_paths outside allowed_paths not detected"
             )
 
     # Operator writes_repo must be false.
@@ -299,14 +299,14 @@ def main() -> None:
                 "dispatch-preflight.json": "schemas/dispatch-preflight.schema.json",
                 "orchestrator-write.json": "schemas/agent-output.orchestrator.write.schema.json",
                 "auditor-write.json": "schemas/agent-output.auditor.write.schema.json",
-                "implementer-1.json": "schemas/agent-output.implementer.schema.json",
-                "implementer-2.json": "schemas/agent-output.implementer.schema.json",
+                "coder-1.json": "schemas/agent-output.coder.schema.json",
+                "coder-2.json": "schemas/agent-output.coder.schema.json",
                 "operator-write-1.json": "schemas/agent-output.operator.schema.json",
             },
             "orchestrator_payload": "orchestrator-write.json",
             "auditor_payload": "auditor-write.json",
             "dispatch_payload": "dispatch-preflight.json",
-            "implementer_payloads": ["implementer-1.json", "implementer-2.json"],
+            "coder_payloads": ["coder-1.json", "coder-2.json"],
             "operator_payloads": ["operator-write-1.json"],
         },
         {
@@ -321,7 +321,7 @@ def main() -> None:
             "orchestrator_payload": "orchestrator-read_only-research.json",
             "auditor_payload": "auditor-read_only-research.json",
             "dispatch_payload": "dispatch-preflight-research.json",
-            "implementer_payloads": [],
+            "coder_payloads": [],
             "operator_payloads": ["operator-1.json", "operator-2.json"],
         },
     ]
@@ -336,23 +336,23 @@ def main() -> None:
         dispatch = loaded[suite["dispatch_payload"]]
         orchestrator = loaded[suite["orchestrator_payload"]]
         auditor = loaded[suite["auditor_payload"]]
-        implementers = [loaded[p] for p in suite["implementer_payloads"]]
+        coders = [loaded[p] for p in suite.get("coder_payloads", [])]
         operators = [loaded[p] for p in suite["operator_payloads"]]
 
         assert_dispatch_preflight_invariants(dispatch)
         assert_orchestrator_invariants(orchestrator, suite_name=suite["name"])
         assert_auditor_invariants(auditor)
-        for impl in implementers:
-            assert_implementer_invariants(impl)
+        for coder in coders:
+            assert_coder_invariants(coder)
         for op in operators:
             assert_operator_invariants(op)
         assert_cross_payload_invariants(
-            dispatch, orchestrator, auditor, implementers, operators
+            dispatch, orchestrator, auditor, coders, operators
         )
 
         if suite["name"] == "write":
             assert_negative_invariants_examples(
-                dispatch, orchestrator, implementers, operators
+                dispatch, orchestrator, coders, operators
             )
 
         print(f"OK: invariants ({suite['name']})")

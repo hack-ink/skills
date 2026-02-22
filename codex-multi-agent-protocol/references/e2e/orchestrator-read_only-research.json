@@ -7,7 +7,7 @@
 	"workflow_mode": "parallel_dispatch",
 	"routing_mode": "assistant_nested",
 	"slice_id": "slice-orchestrate-research-e2e",
-	"implementer_subtask_ids": [],
+	"coder_subtask_ids": [],
 	"operator_subtask_ids": ["op-1", "op-2"],
 	"parallel_peak_inflight": 2,
 	"dispatch_plan": {

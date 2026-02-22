@@ -6,7 +6,7 @@ Operational workflow rules (parallel windowing, spec->quality gates, integration
 
 ## Test tiers (recommended)
 
-- **Smoke (default, < 2 min):** Run `python3 references/e2e/run_smoke.py`. Then run sections **1-3** with **2 implementers** and a small window (2). This validates schema/examples + fixtures quickly, then validates depth=3 nesting + wait-any behavior without stressing the thread pool.
+- **Smoke (default, < 2 min):** Run `python3 references/e2e/run_smoke.py`. Then run sections **1-3** with **2 coders** and a small window (2). This validates schema/examples + fixtures quickly, then validates depth=3 nesting + wait-any behavior without stressing the thread pool.
 - **Stress (on-demand, can be slow):** Run sections **5-7** only when you change runtime concurrency settings (`max_threads`, scheduler) or when debugging liveness/timeout issues.
 
 Notes:
@@ -19,9 +19,9 @@ Notes:
 1. Ensure your working tree includes the latest protocol package updates.
 2. Confirm the runtime is configured for depth=3 nesting (recommended: `max_depth = 3`).
 3. Confirm protocol tokens are present across the packaged schema set:
-    - `rg -n 'assistant_nested|agent-output\\.auditor|agent-output\\.orchestrator|agent-output\\.(implementer|operator)' schemas/*.json`
+    - `rg -n 'assistant_nested|agent-output\\.auditor|agent-output\\.orchestrator|agent-output\\.(coder|operator)' schemas/*.json`
     - Confirm legacy routing tokens are absent (should return no matches; exit code 1):
-        - `rg -n 'assistant_solo|assistant_direct|assistant_router|agent-output\\.director|director-output|auditor-output|orchestrator-output|implementer-output' schemas/*.json`
+        - `rg -n 'assistant_solo|assistant_direct|assistant_router|agent-output\\.director|director-output|auditor-output|orchestrator-output|coder-output' schemas/*.json`
 4. Confirm protocol v2 fields are present across the packaged schema set:
     - `rg -n '\"protocol_version\"|\"workflow_mode\"|\"task_kind\"|\"routing_decision\"' schemas/*.json`
 5. (Recommended for stress runs) Confirm open-files limits are not at the macOS default:
@@ -36,7 +36,7 @@ Notes:
 
 Pass criteria:
 
-- Required protocol tokens appear in packaged schema files (auditor, orchestrator, implementer, operator).
+- Required protocol tokens appear in packaged schema files (auditor, orchestrator, coder, operator).
 - Legacy routing labels and assistant-era schema references are absent.
 
 ## 2) Schema Validation (Structural)
@@ -60,7 +60,7 @@ files = [
   'schemas/agent-output.auditor.read_only.schema.json',
   'schemas/agent-output.orchestrator.write.schema.json',
   'schemas/agent-output.orchestrator.read_only.schema.json',
-  'schemas/agent-output.implementer.schema.json',
+  'schemas/agent-output.coder.schema.json',
   'schemas/agent-output.operator.schema.json',
 ]
 for f in files:
@@ -80,7 +80,7 @@ Pass criteria:
 
 - All seven files return `OK`.
 
-## 3) E2E Positive Test (v2 chain: Director -> Auditor -> Orchestrator -> Implementer (Coder))
+## 3) E2E Positive Test (v2 chain: Director -> Auditor -> Orchestrator -> Coder)
 
 Goal:
 
@@ -103,15 +103,15 @@ Goal:
 3. Execute the chain in your runtime:
     - Director delegates to Auditor
     - Auditor delegates to Orchestrator
-    - Orchestrator runs **2+ implementers** in a **windowed** pattern (`spawn-first -> wait-any -> review -> spawn-next`)
-    - Orchestrator closes implementers; Auditor closes Orchestrator; Director closes Auditor
+    - Orchestrator runs **2+ coders** in a **windowed** pattern (`spawn-first -> wait-any -> review -> spawn-next`)
+    - Orchestrator closes coders; Auditor closes Orchestrator; Director closes Auditor
 
 ### Artifacts to capture
 
 Save the final JSON payloads for:
 
 - Dispatch preflight: `dispatch-preflight.json`
-- Each implementer payload: `implementer-*.json` (at least 2)
+- Each coder payload: `coder-*.json` (at least 2)
 - Orchestrator write payload: `orchestrator-write.json`
 - Auditor write payload: `auditor-write.json`
 
@@ -155,8 +155,8 @@ Pass criteria:
 - Final chain result: `status="done"`, `blocked=false`.
 - `routing_mode="assistant_nested"`.
 - `parallel_peak_inflight >= 2`.
-- `implementer_subtask_ids` is non-empty.
-- Every referenced implementer payload is schema-valid and includes required v2 fields (`protocol_version`, `workflow_mode`, `task_contract`, `verification_steps`).
+- `coder_subtask_ids` is non-empty.
+- Every referenced coder payload is schema-valid and includes required v2 fields (`protocol_version`, `workflow_mode`, `task_contract`, `verification_steps`).
 - Orchestrator and Director do not finalize completion before Auditor review verdict.
 - `review_loop.policy` is `adaptive_min2_max3_second_pass_stable`.
 - `review_loop.auditor_passes` is between 2 and 3 inclusive.
@@ -170,7 +170,7 @@ Pass criteria:
 
 Method:
 
-- Director attempts direct dispatch to Orchestrator or Implementer.
+- Director attempts direct dispatch to Orchestrator or Coder.
 
 Pass criteria:
 
@@ -180,7 +180,7 @@ Pass criteria:
 
 Method:
 
-- Auditor attempts direct dispatch to Implementer.
+- Auditor attempts direct dispatch to Coder.
 
 Pass criteria:
 
@@ -196,11 +196,11 @@ Pass criteria:
 
 - Blocked result with explicit parent-stamp violation reason.
 
-### D) Schema-incomplete implementer payload
+### D) Schema-incomplete coder payload
 
 Method:
 
-- Provide a payload missing required implementer-schema fields (for example missing `task_contract` or `verification_steps`).
+- Provide a payload missing required coder-schema fields (for example missing `task_contract` or `verification_steps`).
 
 Pass criteria:
 
@@ -245,18 +245,18 @@ Pass criteria:
 Method:
 
 - Provide a `dispatch-preflight` with `routing_decision` set to `micro_solo` or `single_agent`.
-- Attempt to proceed with spawning implementers anyway.
+- Attempt to proceed with spawning coders anyway.
 
 Pass criteria:
 
-- Chain must short-circuit: no implementer spawns.
+- Chain must short-circuit: no coder spawns.
 - Output indicates blocked/redirected routing with explicit reason.
 
 ### I) Ownership overlap in parallel slices
 
 Method:
 
-- Orchestrator attempts to run two concurrent implementers with overlapping `ownership_paths`.
+- Orchestrator attempts to run two concurrent coders with overlapping `ownership_paths`.
 
 Pass criteria:
 
@@ -348,7 +348,7 @@ Pass criteria:
 	"negative_auditor_skip_level": "pass|fail",
 	"negative_invalid_parent_stamp": "pass|fail",
 	"negative_depth_limit_tool_level": "pass|fail",
-	"negative_schema_incomplete_implementer_payload": "pass|fail",
+	"negative_schema_incomplete_coder_payload": "pass|fail",
 	"negative_audit_pass_bounds": "pass|fail",
 	"negative_invalid_routing_mode": "pass|fail",
 	"stall_timeout_handling": "pass|fail",

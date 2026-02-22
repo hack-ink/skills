@@ -7,7 +7,7 @@
 	"workflow_mode": "mixed",
 	"routing_mode": "assistant_nested",
 	"slice_id": "slice-orchestrate-write-e2e",
-	"implementer_subtask_ids": ["impl-1", "impl-2"],
+	"coder_subtask_ids": ["coder-1", "coder-2"],
 	"operator_subtask_ids": ["op-w1"],
 	"parallel_peak_inflight": 2,
 	"dispatch_plan": {
@@ -49,8 +49,8 @@
 				}
 			},
 			{
-				"leaf_subtask_id": "impl-1",
-				"leaf_agent_type": "implementer",
+				"leaf_subtask_id": "coder-1",
+				"leaf_agent_type": "coder",
 				"domain_id": "fixture-a",
 				"ownership_paths": ["/abs/repo/fixture/a"],
 				"task_contract": {
@@ -63,8 +63,8 @@
 				}
 			},
 			{
-				"leaf_subtask_id": "impl-2",
-				"leaf_agent_type": "implementer",
+				"leaf_subtask_id": "coder-2",
+				"leaf_agent_type": "coder",
 				"domain_id": "fixture-b",
 				"ownership_paths": ["/abs/repo/fixture/b"],
 				"task_contract": {

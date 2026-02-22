@@ -1,8 +1,8 @@
 {
 	"$schema": "https://json-schema.org/draft/2020-12/schema",
-	"$id": "file:///.codex/agent-output-implementer.schema.json",
-	"title": "Codex Implementer Output",
-	"description": "Structural schema for implementer outputs.",
+	"$id": "file:///.codex/agent-output-coder.schema.json",
+	"title": "Codex Coder Output",
+	"description": "Structural schema for coder outputs.",
 	"type": "object",
 	"required": [
 		"ssot_id",
@@ -138,7 +138,7 @@
 		},
 		"agent_type": {
 			"type": "string",
-			"const": "implementer"
+			"const": "coder"
 		},
 		"workflow_mode": {
 			"type": "string",
@@ -274,10 +274,10 @@
 			"protocol_version": "2.0",
 			"task_id": "task-write-001",
 			"subtask_id": "s2-write",
-			"agent_type": "implementer",
+			"agent_type": "coder",
 			"workflow_mode": "subagent_task_execution",
 			"routing_mode": "assistant_nested",
-			"slice_id": "slice-implementer-a",
+			"slice_id": "slice-coder-a",
 			"attempt": 1,
 			"status": "done",
 			"summary": "Applied requested schema updates.",

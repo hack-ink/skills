@@ -30,7 +30,7 @@
 			"type": "read_only",
 			"delegate_target": "auditor",
 			"allowed_paths": ["/abs/repo"],
-			"deliverable": "Implementer-ready execution brief."
+			"deliverable": "Coder-ready execution brief."
 		},
 		{
 			"task_id": "task-write-001",
@@ -38,7 +38,7 @@
 			"type": "write",
 			"delegate_target": "auditor",
 			"allowed_paths": ["/abs/repo/codex-multi-agent-protocol"],
-			"deliverable": "Auditor/Orchestrator-reviewed Implementer execution with evidence."
+			"deliverable": "Auditor/Orchestrator-reviewed Coder execution with evidence."
 		}
 	],
 	"scheduler_plan": "windowed",

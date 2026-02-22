@@ -7,7 +7,7 @@
 	"workflow_mode": "mixed",
 	"routing_mode": "assistant_nested",
 	"slice_id": "slice-audit-write-e2e",
-	"implementer_subtask_ids": ["impl-1", "impl-2"],
+	"coder_subtask_ids": ["coder-1", "coder-2"],
 	"operator_subtask_ids": ["op-w1"],
 	"parallel_peak_inflight": 2,
 	"audit_phases": [

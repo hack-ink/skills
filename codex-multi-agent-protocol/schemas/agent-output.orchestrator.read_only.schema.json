@@ -2,7 +2,7 @@
 	"$schema": "https://json-schema.org/draft/2020-12/schema",
 	"$id": "file:///.codex/agent-output-orchestrator-read-only.schema.json",
 	"title": "Codex Orchestrator Output (Read Only)",
-	"description": "Structural schema for orchestrator outputs that report completion of read_only subtasks. Read-only workflows may dispatch non-coding Operator slices; Implementer (Coder) is reserved for code_change work.",
+	"description": "Structural schema for orchestrator outputs that report completion of read_only subtasks. Read-only workflows may dispatch non-coding Operator slices; Coder is reserved for code_change work.",
 	"type": "object",
 	"required": [
 		"ssot_id",
@@ -13,7 +13,7 @@
 		"workflow_mode",
 		"routing_mode",
 		"slice_id",
-		"implementer_subtask_ids",
+		"coder_subtask_ids",
 		"operator_subtask_ids",
 		"parallel_peak_inflight",
 		"dispatch_plan",
@@ -107,7 +107,7 @@
 			"type": "string",
 			"minLength": 1
 		},
-		"implementer_subtask_ids": {
+		"coder_subtask_ids": {
 			"type": "array",
 			"items": {
 				"type": "string",
@@ -207,7 +207,7 @@
 							},
 							"leaf_agent_type": {
 								"type": "string",
-								"enum": ["implementer", "operator"]
+								"enum": ["coder", "operator"]
 							},
 							"domain_id": {
 								"type": "string",
@@ -399,7 +399,7 @@
 			"workflow_mode": "parallel_dispatch",
 			"routing_mode": "assistant_nested",
 			"slice_id": "slice-orchestrate-prework-a",
-			"implementer_subtask_ids": [],
+			"coder_subtask_ids": [],
 			"operator_subtask_ids": ["op-brief-1"],
 			"parallel_peak_inflight": 0,
 			"dispatch_plan": {
@@ -410,7 +410,7 @@
 							"domain_id": "brief",
 							"description": "Prework brief generation",
 							"can_parallelize": false,
-							"shared_state_risks": ["No implementers dispatched in this slice"]
+							"shared_state_risks": ["No coders dispatched in this slice"]
 						}
 					]
 				},
@@ -426,7 +426,7 @@
 						"domain_id": "brief",
 						"ownership_paths": ["/abs/repo"],
 						"task_contract": {
-							"goal": "Produce an implementer-ready execution brief for the requested change.",
+							"goal": "Produce a coder-ready execution brief for the requested change.",
 							"scope": "Read-only analysis; no repo writes.",
 							"constraints": ["Do not modify files"],
 							"expected_output": [
@@ -442,7 +442,7 @@
 				{
 					"phase": "dispatch_safety",
 					"status": "pass",
-					"notes": "No concurrent implementers; no ownership conflicts."
+					"notes": "No concurrent coders; no ownership conflicts."
 				},
 				{
 					"phase": "finalization",
