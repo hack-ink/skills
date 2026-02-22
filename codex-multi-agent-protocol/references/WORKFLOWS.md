@@ -162,21 +162,12 @@ Execution policy (minimal state machine):
 
 If your runtime does not support multiple implementer agent types, approximate this by rerunning with a stronger model tier (SSOT-controlled) rather than inventing deeper nesting.
 
-### 2.6 Operator provider fallback (recommended)
+### 2.6 Operator model policy (recommended)
 
-Keep tiering minimal to avoid over-design:
+Keep Operator single-tier by default to reduce complexity:
 
-- Use **high** reasoning effort by default.
-- Use **provider fallback** only: `spark` (preferred) -> `5.3-codex` (fallback only when spark is unavailable/exhausted).
-
-Recommended default configuration names:
-
-- `operator_spark`
-- `operator_codex`
-
-Fallback trigger (example):
-
-- The runtime rejects the spark tier due to quota/token exhaustion/rate limits (or equivalent availability signal).
+- Use **high** reasoning effort.
+- Do not design an Operator-specific fallback unless you have a real operational need.
 
 ## 3) Prompt contract template (Orchestrator -> Implementer (Coder))
 
