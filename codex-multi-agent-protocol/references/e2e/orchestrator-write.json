@@ -8,7 +8,7 @@
 	"routing_mode": "assistant_nested",
 	"slice_id": "slice-orchestrate-write-e2e",
 	"implementer_subtask_ids": ["impl-1", "impl-2"],
-	"operator_subtask_ids": [],
+	"operator_subtask_ids": ["op-w1"],
 	"parallel_peak_inflight": 2,
 	"dispatch_plan": {
 		"independence_assessment": {
@@ -34,6 +34,20 @@
 			"wait_strategy": "wait_any"
 		},
 		"slices": [
+			{
+				"leaf_subtask_id": "op-w1",
+				"leaf_agent_type": "operator",
+				"domain_id": "preflight",
+				"ownership_paths": ["/abs/repo/fixture/preflight"],
+				"task_contract": {
+					"goal": "Collect preflight evidence for the write workflow.",
+					"scope": "Only ownership_paths for preflight.",
+					"constraints": ["No repo writes", "No changes outside ownership_paths"],
+					"expected_output": ["actions evidence"],
+					"non_goals": ["No implementation work"],
+					"writes_repo": false
+				}
+			},
 			{
 				"leaf_subtask_id": "impl-1",
 				"leaf_agent_type": "implementer",

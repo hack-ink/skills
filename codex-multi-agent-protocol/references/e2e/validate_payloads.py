@@ -131,6 +131,32 @@ def assert_operator_invariants(operator: dict) -> None:
             raise AssertionError("Expected operator.actions[*].evidence to be non-empty")
 
 
+def assert_orchestrator_slice_alignment(orchestrator: dict) -> None:
+    slices = orchestrator["dispatch_plan"]["slices"]
+    slice_leaf_ids = [s["leaf_subtask_id"] for s in slices]
+    if len(slice_leaf_ids) != len(set(slice_leaf_ids)):
+        raise AssertionError("dispatch_plan.slices leaf_subtask_id values must be unique")
+
+    impl_from_slices = {
+        s["leaf_subtask_id"]
+        for s in slices
+        if s.get("leaf_agent_type") == "implementer"
+    }
+    ops_from_slices = {
+        s["leaf_subtask_id"] for s in slices if s.get("leaf_agent_type") == "operator"
+    }
+    assert_equal(
+        set(orchestrator["implementer_subtask_ids"]),
+        impl_from_slices,
+        "orchestrator.implementer_subtask_ids vs slices",
+    )
+    assert_equal(
+        set(orchestrator["operator_subtask_ids"]),
+        ops_from_slices,
+        "orchestrator.operator_subtask_ids vs slices",
+    )
+
+
 def assert_cross_payload_invariants(
     dispatch: dict,
     orchestrator: dict,
@@ -192,10 +218,11 @@ def assert_cross_payload_invariants(
         op_ids,
         "auditor.operator_subtask_ids",
     )
+    assert_orchestrator_slice_alignment(orchestrator)
 
 
 def assert_negative_invariants_examples(
-    dispatch: dict, orchestrator: dict, implementers: list[dict]
+    dispatch: dict, orchestrator: dict, implementers: list[dict], operators: list[dict]
 ) -> None:
     # Ownership overlap must fail.
     bad_orch = json.loads(json.dumps(orchestrator))
@@ -237,6 +264,32 @@ def assert_negative_invariants_examples(
                 "Negative test failed: implementer touched_paths outside allowed_paths not detected"
             )
 
+    # Operator writes_repo must be false.
+    if operators:
+        bad_op = json.loads(json.dumps(operators[0]))
+        bad_op["task_contract"]["writes_repo"] = True
+        try:
+            assert_operator_invariants(bad_op)
+        except AssertionError:
+            pass
+        else:
+            raise AssertionError(
+                "Negative test failed: operator writes_repo=true not detected"
+            )
+
+    # Orchestrator subtask id lists must match slices.
+    bad_orch3 = json.loads(json.dumps(orchestrator))
+    if bad_orch3.get("operator_subtask_ids"):
+        bad_orch3["operator_subtask_ids"] = bad_orch3["operator_subtask_ids"][:-1]
+        try:
+            assert_orchestrator_slice_alignment(bad_orch3)
+        except AssertionError:
+            pass
+        else:
+            raise AssertionError(
+                "Negative test failed: orchestrator operator_subtask_ids mismatch not detected"
+            )
+
 
 def main() -> None:
     suites = [
@@ -248,12 +301,13 @@ def main() -> None:
                 "auditor-write.json": "schemas/agent-output.auditor.write.schema.json",
                 "implementer-1.json": "schemas/agent-output.implementer.schema.json",
                 "implementer-2.json": "schemas/agent-output.implementer.schema.json",
+                "operator-write-1.json": "schemas/agent-output.operator.schema.json",
             },
             "orchestrator_payload": "orchestrator-write.json",
             "auditor_payload": "auditor-write.json",
             "dispatch_payload": "dispatch-preflight.json",
             "implementer_payloads": ["implementer-1.json", "implementer-2.json"],
-            "operator_payloads": [],
+            "operator_payloads": ["operator-write-1.json"],
         },
         {
             "name": "read_only_research",
@@ -297,7 +351,9 @@ def main() -> None:
         )
 
         if suite["name"] == "write":
-            assert_negative_invariants_examples(dispatch, orchestrator, implementers)
+            assert_negative_invariants_examples(
+                dispatch, orchestrator, implementers, operators
+            )
 
         print(f"OK: invariants ({suite['name']})")
 
