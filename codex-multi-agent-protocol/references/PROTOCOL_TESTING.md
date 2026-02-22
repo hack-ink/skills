@@ -17,19 +17,20 @@ Notes:
 ## 1) Preconditions
 
 1. Ensure your working tree includes the latest protocol package updates.
-2. Confirm protocol tokens are present across the packaged schema set:
+2. Confirm the runtime is configured for depth=3 nesting (recommended: `max_depth = 3`).
+3. Confirm protocol tokens are present across the packaged schema set:
     - `rg -n 'assistant_nested|agent-output\\.auditor|agent-output\\.orchestrator|agent-output\\.implementer' schemas/*.json`
     - Confirm legacy routing tokens are absent (should return no matches; exit code 1):
         - `rg -n 'assistant_solo|assistant_direct|assistant_router|agent-output\\.director|director-output|auditor-output|orchestrator-output|implementer-output' schemas/*.json`
-3. Confirm protocol v2 fields are present across the packaged schema set:
+4. Confirm protocol v2 fields are present across the packaged schema set:
     - `rg -n '\"protocol_version\"|\"workflow_mode\"|\"task_kind\"|\"routing_decision\"' schemas/*.json`
-4. (Recommended for stress runs) Confirm open-files limits are not at the macOS default:
+5. (Recommended for stress runs) Confirm open-files limits are not at the macOS default:
     - `launchctl limit maxfiles`
     - `ulimit -Sn` and `ulimit -Hn`
     - If soft is `256`, expect high-concurrency `exec_command` runs to be flaky or fail with `os error 24`.
     - Note: `launchctl limit` can be higher than the per-shell soft limit (`ulimit -Sn`). Prefer checking both.
     - If you see `os error 24` even with a high `max_threads`, fix the open-files limits (don't rely on protocol-level throttling).
-5. (Recommended for stress runs) Ensure no other long-running Codex sessions are consuming agent threads:
+6. (Recommended for stress runs) Ensure no other long-running Codex sessions are consuming agent threads:
     - `ps -Ao pid,etime,command | rg '\\bcodex( resume)?\\b'`
     - Close/exit other interactive sessions before trying to saturate `max_threads`.
 
@@ -271,7 +272,7 @@ Method:
 
 Expected:
 
-- Failure at configured thread limit (currently observed: 24).
+- Failure at the configured thread limit (`max_threads`).
 - Completed implementers hold slots until `close_agent`.
 - New spawn succeeds after close.
 
@@ -287,16 +288,16 @@ Purpose:
 
 - Validate nested spawning (depth=3) while saturating `max_threads` with a mixed topology.
 
-Method (example for `max_threads=24`):
+Method (example for `max_threads=32`; substitute your configured `max_threads`):
 
 1. Director spawns 4 Auditors total:
     - 1x Auditor root (will spawn orchestrators)
     - 3x idle Auditors (depth1 leaves)
 2. Auditor root spawns 4 Orchestrators:
     - ORCH_IDLE spawns 0 implementers (depth2 leaf)
-    - ORCH_A spawns 5 implementers (impl_1..impl_5)
-    - ORCH_B spawns 5 implementers (impl_6..impl_10)
-    - ORCH_C spawns 6 implementers (impl_11..impl_16)
+    - ORCH_A spawns 8 implementers (impl_1..impl_8)
+    - ORCH_B spawns 8 implementers (impl_9..impl_16)
+    - ORCH_C spawns 8 implementers (impl_17..impl_24)
 3. Each implementer runs one short marker command (no need for agent_id env vars):
     - `bash -lc 'echo \"label=impl_N\" > <run_dir>/impl_N.txt; date >> <run_dir>/impl_N.txt; ulimit -Sn >> <run_dir>/impl_N.txt'`
 4. After the target population is reached, attempt 1 extra spawn (e.g. from ORCH_C). Record the exact failure text.
@@ -304,8 +305,8 @@ Method (example for `max_threads=24`):
 
 Pass criteria:
 
-- Exactly `max_threads` live subagents are reached (example: `4 + 4 + 16 = 24`).
-- Extra spawn fails with `agent thread limit reached (max 24)` (or equivalent runtime message).
+- Exactly `max_threads` live subagents are reached (example: `4 + 4 + 24 = 32`).
+- Extra spawn fails with `agent thread limit reached (max 32)` (or equivalent runtime message; value depends on your config).
 - All marker files exist under the run dir.
 
 ## 6) Wait-Any Test

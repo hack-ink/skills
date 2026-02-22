@@ -53,7 +53,7 @@ Provide a reliable, auditable slow-path workflow for multi-agent execution: expl
 
 There are two independent bottlenecks:
 
-- **Agent threads** (e.g. `max_threads=24`): how many subagents can be alive concurrently.
+- **Agent threads** (e.g. `max_threads=<N>`): how many subagents can be alive concurrently.
 - **Tool/process resources** (FDs, processes, CPU): how many concurrent `exec_command`-style shell actions can run without destabilizing the runner.
 
 Rules of thumb:

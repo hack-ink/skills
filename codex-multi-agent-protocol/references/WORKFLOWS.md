@@ -36,6 +36,13 @@ Guidelines:
 - Use `review_only=false` for normal research outputs and for any workflow that performs tool actions, writes files, or mutates state.
 - If `review_only=true`, the payload must not claim that code or external systems were changed; treat it as a planning/review deliverable.
 
+## 0.2) Runtime preconditions (depth + threads)
+
+- This workflow assumes the runtime supports **depth=3** nesting for the 4-role chain:
+  - Director (main) -> Auditor -> Orchestrator -> Implementer
+- Recommended: set `max_depth = 3` and treat it as a **hard cap**. Deeper nesting tends to reduce clarity and makes failure modes harder to debug.
+- If your runtime cannot support depth=3, do not force it: switch to a flattened topology (Director directly spawns Orchestrator and Implementers, with Auditor review gates) and update the SSOT accordingly.
+
 ## 1) Parallel dispatch workflow (independent domains)
 
 Use when you have **2+ independent domains** (different failing tests, subsystems, or files) where fixes can proceed without shared state.
@@ -123,6 +130,30 @@ If any phase finds issues:
 1. The implementer fixes.
 2. The same phase re-reviews.
 3. Repeat until pass (bounded by your protocol's pass limits).
+
+### 2.5 Implementer provider fallback (recommended)
+
+Keep tiering minimal to avoid over-design:
+
+- Use **high** reasoning effort by default.
+- Use **provider fallback** only: `spark` (preferred) -> `5.3-codex` (fallback only when spark is unavailable/exhausted).
+
+Recommended default configuration names:
+
+- `implementer_spark`
+- `implementer_codex`
+
+Fallback trigger (example):
+
+- The runtime rejects the spark tier due to quota/token exhaustion/rate limits (or equivalent availability signal).
+
+Execution policy (minimal state machine):
+
+1. Start at `implementer_spark` (high reasoning).
+2. If **availability** triggers, switch provider: `implementer_spark` -> `implementer_codex`.
+3. If **quality** triggers, rerun with a tighter `task_contract` and better verification (do not change provider).
+
+If your runtime does not support multiple implementer agent types, approximate this by rerunning with a stronger model tier (SSOT-controlled) rather than inventing deeper nesting.
 
 ## 3) Prompt contract template (Orchestrator -> Implementer)
 
