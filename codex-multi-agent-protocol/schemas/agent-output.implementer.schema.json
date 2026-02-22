@@ -81,7 +81,11 @@
 							"command_exec",
 							"synthesize"
 						]
-					}
+					},
+					"contains": {
+						"const": "code_change"
+					},
+					"minContains": 1
 				},
 				"writes_repo": {
 					"type": "boolean",

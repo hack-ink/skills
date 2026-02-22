@@ -178,6 +178,8 @@ Every slice must include a `task_contract` with at least:
 - `constraints`: what not to do (no refactors, touch only X, etc.)
 - `expected_output`: what the implementer must return (and what "done" means)
 - `non_goals`: explicitly excluded work
+- `capabilities`: must include `code_change` for Implementer (Coder) slices
+- `writes_repo`: must be `true` for Implementer (Coder) slices
 
 Recommended additions (encode either in the message or in schema fields):
 
@@ -204,6 +206,8 @@ Every operator slice must include a `task_contract` with at least:
 - `constraints`: explicit safety constraints (no writes, no long-running commands, stop on conflicts)
 - `expected_output`: required evidence format (commands + outputs + short synthesis)
 - `non_goals`: explicitly excluded work
+- `capabilities`: choose from `repo_inspect`, `git_ops`, `net_fetch`, `command_exec`, `synthesize`
+- `writes_repo`: must be `false` for Operator slices
 
 Operator evidence requirements:
 
