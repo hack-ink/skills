@@ -30,7 +30,7 @@ Before spawning implementers:
 
 1. Identify domains and record them in `dispatch_plan.independence_assessment.domains`.
 2. For each domain, explicitly decide `can_parallelize`.
-3. If *any* domain shares files, shared state, or causal coupling, set `can_parallelize=false` and keep it sequential.
+3. If _any_ domain shares files, shared state, or causal coupling, set `can_parallelize=false` and keep it sequential.
 
 ### 1.2 Ownership lock policy (required)
 
@@ -89,11 +89,11 @@ If an implementer asks a clarifying question:
 Auditor review is explicitly two-phase, reflected in `audit_phases`:
 
 1. **Spec phase**
-   - Check alignment with SSOT + `task_contract`.
-   - Block on missing requirements or unrequested extras.
+    - Check alignment with SSOT + `task_contract`.
+    - Block on missing requirements or unrequested extras.
 2. **Quality phase**
-   - Check maintainability, risk, tests, correctness evidence quality.
-   - Block on weak verification, unsafe patterns, or ownership/parallelism violations.
+    - Check maintainability, risk, tests, correctness evidence quality.
+    - Block on weak verification, unsafe patterns, or ownership/parallelism violations.
 
 Hard rule: **quality must not run before spec passes**.
 
@@ -141,8 +141,8 @@ For operational slices, include:
 ### Orchestrator
 
 - Must provide `integration_report`:
-  - `conflict_check` command + evidence
-  - `full_test` command + evidence
+    - `conflict_check` command + evidence
+    - `full_test` command + evidence
 
 ### Auditor
 

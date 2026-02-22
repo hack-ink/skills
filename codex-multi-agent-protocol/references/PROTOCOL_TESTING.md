@@ -18,19 +18,19 @@ Notes:
 
 1. Ensure your working tree includes the latest protocol package updates.
 2. Confirm protocol tokens are present across the packaged schema set:
-   - `rg -n 'assistant_nested|agent-output\\.auditor|agent-output\\.orchestrator|agent-output\\.implementer' schemas/*.json`
-   - Run a second check to confirm legacy routing tokens are absent from the same paths.
+    - `rg -n 'assistant_nested|agent-output\\.auditor|agent-output\\.orchestrator|agent-output\\.implementer' schemas/*.json`
+    - Run a second check to confirm legacy routing tokens are absent from the same paths.
 3. Confirm protocol v2 fields are present across the packaged schema set:
-   - `rg -n '\"protocol_version\"|\"workflow_mode\"|\"task_kind\"|\"routing_decision\"' schemas/*.json`
-3. (Recommended for stress runs) Confirm open-files limits are not at the macOS default:
-   - `launchctl limit maxfiles`
-   - `ulimit -Sn` and `ulimit -Hn`
-   - If soft is `256`, expect high-concurrency `exec_command` runs to be flaky or fail with `os error 24`.
-   - Note: `launchctl limit` can be higher than the per-shell soft limit (`ulimit -Sn`). Prefer checking both.
-   - If you see `os error 24` even with a high `max_threads`, fix the open-files limits (don’t rely on protocol-level throttling).
-4. (Recommended for stress runs) Ensure no other long-running Codex sessions are consuming agent threads:
-   - `ps -Ao pid,etime,command | rg '\\bcodex( resume)?\\b'`
-   - Close/exit other interactive sessions before trying to saturate `max_threads`.
+    - `rg -n '\"protocol_version\"|\"workflow_mode\"|\"task_kind\"|\"routing_decision\"' schemas/*.json`
+4. (Recommended for stress runs) Confirm open-files limits are not at the macOS default:
+    - `launchctl limit maxfiles`
+    - `ulimit -Sn` and `ulimit -Hn`
+    - If soft is `256`, expect high-concurrency `exec_command` runs to be flaky or fail with `os error 24`.
+    - Note: `launchctl limit` can be higher than the per-shell soft limit (`ulimit -Sn`). Prefer checking both.
+    - If you see `os error 24` even with a high `max_threads`, fix the open-files limits (don’t rely on protocol-level throttling).
+5. (Recommended for stress runs) Ensure no other long-running Codex sessions are consuming agent threads:
+    - `ps -Ao pid,etime,command | rg '\\bcodex( resume)?\\b'`
+    - Close/exit other interactive sessions before trying to saturate `max_threads`.
 
 Pass criteria:
 
@@ -88,20 +88,20 @@ Goal:
 ### Setup
 
 1. Create a run dir and two independent sandbox files:
-   - `RUN_DIR=$(mktemp -d)`
-   - `printf 'a\n' > \"$RUN_DIR/a.txt\"`
-   - `printf 'b\n' > \"$RUN_DIR/b.txt\"`
+    - `RUN_DIR=$(mktemp -d)`
+    - `printf 'a\n' > \"$RUN_DIR/a.txt\"`
+    - `printf 'b\n' > \"$RUN_DIR/b.txt\"`
 2. Produce a v2 `dispatch-preflight` with:
-   - `protocol_version="2.0"`
-   - `routing_mode="assistant_nested"`
-   - `routing_decision="multi_agent"`
-   - `review_policy.phase_order=["spec","quality"]`
-   - `parallel_policy.wait_strategy="wait_any"`, `parallel_policy.conflict_policy="ownership_lock"`, `parallel_policy.window_size=2`
+    - `protocol_version="2.0"`
+    - `routing_mode="assistant_nested"`
+    - `routing_decision="multi_agent"`
+    - `review_policy.phase_order=["spec","quality"]`
+    - `parallel_policy.wait_strategy="wait_any"`, `parallel_policy.conflict_policy="ownership_lock"`, `parallel_policy.window_size=2`
 3. Execute the chain in your runtime:
-   - Director delegates to Auditor
-   - Auditor delegates to Orchestrator
-   - Orchestrator runs **2+ implementers** in a **windowed** pattern (`spawn-first -> wait-any -> review -> spawn-next`)
-   - Orchestrator closes implementers; Auditor closes Orchestrator; Director closes Auditor
+    - Director delegates to Auditor
+    - Auditor delegates to Orchestrator
+    - Orchestrator runs **2+ implementers** in a **windowed** pattern (`spawn-first -> wait-any -> review -> spawn-next`)
+    - Orchestrator closes implementers; Auditor closes Orchestrator; Director closes Auditor
 
 ### Artifacts to capture
 
@@ -289,15 +289,15 @@ Purpose:
 Method (example for `max_threads=24`):
 
 1. Director spawns 4 Auditors total:
-   - 1x Auditor root (will spawn orchestrators)
-   - 3x idle Auditors (depth1 leaves)
+    - 1x Auditor root (will spawn orchestrators)
+    - 3x idle Auditors (depth1 leaves)
 2. Auditor root spawns 4 Orchestrators:
-   - ORCH_IDLE spawns 0 implementers (depth2 leaf)
-   - ORCH_A spawns 5 implementers (impl_1..impl_5)
-   - ORCH_B spawns 5 implementers (impl_6..impl_10)
-   - ORCH_C spawns 6 implementers (impl_11..impl_16)
+    - ORCH_IDLE spawns 0 implementers (depth2 leaf)
+    - ORCH_A spawns 5 implementers (impl_1..impl_5)
+    - ORCH_B spawns 5 implementers (impl_6..impl_10)
+    - ORCH_C spawns 6 implementers (impl_11..impl_16)
 3. Each implementer runs one short marker command (no need for agent_id env vars):
-   - `bash -lc 'echo \"label=impl_N\" > <run_dir>/impl_N.txt; date >> <run_dir>/impl_N.txt; ulimit -Sn >> <run_dir>/impl_N.txt'`
+    - `bash -lc 'echo \"label=impl_N\" > <run_dir>/impl_N.txt; date >> <run_dir>/impl_N.txt; ulimit -Sn >> <run_dir>/impl_N.txt'`
 4. After the target population is reached, attempt 1 extra spawn (e.g. from ORCH_C). Record the exact failure text.
 5. Close all implementers, then orchestrators, then auditors.
 

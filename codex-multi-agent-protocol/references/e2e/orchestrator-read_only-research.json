@@ -41,7 +41,10 @@
 					"goal": "Research angle A and return evidence-rich summary.",
 					"scope": "Only web:topic/research-e2e/angle-a.",
 					"constraints": ["No repo writes", "Do not exceed scope"],
-					"expected_output": ["verification_steps evidence", "summary with sources/unknowns"],
+					"expected_output": [
+						"verification_steps evidence",
+						"summary with sources/unknowns"
+					],
 					"non_goals": ["No implementation work"]
 				}
 			},
@@ -53,7 +56,10 @@
 					"goal": "Analyze the target repository slice and return structured findings.",
 					"scope": "Only repo:obra/superpowers.",
 					"constraints": ["No repo writes", "Do not exceed scope"],
-					"expected_output": ["verification_steps evidence", "summary with risks/unknowns"],
+					"expected_output": [
+						"verification_steps evidence",
+						"summary with risks/unknowns"
+					],
 					"non_goals": ["No unrelated repositories"]
 				}
 			}
@@ -85,4 +91,3 @@
 		"escalation_reason": "none"
 	}
 }
-

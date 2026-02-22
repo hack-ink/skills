@@ -138,19 +138,19 @@
 						"enum": ["auditor"],
 						"description": "Dispatch Preflight subtasks are always delegated to auditor."
 					},
-						"allowed_paths": {
-							"type": "array",
-							"minItems": 1,
-							"items": {
-								"type": "string",
-								"minLength": 1,
-								"pattern": "^(/|web:|repo:)"
-							}
-						},
-						"deliverable": {
+					"allowed_paths": {
+						"type": "array",
+						"minItems": 1,
+						"items": {
 							"type": "string",
-							"minLength": 1
+							"minLength": 1,
+							"pattern": "^(/|web:|repo:)"
 						}
+					},
+					"deliverable": {
+						"type": "string",
+						"minLength": 1
+					}
 				},
 				"additionalProperties": false
 			}
@@ -191,12 +191,7 @@
 		},
 		"parallel_policy": {
 			"type": "object",
-			"required": [
-				"scheduler_plan",
-				"wait_strategy",
-				"conflict_policy",
-				"window_size"
-			],
+			"required": ["scheduler_plan", "wait_strategy", "conflict_policy", "window_size"],
 			"properties": {
 				"scheduler_plan": {
 					"type": "string",

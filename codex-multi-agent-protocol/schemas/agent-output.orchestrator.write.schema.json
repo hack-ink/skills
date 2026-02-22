@@ -146,11 +146,7 @@
 							"minItems": 1,
 							"items": {
 								"type": "object",
-								"required": [
-									"domain_id",
-									"description",
-									"can_parallelize"
-								],
+								"required": ["domain_id", "description", "can_parallelize"],
 								"properties": {
 									"domain_id": {
 										"type": "string",
@@ -216,19 +212,19 @@
 								"type": "string",
 								"minLength": 1
 							},
-								"ownership_paths": {
-									"type": "array",
-									"minItems": 1,
-									"items": {
-										"type": "string",
-										"minLength": 1,
-										"pattern": "^(/|web:|repo:)"
-									}
-								},
-								"task_contract": {
-									"$ref": "#/$defs/task_contract"
+							"ownership_paths": {
+								"type": "array",
+								"minItems": 1,
+								"items": {
+									"type": "string",
+									"minLength": 1,
+									"pattern": "^(/|web:|repo:)"
 								}
 							},
+							"task_contract": {
+								"$ref": "#/$defs/task_contract"
+							}
+						},
 						"additionalProperties": false
 					}
 				}
@@ -433,7 +429,10 @@
 							"goal": "Update the schema files to protocol_version=2.0 and keep examples valid.",
 							"scope": "Only schema JSON files and protocol testing docs for this task.",
 							"constraints": ["No unrelated refactors"],
-							"expected_output": ["All schema examples validate", "Testing doc updated"],
+							"expected_output": [
+								"All schema examples validate",
+								"Testing doc updated"
+							],
 							"non_goals": ["No new unrelated features"]
 						}
 					}

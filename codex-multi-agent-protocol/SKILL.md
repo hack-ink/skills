@@ -18,7 +18,7 @@ description: Use when a task requires multi-agent execution with Director/Audito
 ## How to use
 
 1. Run all validation steps from the skill root directory (where `schemas/` and `references/` exist):
-   - Example: `cd ~/.codex/skills/codex-multi-agent-protocol`
+    - Example: `cd ~/.codex/skills/codex-multi-agent-protocol`
 2. Read the operational playbook at `references/WORKFLOWS.md` (routing guardrails, parallel windowing, spec→quality audit phases, integration evidence).
 3. Validate schema structure and examples using `references/PROTOCOL_TESTING.md` section 2.
 4. If schemas or routing rules changed, run the E2E and negative tests in `references/PROTOCOL_TESTING.md`.
@@ -51,9 +51,9 @@ Rules of thumb:
 
 - Keep **agent concurrency aggressive** (use windowed dispatch and replenish; aim to saturate `max_threads` when you have independent slices).
 - Keep **tool concurrency opportunistic**:
-  - If `ulimit -Sn` is high (typically `>= 4096`) and tool steps are short, you can usually run many `exec_command` calls concurrently (often up to `max_threads`) without special throttling.
-  - Prefer **short** tool steps; avoid long `sleep` inside `exec_command` for stress tests (keep agents alive by not closing them instead).
-  - If you see `os error 24` / “Too many open files”, treat it as an **environment regression**: re-check `launchctl limit maxfiles` and `ulimit -Sn/-Hn` and fix the limit (don’t “paper over” with protocol throttling).
+    - If `ulimit -Sn` is high (typically `>= 4096`) and tool steps are short, you can usually run many `exec_command` calls concurrently (often up to `max_threads`) without special throttling.
+    - Prefer **short** tool steps; avoid long `sleep` inside `exec_command` for stress tests (keep agents alive by not closing them instead).
+    - If you see `os error 24` / “Too many open files”, treat it as an **environment regression**: re-check `launchctl limit maxfiles` and `ulimit -Sn/-Hn` and fix the limit (don’t “paper over” with protocol throttling).
 
 Spawn hygiene:
 
