@@ -29,6 +29,12 @@ Perform version constraint and lockfile updates in a disciplined order so depend
 - Never edit lockfiles by hand; regenerate them with the ecosystem tool.
 - For npm semver, `1.2` is shorthand for `>=1.2.0 <1.3.0`.
 
+## Hard gates (non-negotiable)
+
+- Do not hand-edit lockfiles. Regenerate them with the ecosystem tooling.
+- Do not proceed to Dependabot reconciliation until verification has run for the touched ecosystems.
+- If verification fails, stop and report the failure; do not “fix forward” by stacking unrelated changes.
+
 ## Procedure (repo-agnostic)
 
 1. Inventory applicable ecosystems by checking for files:
