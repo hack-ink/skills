@@ -59,6 +59,8 @@ There are two independent bottlenecks:
 Rules of thumb:
 
 - Keep **agent concurrency aggressive** (use windowed dispatch and replenish; aim to saturate `max_threads` when you have independent slices).
+    - Recommended default: keep a small reserve for orchestration and review work.
+      - Example: `reserve_threads=2`, `window_size = max_threads - reserve_threads`
 - Keep **tool concurrency opportunistic**:
     - If `ulimit -Sn` is high (typically `>= 4096`) and tool steps are short, you can usually run many `exec_command` calls concurrently (often up to `max_threads`) without special throttling.
     - Prefer **short** tool steps; avoid long `sleep` inside `exec_command` for stress tests (keep agents alive by not closing them instead).

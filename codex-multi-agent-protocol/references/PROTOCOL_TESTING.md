@@ -266,15 +266,15 @@ Pass criteria:
 
 Method:
 
-1. Spawn `N` implementers that sleep and return JSON.
+1. Spawn `N` Operators that sleep and return JSON (preferred; no repo writes).
 2. Increase `N` until spawn fails.
 3. Record first failure.
-4. Close completed implementers and retry.
+4. Close completed leaf agents and retry.
 
 Expected:
 
 - Failure at the configured thread limit (`max_threads`).
-- Completed implementers hold slots until `close_agent`.
+- Completed leaf agents hold slots until `close_agent`.
 - New spawn succeeds after close.
 
 Practical guidance:
@@ -295,14 +295,14 @@ Method (example for `max_threads=32`; substitute your configured `max_threads`):
     - 1x Auditor root (will spawn orchestrators)
     - 3x idle Auditors (depth1 leaves)
 2. Auditor root spawns 4 Orchestrators:
-    - ORCH_IDLE spawns 0 implementers (depth2 leaf)
-    - ORCH_A spawns 8 implementers (impl_1..impl_8)
-    - ORCH_B spawns 8 implementers (impl_9..impl_16)
-    - ORCH_C spawns 8 implementers (impl_17..impl_24)
-3. Each implementer runs one short marker command (no need for agent_id env vars):
-    - `bash -lc 'echo \"label=impl_N\" > <run_dir>/impl_N.txt; date >> <run_dir>/impl_N.txt; ulimit -Sn >> <run_dir>/impl_N.txt'`
+    - ORCH_IDLE spawns 0 leaf agents (depth2 leaf)
+    - ORCH_A spawns 8 Operators (op_1..op_8)
+    - ORCH_B spawns 8 Operators (op_9..op_16)
+    - ORCH_C spawns 8 Operators (op_17..op_24)
+3. Each Operator runs one short marker command (no need for agent_id env vars):
+    - `bash -lc 'echo \"label=op_N\" > <run_dir>/op_N.txt; date >> <run_dir>/op_N.txt; ulimit -Sn >> <run_dir>/op_N.txt'`
 4. After the target population is reached, attempt 1 extra spawn (e.g. from ORCH_C). Record the exact failure text.
-5. Close all implementers, then orchestrators, then auditors.
+5. Close all leaf agents, then orchestrators, then auditors.
 
 Pass criteria:
 

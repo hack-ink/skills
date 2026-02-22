@@ -87,6 +87,11 @@ Run leaf agents in a window:
 3. As one completes, review the result, then spawn the next slice (replenish) until all slices are done.
 4. Always `close_agent` for completed children to avoid thread starvation.
 
+Recommended default:
+
+- Keep a small reserve for orchestration/review work.
+  - Example: `reserve_threads=2`, `window_size = max_threads - reserve_threads`
+
 ### 1.4 Integration loop (required)
 
 After slice results return:
@@ -98,6 +103,29 @@ After slice results return:
 3. Perform `integration_report.conflict_check`.
 4. Run `integration_report.full_test` (or the best available end-to-end verification command).
 5. Only then finalize.
+
+### 1.5 Dynamic replanning (supported)
+
+Dynamic parallelism is allowed and recommended:
+
+- As slice results arrive, the Orchestrator may:
+  - unblock dependent work,
+  - refine the plan,
+  - and spawn new slices immediately (still subject to independence + ownership lock).
+- Do not wait for the entire wave to finish if new independent work is now ready.
+
+Hard rules still apply:
+
+- Coder/Implementer slices are `code_change` only.
+- Operator slices may run tool/command actions but must not write the repo (`writes_repo=false`).
+- Close completed children to reclaim thread slots.
+
+### 1.6 Slice naming (recommended)
+
+Avoid adding new schema fields just to track waves. Encode it in ids:
+
+- Operator: `op-w1-01`, `op-w1-02`, ...
+- Coder: `code-w2-01`, `code-w2-02`, ...
 
 ## 2) Subagent-per-task execution workflow (fresh leaf agent per task)
 
