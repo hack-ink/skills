@@ -50,6 +50,7 @@ xcuserdata
 *.log
 .env*
 .turbo
+local/
 model
 tmp
 
