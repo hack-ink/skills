@@ -6,6 +6,7 @@ If the schemas answer **"what JSON must look like"**, this answers **"how the wo
 ## Hard gates summary (printable)
 
 - If `dispatch-preflight.routing_decision != "multi_agent"`, short-circuit (no leaf spawns).
+- Spawn allowlist: when `routing_decision == "multi_agent"`, spawn ONLY protocol agent types (Auditor/Orchestrator/Operator/Coder*). Never spawn built-in/default agent types (for example `worker`, `default`, `explorer`).
 - Do not parallelize without an explicit independence assessment and an ownership lock policy.
 - Auditor review is two-phase: spec must pass before quality runs.
 - No evidence, no completion: coders must return `verification_steps`; operators must return `actions`; orchestrator must return integration evidence for write workflows.

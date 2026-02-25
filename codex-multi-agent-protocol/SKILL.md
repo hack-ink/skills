@@ -25,6 +25,7 @@ Provide a reliable, auditable slow-path workflow for multi-agent execution: expl
 ## Hard gates (non-negotiable)
 
 - If `dispatch-preflight.routing_decision != "multi_agent"`, short-circuit and do not spawn leaf agents.
+- Spawn allowlist: when `routing_decision == "multi_agent"`, spawn ONLY protocol agent types (Auditor/Orchestrator/Operator/Coder*). Do not spawn built-in/default agent types (for example `worker`, `default`, `explorer`).
 - Do not run parallel leaf agents unless independence assessment + ownership lock policy are satisfied.
 - Auditor review must be spec-first, then quality. Quality review must not run before spec passes.
 - No evidence, no completion: coders must provide `verification_steps`; operators must provide `actions`; orchestrator must provide `integration_report` evidence for write workflows.

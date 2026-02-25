@@ -81,6 +81,7 @@ Block if any answer is "no".
 ## Orchestrator integration checklist
 
 - Confirm slices are independent and ownership scopes do not overlap (for parallel runs).
+- Enforce the spawn allowlist: spawn ONLY protocol agent types (Auditor/Orchestrator/Operator/Coder*); never spawn built-in/default agent types (for example `worker`, `default`, `explorer`).
 - Enforce windowed concurrency (spawn -> wait_any -> review -> replenish).
 - Default to `high` reasoning effort; use provider fallback only:
   - Availability fallback: `spark` -> `5.3-codex` (only when rate-limited / exhausted).
