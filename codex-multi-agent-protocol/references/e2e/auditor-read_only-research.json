@@ -1,14 +1,14 @@
 {
-	"ssot_id": "e2e-research-2026-02-22",
+	"ssot_id": "e2e-ops-0001",
 	"protocol_version": "2.0",
-	"task_id": "task-research-001",
-	"subtask_id": "s1-research",
+	"task_id": "task-ops-001",
+	"subtask_id": "s1-ops",
 	"agent_type": "auditor",
 	"workflow_mode": "parallel_dispatch",
 	"routing_mode": "assistant_nested",
 	"slice_id": "slice-audit-research-e2e",
 	"coder_subtask_ids": [],
-	"operator_subtask_ids": ["op-1", "op-2"],
+	"operator_subtask_ids": ["op-w1-01", "op-w1-02"],
 	"parallel_peak_inflight": 2,
 	"audit_phases": [
 		{

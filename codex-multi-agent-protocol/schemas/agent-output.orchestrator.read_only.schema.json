@@ -391,7 +391,7 @@
 	],
 	"examples": [
 		{
-			"ssot_id": "dev-2026-02-22",
+			"ssot_id": "dev-0001",
 			"protocol_version": "2.0",
 			"task_id": "task-brief-001",
 			"subtask_id": "s1-brief",

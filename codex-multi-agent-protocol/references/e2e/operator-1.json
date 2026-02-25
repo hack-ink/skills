@@ -1,8 +1,8 @@
 {
-	"ssot_id": "e2e-research-2026-02-22",
+	"ssot_id": "e2e-ops-0001",
 	"protocol_version": "2.0",
-	"task_id": "task-research-001",
-	"subtask_id": "op-1",
+	"task_id": "task-ops-001",
+	"subtask_id": "op-w1-01",
 	"agent_type": "operator",
 	"workflow_mode": "parallel_dispatch",
 	"routing_mode": "assistant_nested",

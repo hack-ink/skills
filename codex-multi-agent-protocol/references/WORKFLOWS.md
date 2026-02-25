@@ -7,6 +7,7 @@ If the schemas answer **"what JSON must look like"**, this answers **"how the wo
 
 - If `dispatch-preflight.routing_decision != "multi_agent"`, short-circuit (no leaf spawns).
 - Spawn allowlist: when `routing_decision == "multi_agent"`, spawn ONLY protocol agent types (Auditor/Orchestrator/Operator/Coder*) plus `awaiter` (waiting/polling only). Never spawn built-in/default agent types (for example `worker`, `default`, `explorer`).
+- Only dispatch a Coder when the slice is clearly a coding task (repo changes). If unsure, keep it at Orchestrator.
 - Do not parallelize without an explicit independence assessment and an ownership lock policy.
 - Auditor review is two-phase: spec must pass before quality runs.
 - No evidence, no completion: coders must return `verification_steps`; operators must return `actions`; orchestrator must return integration evidence for write workflows.
@@ -53,10 +54,11 @@ Guidelines:
 
 Use `ssot_id = <scenario>-<id>` (short, ASCII, kebab-case):
 
-- Examples: `dev-01J...`, `ops-01J...`, `research-01J...`, `e2e-2026-02-22`
+- Examples: `dev-01J...`, `ops-01J...`, `research-01J...`, `e2e-0001`
 - Requirements:
   - One run -> one `ssot_id` shared across all payloads
   - Different runs -> different `ssot_id` (avoid collisions)
+- Avoid raw epoch seconds (e.g. `...-1771782960`): they are opaque in logs and easy to misread.
 
 ## 1) Parallel dispatch workflow (independent domains)
 
@@ -152,6 +154,7 @@ Avoid adding new schema fields just to track waves. Encode it in ids:
 
 - Operator: `op-w1-01`, `op-w1-02`, ...
 - Coder: `code-w2-01`, `code-w2-02`, ...
+- Avoid epoch-based ids here as well; prefer short wave/sequence tokens.
 
 ## 2) Subagent-per-task execution workflow (fresh leaf agent per task)
 
@@ -201,8 +204,8 @@ Keep tiering minimal to avoid over-design:
 
 Recommended default configuration names:
 
-- `implementer_spark`
-- `implementer_codex`
+- `coder_spark`
+- `coder_codex`
 
 Fallback trigger (example):
 
@@ -288,7 +291,7 @@ Operator evidence requirements:
 ## 5) Red flags (block immediately)
 
 - Micro task routed to multi-agent (should short-circuit).
-- Parallel implementers with overlapping ownership.
+- Parallel coders with overlapping ownership.
 - "Just increase timeouts" fixes for flaky tests without root-cause reasoning.
 - Running quality review before spec review passes.
 - Proceeding after any reviewer marks `blocked=true`.

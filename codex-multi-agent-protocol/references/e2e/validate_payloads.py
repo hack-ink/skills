@@ -1,10 +1,12 @@
 import json
+import re
 from pathlib import Path
 
 from jsonschema import Draft202012Validator
 
 ROOT = Path(__file__).resolve().parents[2]
 E2E_DIR = Path(__file__).resolve().parent
+SSOT_ID_RE = re.compile(r"^[a-z][a-z0-9]*-[a-z0-9][a-z0-9-]{0,62}$")
 
 
 def load_json(path: Path) -> dict:
@@ -28,6 +30,21 @@ def assert_any(predicate, items, label: str) -> None:
         raise AssertionError(label)
 
 
+def assert_ssot_id_format(ssot_id: str) -> None:
+    if not SSOT_ID_RE.match(ssot_id):
+        raise AssertionError(
+            "ssot_id must be ASCII kebab-case and include a scenario prefix, e.g. 'ops-0001'"
+        )
+
+    # Disallow epoch-like numeric suffixes (opaque and easy to misread in logs).
+    # Allow short numeric ids for local sequencing (e.g. 0001).
+    for seg in ssot_id.split("-")[1:]:
+        if seg.isdigit() and len(seg) >= 9:
+            raise AssertionError(
+                "ssot_id must not contain epoch-like numeric segments (>= 9 digits)"
+            )
+
+
 def is_within_allowed_paths(touched: str, allowed_paths: list[str]) -> bool:
     for allowed in allowed_paths:
         if touched == allowed or touched.startswith(allowed.rstrip("/") + "/"):
@@ -41,6 +58,7 @@ def assert_dispatch_preflight_invariants(dispatch: dict) -> None:
     assert_equal(
         dispatch["routing_decision"], "multi_agent", "dispatch.routing_decision"
     )
+    assert_ssot_id_format(dispatch["ssot_id"])
     assert_equal(
         dispatch["review_policy"]["phase_order"],
         ["spec", "quality"],
@@ -310,7 +328,7 @@ def main() -> None:
             "operator_payloads": ["operator-write-1.json"],
         },
         {
-            "name": "read_only_research",
+            "name": "non_write_ops",
             "payloads": {
                 "dispatch-preflight-research.json": "schemas/dispatch-preflight.schema.json",
                 "orchestrator-read_only-research.json": "schemas/agent-output.orchestrator.read_only.schema.json",
