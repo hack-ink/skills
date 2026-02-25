@@ -32,6 +32,7 @@ Provide a reliable, auditable slow-path workflow for multi-agent execution: expl
 - No evidence, no completion: coders must provide `verification_steps`; operators must provide `actions`; orchestrator must provide `integration_report` evidence for write workflows.
 - Do not proceed if any reviewer sets `blocked=true`.
 - Close completed agents to avoid thread starvation.
+- Decompose leaf slices so they are self-contained (inputs + constraints + evidence). Leaf agents must resolve small unknowns via research and safest reversible defaults (no user questions mid-flight).
 
 ## How to use
 

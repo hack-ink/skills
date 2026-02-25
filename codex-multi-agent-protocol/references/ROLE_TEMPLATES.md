@@ -60,6 +60,16 @@ Operator output checklist:
 - Keep synthesis minimal; do not over-interpret ambiguous outputs.
 - Call out any assumptions or blockers.
 
+## Orchestrator slice decomposition checklist (recommended)
+
+Before spawning any leaf slice, confirm:
+
+- The slice has a single objective and a concrete done condition.
+- The slice includes all inputs needed to start (paths, commands, error text, links).
+- The slice has narrow ownership scopes and cannot conflict with other in-flight slices.
+- The slice states its evidence requirement (`actions` / `verification_steps`).
+- The slice states the assumptions policy: unknowns are resolved via research and safest reversible defaults (no user questions mid-flight).
+
 ## Auditor (spec -> quality) checklists
 
 ### Spec phase (must pass first)

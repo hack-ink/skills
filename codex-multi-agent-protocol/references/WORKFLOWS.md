@@ -76,6 +76,19 @@ When the Director is unsure about any non-trivial claim, dependency, API, comman
 6. Default: proceed without asking the user, using the safest reversible assumption set and documenting it.
    - Ask the user only when a decision is preference/requirements-driven (not knowable via research) or irreversible/high-risk.
 
+## 0.5) Slice decomposition quality (recommended)
+
+Good decomposition is the main driver of speed and reliability. A well-scoped slice should not need to ask the user questions.
+
+Before dispatching any leaf slice, ensure the slice `task_contract` is self-contained:
+
+- **Objective:** one sentence outcome, with a concrete "done" condition.
+- **Ownership:** narrow `ownership_paths`/scopes; no overlaps for parallel slices.
+- **Inputs:** links, file paths, error logs, versions, commands to run, and any required context.
+- **Constraints:** what not to do (no refactors, no API changes, no commits, etc.).
+- **Evidence:** what to return (`actions` for Operator, `verification_steps` for Coder).
+- **Assumptions policy:** if a detail is unknown, the leaf must research and choose the safest reversible default, then record it (do not ask the user mid-flight).
+
 ## 1) Parallel dispatch workflow (independent domains)
 
 Use when you have **2+ independent domains** (different failing tests, subsystems, or files) where fixes can proceed without shared state.
