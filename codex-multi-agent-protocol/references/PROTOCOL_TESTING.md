@@ -311,7 +311,8 @@ Method (example for `max_threads=32`; substitute your configured `max_threads`):
     - ORCH_IDLE spawns 0 leaf agents (depth2 leaf)
     - ORCH_A spawns 8 Operators (op_1..op_8)
     - ORCH_B spawns 8 Operators (op_9..op_16)
-    - ORCH_C spawns 8 Operators (op_17..op_24)
+    - ORCH_C spawns 8 leaf agents (op_17..op_24)
+        - Recommended mix: 4 Operators + 4 Coders (covers both leaf types under max_threads pressure)
 3. Each Operator runs one short marker command (no need for agent_id env vars):
     - `bash -lc 'echo \"label=op_N\" > <run_dir>/op_N.txt; date >> <run_dir>/op_N.txt; ulimit -Sn >> <run_dir>/op_N.txt'`
 4. After the target population is reached, attempt 1 extra spawn (e.g. from ORCH_C). Record the exact failure text.
