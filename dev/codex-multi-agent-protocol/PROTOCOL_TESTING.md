@@ -20,7 +20,7 @@ Notes:
 2. Confirm the runtime is configured for depth=2 spawning (recommended: `max_depth = 2`).
 3. Confirm the spawn topology for positive tests:
     - Director (main) -> (Auditor | Orchestrator)
-    - Orchestrator -> (Coder | Operator | Awaiter)
+    - Orchestrator -> (Coder | Operator)
 4. Confirm protocol tokens are present across the packaged schema set:
     - `rg -n 'assistant_nested|agent-output\\.auditor|agent-output\\.orchestrator|agent-output\\.(coder|operator)' schemas/*.json`
     - Confirm legacy routing tokens are absent (should return no matches; exit code 1):

@@ -230,8 +230,8 @@ Block if any answer is "no".
 ## Orchestrator integration checklist
 
 - Confirm slices are independent and ownership scopes do not overlap (for parallel runs).
-- Enforce the spawn allowlist: spawn ONLY protocol agent types (Auditor/Orchestrator/Operator/Coder*); never spawn built-in/default agent types (for example `worker`, `default`, `explorer`).
-- Enforce the repo-write gate: only `coder_*` may implement repo changes (no `apply_patch` / file edits by Orchestrator/Operator/Auditor).
+- Enforce the spawn allowlist: spawn ONLY `auditor`, `orchestrator`, `operator`, `coder_spark` (primary), `coder_codex` (fallback only); never spawn built-in/default agent types (for example `worker`, `default`, `explorer`).
+- Enforce the repo-write gate: only Coders (spawned via `coder_spark` or fallback `coder_codex`) may implement repo changes (no `apply_patch` / file edits by Orchestrator/Operator/Auditor).
 - Orchestrator performs `wait_any` polling itself (no dedicated waiting agent).
 - Enforce windowed concurrency (spawn -> wait_any -> review -> replenish).
 - Leaf agents do not interact with the user; any user checkpoint is Director-only.

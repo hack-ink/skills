@@ -6,16 +6,18 @@ If the schemas answer **"what JSON must look like"**, this answers **"how the wo
 ## Hard gates summary (printable)
 
 - If `dispatch-preflight.routing_decision != "multi_agent"`, short-circuit (no leaf spawns).
-- Spawn allowlist: when `routing_decision == "multi_agent"`, spawn ONLY protocol agent types (Auditor/Orchestrator/Operator/Coder*). Never spawn built-in/default agent types (for example `worker`, `default`, `explorer`).
+- Spawn allowlist: when `routing_decision == "multi_agent"`, spawn ONLY these configured protocol agent types:
+  - `auditor`, `orchestrator`, `operator`, `coder_spark` (primary), `coder_codex` (fallback only)
+  - Never spawn built-in/default agent types (for example `worker`, `default`, `explorer`).
 - Spawn topology gate (depth=2):
   - Director (main) spawns `auditor` and `orchestrator` as peers.
-  - Orchestrator spawns leaf agents: `operator`, `coder_*`.
+  - Orchestrator spawns leaf agents: `operator`, `coder_spark` (fallback `coder_codex` only).
   - Auditor spawns no agents (gatekeeping only).
-  - Leaf agents (`operator`, `coder_*`) spawn nothing.
+  - Leaf agents (`operator`, `coder_spark`, `coder_codex`) spawn nothing.
 - Repo-write gate (non-negotiable in multi-agent mode):
-  - Only `coder_*` agents may write the repo or produce code changes.
+  - Only Coders may write the repo or produce code changes (spawn via `coder_spark`, fallback `coder_codex` only).
   - `director` (main), `orchestrator`, `auditor`, and `operator` must not use `apply_patch`, must not edit files, and must not "implement" code changes themselves once `routing_decision == "multi_agent"`.
-  - Any code/config change required by a slice must be delegated to a `coder_*` leaf slice with explicit `allowed_paths`.
+  - Any code/config change required by a slice must be delegated to a Coder leaf slice with explicit `allowed_paths`.
 - Only dispatch a Coder when the slice is clearly a coding task (repo changes). If unsure, keep it at Orchestrator.
 - Do not parallelize without an explicit independence assessment and an ownership lock policy.
 - Auditor review is two-phase: spec must pass before quality runs.
@@ -160,7 +162,7 @@ After slice results return:
 4. Run `integration_report.full_test` (or the best available end-to-end verification command).
 5. Only then finalize.
 
-Note: if the Orchestrator discovers new implementation work while integrating, it must spawn a new `coder_*` slice (it must not implement the code change directly).
+Note: if the Orchestrator discovers new implementation work while integrating, it must spawn a new Coder slice (it must not implement the code change directly).
 
 ### 1.5 Dynamic replanning (supported)
 
