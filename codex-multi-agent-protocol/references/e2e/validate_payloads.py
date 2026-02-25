@@ -6,7 +6,7 @@ from jsonschema import Draft202012Validator
 
 ROOT = Path(__file__).resolve().parents[2]
 E2E_DIR = Path(__file__).resolve().parent
-SSOT_ID_RE = re.compile(r"^[a-z][a-z0-9]*-[a-z0-9][a-z0-9-]{0,62}$")
+SSOT_ID_RE = re.compile(r"^[a-z][a-z0-9]*-[a-z0-9][a-z0-9-]{7,127}$")
 
 
 def load_json(path: Path) -> dict:
@@ -33,15 +33,17 @@ def assert_any(predicate, items, label: str) -> None:
 def assert_ssot_id_format(ssot_id: str) -> None:
     if not SSOT_ID_RE.match(ssot_id):
         raise AssertionError(
-            "ssot_id must be ASCII kebab-case and include a scenario prefix, e.g. 'ops-0001'"
+            "ssot_id must be ASCII kebab-case and include a scenario prefix, e.g. 'ops-9f2c0d6a1b3e'"
         )
 
-    # Disallow epoch-like numeric suffixes (opaque and easy to misread in logs).
-    # Allow short numeric ids for local sequencing (e.g. 0001).
+    # Disallow epoch-like numeric segments (opaque and easy to misread in logs).
+    # Common cases:
+    # - seconds since epoch: 10 digits (current era)
+    # - milliseconds since epoch: 13 digits
     for seg in ssot_id.split("-")[1:]:
-        if seg.isdigit() and len(seg) >= 9:
+        if seg.isdigit() and len(seg) in (10, 13):
             raise AssertionError(
-                "ssot_id must not contain epoch-like numeric segments (>= 9 digits)"
+                "ssot_id must not contain epoch-like numeric segments (10/13 digits)"
             )
 
 

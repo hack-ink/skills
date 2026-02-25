@@ -434,7 +434,7 @@
 	],
 	"examples": [
 		{
-			"ssot_id": "dev-0001",
+			"ssot_id": "dev-9f2c0d6a1b3e",
 			"protocol_version": "2.0",
 			"task_id": "task-write-001",
 			"subtask_id": "s2-write",

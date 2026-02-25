@@ -52,9 +52,10 @@ Guidelines:
 
 ## 0.3) `ssot_id` convention (recommended)
 
-Use `ssot_id = <scenario>-<id>` (short, ASCII, kebab-case):
+Use `ssot_id = <scenario>-<token>` (short, ASCII, kebab-case):
 
-- Examples: `dev-01J...`, `ops-01J...`, `research-01J...`, `e2e-0001`
+- Recommended token forms: `uuid` or short `hash` (stable, human-scannable).
+- Examples: `dev-550e8400-e29b-41d4-a716-446655440000`, `ops-9f2c0d6a1b3e`, `research-7c9e6679`
 - Requirements:
   - One run -> one `ssot_id` shared across all payloads
   - Different runs -> different `ssot_id` (avoid collisions)

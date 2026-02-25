@@ -258,7 +258,7 @@
 	],
 	"examples": [
 		{
-			"ssot_id": "dev-0001",
+			"ssot_id": "dev-9f2c0d6a1b3e",
 			"protocol_version": "2.0",
 			"workflow_mode": "mixed",
 			"task_kind": "multi_file_or_ambiguous_or_risky",
