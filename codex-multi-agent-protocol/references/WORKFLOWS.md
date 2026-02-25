@@ -61,6 +61,21 @@ Use `ssot_id = <scenario>-<token>` (short, ASCII, kebab-case):
   - Different runs -> different `ssot_id` (avoid collisions)
 - Avoid raw epoch seconds (e.g. `...-1771782960`): they are opaque in logs and easy to misread.
 
+## 0.4) Director uncertainty -> parallel research (recommended)
+
+User interaction happens only at the Director (main).
+
+When the Director is unsure about any non-trivial claim, dependency, API, command, or external fact:
+
+1. Pause decision-making (do not guess).
+2. Run a **parallel Operator research fanout** under the normal nesting chain:
+   - Director -> Auditor -> Orchestrator -> Operator(s)
+3. Orchestrator spawns 2+ independent Operator slices (web/docs, repo comparisons, command probes).
+4. Orchestrator synthesizes a short decision brief (options + tradeoffs + assumptions) with an evidence map.
+5. Auditor reviews the brief (spec + quality) and blocks on weak evidence.
+6. Default: proceed without asking the user, using the safest reversible assumption set and documenting it.
+   - Ask the user only when a decision is preference/requirements-driven (not knowable via research) or irreversible/high-risk.
+
 ## 1) Parallel dispatch workflow (independent domains)
 
 Use when you have **2+ independent domains** (different failing tests, subsystems, or files) where fixes can proceed without shared state.
@@ -171,15 +186,9 @@ Use when you have an implementation plan with multiple tasks that are **mostly i
 
 If a coder asks a clarifying question:
 
-1. Escalate the question to the Director (main). Leaf agents do not interact with the user directly.
-2. Director asks the user and records the answer (or explicitly records "unknown").
-3. If the answer changes scope/constraints, update the slice `task_contract` and re-dispatch the coder.
-
-If the Director cannot obtain an answer (user has no context/experience to answer):
-
-4. Spawn 2+ parallel **Operator** research slices to propose options (claim -> evidence -> source + open questions).
-5. Orchestrator synthesizes 1–3 candidate assumptions with tradeoffs.
-6. Director asks the user to pick (or confirm a safest default), then updates `task_contract` and continues the coder slice.
+1. Avoid user Q&A loops. A well-scoped `task_contract` should be sufficient.
+2. Leaf agents do not interact with the user directly.
+3. If a blocker remains, prefer the Director uncertainty flow in **0.4** (parallel Operator research + Director confirmation), then re-contract and continue.
 
 ### 2.3 Two-phase audit gate (required): spec -> quality
 
