@@ -28,7 +28,7 @@
 			"task_id": "task-ops-001",
 			"subtask_id": "s1-ops",
 			"type": "read_only",
-			"delegate_target": "auditor",
+			"delegate_target": "orchestrator",
 			"allowed_paths": ["web:topic/research-e2e", "repo:obra/superpowers"],
 			"deliverable": "Parallel research result summaries with evidence."
 		}

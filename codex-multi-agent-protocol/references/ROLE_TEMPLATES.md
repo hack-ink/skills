@@ -72,6 +72,15 @@ Before spawning any leaf slice, confirm:
 
 ## Auditor (spec -> quality) checklists
 
+Auditor output contract (required):
+
+- Timebox review work to **<= 120 seconds**. Do not perform open-ended exploration or redesign.
+- Always set `verdict`:
+  - `PASS`: accept the deliverable (`status="done"`, `blocked=false`).
+  - `BLOCK`: reject due to concrete blockers (`status="awaiting_review"`, `blocked=true`, include `blockers`).
+  - `NEEDS_EVIDENCE`: reject due to missing evidence (`status="awaiting_review"`, `blocked=true`, include `required_evidence`).
+- Keep `blockers` to <= 3 and `required_evidence` to <= 5 (minimum needed to proceed).
+
 ### Spec phase (must pass first)
 
 - Is the coder output aligned with the `task_contract` goal and scope?

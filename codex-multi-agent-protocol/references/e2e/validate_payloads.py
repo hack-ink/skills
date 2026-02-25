@@ -119,6 +119,7 @@ def assert_orchestrator_invariants(orchestrator: dict, suite_name: str) -> None:
 
 
 def assert_auditor_invariants(auditor: dict) -> None:
+    assert_equal(auditor["verdict"], "PASS", "auditor.verdict")
     phases = auditor["audit_phases"]
     # Schema enforces ordering via prefixItems; assert statuses for fixtures.
     assert_equal(phases[0]["phase"], "spec", "auditor.audit_phases[0].phase")

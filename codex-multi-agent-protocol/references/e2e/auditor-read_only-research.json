@@ -31,6 +31,7 @@
 		"command": "not_applicable",
 		"evidence": "Read-only research fixture payloads are standalone examples."
 	},
+	"verdict": "PASS",
 	"status": "done",
 	"blocked": false,
 	"rationale": "Completed spec-first then quality review for read-only research workflow.",

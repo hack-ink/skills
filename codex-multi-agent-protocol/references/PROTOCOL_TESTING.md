@@ -6,7 +6,7 @@ Operational workflow rules (parallel windowing, spec->quality gates, integration
 
 ## Test tiers (recommended)
 
-- **Smoke (default, < 2 min):** Run `python3 references/e2e/run_smoke.py`. Then run sections **1-3** with **2 coders** and a small window (2). This validates schema/examples + fixtures quickly, then validates depth=3 nesting + wait-any behavior without stressing the thread pool.
+- **Smoke (default, < 2 min):** Run `python3 references/e2e/run_smoke.py`. Then run sections **1-3** with **2 coders** and a small window (2). This validates schema/examples + fixtures quickly, then validates depth=2 spawning + wait-any behavior without stressing the thread pool.
 - **Stress (on-demand, can be slow):** Run sections **5-7** only when you change runtime concurrency settings (`max_threads`, scheduler) or when debugging liveness/timeout issues.
 
 Notes:
@@ -17,10 +17,10 @@ Notes:
 ## 1) Preconditions
 
 1. Ensure your working tree includes the latest protocol package updates.
-2. Confirm the runtime is configured for depth=3 nesting (recommended: `max_depth = 3`).
-3. Confirm strict hierarchy for positive tests (no skip-level spawns):
-    - Director (main) -> Auditor -> Orchestrator -> (Coder | Operator | Awaiter)
-    - Do not use `Director -> Orchestrator` for depth testing (it is forbidden by protocol).
+2. Confirm the runtime is configured for depth=2 spawning (recommended: `max_depth = 2`).
+3. Confirm the spawn topology for positive tests:
+    - Director (main) -> (Auditor | Orchestrator)
+    - Orchestrator -> (Coder | Operator | Awaiter)
 4. Confirm protocol tokens are present across the packaged schema set:
     - `rg -n 'assistant_nested|agent-output\\.auditor|agent-output\\.orchestrator|agent-output\\.(coder|operator)' schemas/*.json`
     - Confirm legacy routing tokens are absent (should return no matches; exit code 1):
@@ -83,7 +83,7 @@ Pass criteria:
 
 - All seven files return `OK`.
 
-## 3) E2E Positive Test (v2 chain: Director -> Auditor -> Orchestrator -> Coder)
+## 3) E2E Positive Test (v2: Director -> Orchestrator -> Coder, Auditor gate)
 
 Goal:
 
@@ -104,10 +104,10 @@ Goal:
     - `review_policy.phase_order=["spec","quality"]`
     - `parallel_policy.wait_strategy="wait_any"`, `parallel_policy.conflict_policy="ownership_lock"`, `parallel_policy.window_size=2`
 3. Execute the chain in your runtime:
-    - Director delegates to Auditor
-    - Auditor delegates to Orchestrator
+    - Director runs Orchestrator execution
+    - Director requests Auditor review of the Orchestrator deliverable
     - Orchestrator runs **2+ coders** in a **windowed** pattern (`spawn-first -> wait-any -> review -> spawn-next`)
-    - Orchestrator closes coders; Auditor closes Orchestrator; Director closes Auditor
+    - Close completed leaf agents (coders/operators); close Auditor/Orchestrator at the end of the run
 
 ### Artifacts to capture
 
@@ -160,56 +160,16 @@ Pass criteria:
 - `parallel_peak_inflight >= 2`.
 - `coder_subtask_ids` is non-empty.
 - Every referenced coder payload is schema-valid and includes required v2 fields (`protocol_version`, `workflow_mode`, `task_contract`, `verification_steps`).
-- Orchestrator and Director do not finalize completion before Auditor review verdict.
+- Director does not finalize completion before an Auditor verdict.
 - `review_loop.policy` is `adaptive_min2_max3_second_pass_stable`.
 - `review_loop.auditor_passes` is between 2 and 3 inclusive.
 - `review_loop.orchestrator_self_passes >= 2`.
 - Orchestrator write output includes `dispatch_plan`, `review_phases`, and `integration_report` with non-empty evidence.
-- Auditor write output includes `audit_phases` (spec first, quality second) and a populated `diff_review` (or `not_applicable` with evidence).
+- Auditor write output includes `verdict="PASS"`, `audit_phases` (spec first, quality second), and a populated `diff_review` (or `not_applicable` with evidence).
 
 ## 4) Negative Tests
 
-### A) Director skip-level dispatch attempt
-
-Method:
-
-- Director attempts direct dispatch to Orchestrator or Coder.
-
-Pass criteria:
-
-- Result blocked with explicit skip-level-edge violation.
-
-### B) Auditor skip-level dispatch attempt
-
-Method:
-
-- Auditor attempts direct dispatch to Coder.
-
-Pass criteria:
-
-- Result blocked with explicit skip-level-edge violation.
-
-### C) Same-level spawn attempt
-
-Method:
-
-- Auditor attempts to spawn another Auditor, or Orchestrator attempts to spawn another Orchestrator.
-
-Pass criteria:
-
-- Result blocked with explicit hierarchy violation.
-
-### D) Invalid parent stamp
-
-Method:
-
-- Spawn role with invalid `[PARENT:...]` value.
-
-Pass criteria:
-
-- Blocked result with explicit parent-stamp violation reason.
-
-### E) Schema-incomplete coder payload
+### A) Schema-incomplete coder payload
 
 Method:
 
@@ -220,18 +180,37 @@ Pass criteria:
 - Auditor returns `status="awaiting_review"`, `blocked=true`.
 - `blocking_reason` indicates schema invalidity.
 
-### F) Audit pass bounds
+### B) Schema-invalid auditor verdict mapping
 
 Method:
 
-- Force more than 3 Auditor passes for one write result while risks remain unresolved.
+- Provide an Auditor payload with `verdict="PASS"` but `blocked=true` or `status!="done"`.
 
 Pass criteria:
 
-- More than 3 Auditor passes must be blocked.
-- Fourth pass returns `status="awaiting_review"` with an explicit pass-boundary `blocking_reason`.
+- Schema validation rejects the payload.
 
-### G) Invalid routing mode
+### C) Schema-incomplete `NEEDS_EVIDENCE`
+
+Method:
+
+- Provide an Auditor payload with `verdict="NEEDS_EVIDENCE"` but no `required_evidence` entries.
+
+Pass criteria:
+
+- Schema validation rejects the payload.
+
+### D) Ownership overlap (fixture invariant)
+
+Method:
+
+- Modify an Orchestrator fixture so two slices overlap in `ownership_paths`.
+
+Pass criteria:
+
+- `python3 references/e2e/validate_payloads.py` rejects the fixtures with an overlap error.
+
+### E) Invalid routing mode
 
 Method:
 
@@ -241,19 +220,7 @@ Pass criteria:
 
 - Schema or runtime checks reject the payload.
 
-### H) Depth-limit enforcement (tool-level)
-
-Method:
-
-- Attempt to spawn a new tool/agent one level deeper than the current max depth at runtime.
-
-Pass criteria:
-
-- Attempt is blocked.
-- Runtime output is schema-valid.
-- `validation_evidence` is present and non-empty.
-
-### I) Routing short-circuit (non-multi-agent)
+### F) Routing short-circuit (non-multi-agent)
 
 Method:
 
@@ -296,31 +263,26 @@ Practical guidance:
 - If you see slowdowns, first confirm no completed agents are left unclosed (thread starvation).
 - Always pass a non-empty `message` to `spawn_agent` (omit it and you may get a tool-level failure that looks like a concurrency issue).
 
-## 5b) Mixed-Depth Fill Test (depth1/2/3 mix)
+## 5b) Mixed-Role Fill Test (depth1/2 mix)
 
 Purpose:
 
-- Validate nested spawning (depth=3) while saturating `max_threads` with a mixed topology.
+- Validate depth=2 spawning while saturating `max_threads` with a mixed topology.
 
 Method (example for `max_threads=32`; substitute your configured `max_threads`):
 
-1. Director spawns 4 Auditors total:
-    - 1x Auditor root (will spawn orchestrators)
-    - 3x idle Auditors (depth1 leaves)
-2. Auditor root spawns 4 Orchestrators:
-    - ORCH_IDLE spawns 0 leaf agents (depth2 leaf)
-    - ORCH_A spawns 8 Operators (op_1..op_8)
-    - ORCH_B spawns 8 Operators (op_9..op_16)
-    - ORCH_C spawns 8 leaf agents (op_17..op_24)
-        - Recommended mix: 4 Operators + 4 Coders (covers both leaf types under max_threads pressure)
+1. Director spawns:
+    - 1x Auditor (gatekeeping)
+    - 4x Orchestrators (work dispatch)
+2. Each Orchestrator spawns 6 leaf agents (example mix: 4 Operators + 2 Coders) until the thread limit is reached.
 3. Each Operator runs one short marker command (no need for agent_id env vars):
     - `bash -lc 'echo \"label=op_N\" > <run_dir>/op_N.txt; date >> <run_dir>/op_N.txt; ulimit -Sn >> <run_dir>/op_N.txt'`
 4. After the target population is reached, attempt 1 extra spawn (e.g. from ORCH_C). Record the exact failure text.
-5. Close all leaf agents, then orchestrators, then auditors.
+5. Close all leaf agents, then orchestrators, then the auditor.
 
 Pass criteria:
 
-- Exactly `max_threads` live subagents are reached (example: `4 + 4 + 24 = 32`).
+- Exactly `max_threads` live subagents are reached (value depends on your mix and reserves).
 - Extra spawn fails with `agent thread limit reached (max 32)` (or equivalent runtime message; value depends on your config).
 - All marker files exist under the run dir.
 

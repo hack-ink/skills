@@ -36,7 +36,7 @@
 			"task_id": "task-write-001",
 			"subtask_id": "s2-write",
 			"type": "write",
-			"delegate_target": "auditor",
+			"delegate_target": "orchestrator",
 			"allowed_paths": ["/abs/repo/codex-multi-agent-protocol"],
 			"deliverable": "Auditor/Orchestrator-reviewed Coder execution with evidence."
 		}

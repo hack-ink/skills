@@ -7,19 +7,17 @@ If the schemas answer **"what JSON must look like"**, this answers **"how the wo
 
 - If `dispatch-preflight.routing_decision != "multi_agent"`, short-circuit (no leaf spawns).
 - Spawn allowlist: when `routing_decision == "multi_agent"`, spawn ONLY protocol agent types (Auditor/Orchestrator/Operator/Coder*) plus `awaiter` (waiting/polling only). Never spawn built-in/default agent types (for example `worker`, `default`, `explorer`).
-- Hierarchy gate: spawned agents MUST be direct subordinates of the parent role (multiple subordinates are allowed; same-level spawns are forbidden).
-  - Director (main) -> Auditor
-  - Auditor -> Orchestrator
-  - Orchestrator -> (Operator | Coder* | Awaiter)
-    - `awaiter` is waiting/polling only (no work execution, no spawns).
-  - (Operator | Coder* | Awaiter) -> (spawn nothing)
-- No skip-level spawns: Director MUST NOT spawn Orchestrator/Operator/Coder directly, and Auditor MUST NOT spawn Operator/Coder directly.
+- Spawn topology gate (depth=2):
+  - Director (main) spawns `auditor` and `orchestrator` as peers.
+  - Orchestrator spawns leaf agents: `operator`, `coder_*`, optional `awaiter` (waiting/polling only; no work execution, no spawns).
+  - Auditor spawns no agents (gatekeeping only).
+  - Leaf agents (`operator`, `coder_*`, `awaiter`) spawn nothing.
 - Only dispatch a Coder when the slice is clearly a coding task (repo changes). If unsure, keep it at Orchestrator.
 - Do not parallelize without an explicit independence assessment and an ownership lock policy.
 - Auditor review is two-phase: spec must pass before quality runs.
 - No evidence, no completion: coders must return `verification_steps`; operators must return `actions`; orchestrator must return integration evidence for write workflows.
 - Stop on `blocked=true` from any review phase.
-- Close completed agents (thread starvation is a real failure mode).
+- Close completed leaf agents (thread starvation is a real failure mode).
 
 ## 0) Routing guardrails (fast path vs slow path)
 
@@ -52,9 +50,9 @@ Guidelines:
 
 ## 0.2) Runtime preconditions (depth + threads)
 
-- This workflow assumes the runtime supports **depth=3** nesting for the leaf dispatch chain:
-  - Director (main) -> Auditor -> Orchestrator -> (Coder | Operator)
-- Recommended: set `max_depth = 3` and treat it as a **hard cap**. Deeper nesting tends to reduce clarity and makes failure modes harder to debug.
+- This workflow assumes the runtime supports **depth=2** nesting:
+  - Director (main) -> (Auditor | Orchestrator) -> (Coder | Operator)
+- Recommended: set `max_depth = 2` and treat it as a **hard cap**.
 
 ## 0.3) `ssot_id` convention (recommended)
 
@@ -77,8 +75,8 @@ Triggers:
 - The Director is unsure about any non-trivial claim, dependency, API, command, or external fact.
 
 1. Pause decision-making (do not guess).
-2. Run a **parallel Operator research fanout** under the normal nesting chain:
-   - Director -> Auditor -> Orchestrator -> Operator(s)
+2. Run a **parallel Operator research fanout** under Orchestrator:
+   - Director -> Orchestrator -> Operator(s)
 3. Orchestrator spawns 2+ independent Operator slices (web/docs, repo comparisons, command probes).
 4. Orchestrator synthesizes a short decision brief (options + tradeoffs + assumptions) with an evidence map.
 5. Auditor reviews the brief (spec + quality) and blocks on weak evidence.

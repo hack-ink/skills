@@ -27,9 +27,12 @@ Provide a reliable, auditable slow-path workflow for multi-agent execution: expl
 
 - Short-circuit if `dispatch-preflight.routing_decision != "multi_agent"` (no leaf spawns).
 - Enforce the spawn allowlist (protocol types only; no built-ins).
-- Enforce the hierarchy gate (subordinate-only spawns; multiple subordinates allowed).
+- Enforce the spawn topology:
+  - Director (main) spawns `auditor` and `orchestrator` as peers.
+  - Orchestrator spawns leaf agents (`operator`, `coder_*`, optional `awaiter` for waiting only).
+  - Auditor spawns no agents (gatekeeping only).
 - Enforce spec-first review, evidence-first completion, and stop on `blocked=true`.
-- Close completed agents to avoid thread starvation.
+- Close completed leaf agents to avoid thread starvation.
 
 ## How to use
 
@@ -46,6 +49,7 @@ Provide a reliable, auditable slow-path workflow for multi-agent execution: expl
 ## Notes
 
 - Schemas are structural; invariants are enforced via workflow rules and fixture validation.
-- Keep `routing_mode="assistant_nested"` unless the SSOT explicitly changes.
+- Depth is capped at 2: Director -> (Auditor | Orchestrator) -> leaf.
+- `routing_mode` is pinned by the packaged schemas; if you change it, update schemas, fixtures, and invariants together.
 - Protocol v2 requires `protocol_version="2.0"` and a `dispatch-preflight` that includes sizing + routing. Non-multi-agent routing must short-circuit.
 - For runtime/stress guidance (threads, depth, open-files limits), follow `codex-multi-agent-protocol/references/PROTOCOL_TESTING.md`.

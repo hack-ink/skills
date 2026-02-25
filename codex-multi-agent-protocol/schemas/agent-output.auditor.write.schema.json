@@ -18,6 +18,7 @@
 		"parallel_peak_inflight",
 		"audit_phases",
 		"diff_review",
+		"verdict",
 		"status",
 		"blocked",
 		"rationale",
@@ -205,6 +206,34 @@
 			},
 			"additionalProperties": false
 		},
+		"verdict": {
+			"type": "string",
+			"enum": ["PASS", "BLOCK", "NEEDS_EVIDENCE"]
+		},
+		"blockers": {
+			"type": "array",
+			"maxItems": 3,
+			"items": {
+				"type": "string",
+				"minLength": 1
+			}
+		},
+		"required_evidence": {
+			"type": "array",
+			"maxItems": 5,
+			"items": {
+				"type": "string",
+				"minLength": 1
+			}
+		},
+		"notes": {
+			"type": "array",
+			"maxItems": 5,
+			"items": {
+				"type": "string",
+				"minLength": 1
+			}
+		},
 		"status": {
 			"type": "string",
 			"enum": ["in_progress", "done", "awaiting_review"]
@@ -324,6 +353,32 @@
 					"review_loop": { "properties": { "converged": { "const": true } } }
 				}
 			}
+		},
+		{
+			"if": { "properties": { "verdict": { "const": "PASS" } } },
+			"then": {
+				"properties": { "status": { "const": "done" }, "blocked": { "const": false } }
+			}
+		},
+		{
+			"if": { "properties": { "verdict": { "const": "BLOCK" } } },
+			"then": {
+				"properties": {
+					"status": { "const": "awaiting_review" },
+					"blocked": { "const": true },
+					"blockers": { "minItems": 1 }
+				}
+			}
+		},
+		{
+			"if": { "properties": { "verdict": { "const": "NEEDS_EVIDENCE" } } },
+			"then": {
+				"properties": {
+					"status": { "const": "awaiting_review" },
+					"blocked": { "const": true },
+					"required_evidence": { "minItems": 1 }
+				}
+			}
 		}
 	],
 	"examples": [
@@ -360,6 +415,7 @@
 				"command": "git diff --stat HEAD~1..HEAD",
 				"evidence": "0 files changed"
 			},
+			"verdict": "PASS",
 			"status": "done",
 			"blocked": false,
 			"rationale": "Auditor completed spec-first then quality review and accepted the result.",

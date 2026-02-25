@@ -31,6 +31,7 @@
 		"command": "git diff --stat HEAD~1..HEAD",
 		"evidence": "0 files changed"
 	},
+	"verdict": "PASS",
 	"status": "done",
 	"blocked": false,
 	"rationale": "Completed spec-first then quality review and accepted the orchestrated result.",

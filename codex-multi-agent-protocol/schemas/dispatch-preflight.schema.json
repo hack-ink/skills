@@ -135,8 +135,8 @@
 					},
 					"delegate_target": {
 						"type": "string",
-						"enum": ["auditor"],
-						"description": "Dispatch Preflight subtasks are always delegated to auditor."
+						"enum": ["auditor", "orchestrator"],
+						"description": "Subtask delegation target. Use auditor for review/gate work; use orchestrator for execution/dispatch work."
 					},
 					"allowed_paths": {
 						"type": "array",
@@ -269,18 +269,18 @@
 			},
 			"routing_decision": "multi_agent",
 			"ssot": {
-				"goal": "Apply requested file updates with Auditor->Orchestrator->Coder reviewed execution.",
+				"goal": "Apply requested file updates with Auditor-gated Orchestrator execution and evidence-backed verification.",
 				"non_goals": ["No unrelated refactors"],
 				"constraints": [
 					"SSOT frozen during execution",
-					"Director delegates to Auditor; Auditor delegates to Orchestrator; Orchestrator delegates to Coder."
+					"Director spawns Auditor and Orchestrator as peers; Orchestrator delegates to leaf agents; Auditor gates Orchestrator output."
 				],
 				"acceptance_criteria": [
 					"Schema-valid director/auditor/orchestrator chain outputs",
 					"Requested files updated"
 				],
 				"decisions": [
-					"Use chain routing compatible with Director->Auditor->Orchestrator->Coder"
+					"Use depth=2 peer-spawn topology: Director -> (Auditor | Orchestrator) -> leaf"
 				]
 			},
 			"routing_mode": "assistant_nested",
@@ -297,7 +297,7 @@
 					"task_id": "task-write-001",
 					"subtask_id": "s2-write",
 					"type": "write",
-					"delegate_target": "auditor",
+					"delegate_target": "orchestrator",
 					"allowed_paths": ["/abs/repo/path/file.md"],
 					"deliverable": "Auditor/Orchestrator-reviewed Coder execution with evidence."
 				}
