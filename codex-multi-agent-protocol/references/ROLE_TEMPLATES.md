@@ -84,7 +84,7 @@ Block if any answer is "no".
 - Enforce the spawn allowlist: spawn ONLY protocol agent types (Auditor/Orchestrator/Operator/Coder*) plus `awaiter` (waiting/polling only); never spawn built-in/default agent types (for example `worker`, `default`, `explorer`).
 - Use `awaiter` only as a waiting/polling helper (optional; prefer Orchestrator direct wait_any for short runs).
 - Enforce windowed concurrency (spawn -> wait_any -> review -> replenish).
-- If blocked on missing user domain knowledge, spawn parallel Operator research slices, synthesize options, and re-contract the Coder with explicit assumptions.
+- If blocked on missing user domain knowledge, ask the Director to handle the user checkpoint; if still unknown, spawn parallel Operator research slices, synthesize options, and re-contract the Coder with explicit assumptions.
 - Default to `high` reasoning effort; use provider fallback only:
   - Availability fallback: `spark` -> `5.3-codex` (only when rate-limited / exhausted).
 - Operator is single-tier by default (no provider fallback).

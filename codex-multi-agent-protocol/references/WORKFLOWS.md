@@ -171,18 +171,15 @@ Use when you have an implementation plan with multiple tasks that are **mostly i
 
 If a coder asks a clarifying question:
 
-1. Answer clearly and completely.
-2. If the answer changes scope/constraints, update the slice `task_contract`.
-3. Re-dispatch the coder with the updated contract.
+1. Escalate the question to the Director (main). Leaf agents do not interact with the user directly.
+2. Director asks the user and records the answer (or explicitly records "unknown").
+3. If the answer changes scope/constraints, update the slice `task_contract` and re-dispatch the coder.
 
-If the user explicitly says they do not know / cannot answer (lack of context or experience):
+If the Director cannot obtain an answer (user has no context/experience to answer):
 
-4. Treat it as a temporary block on missing domain knowledge.
-5. Spawn 2+ parallel **Operator** research slices to propose options:
-    - Each slice returns a minimal claim -> evidence -> source map (plus open questions).
-    - Use disjoint ownership scopes like `web:<topic>/<slice_id>` or `repo:<owner>/<repo>`.
-6. Orchestrator synthesizes into 1–3 candidate answers with tradeoffs and assumptions, then asks the user to pick (or confirm the safest default).
-7. Update `task_contract` with the chosen assumption set and continue the coder slice.
+4. Spawn 2+ parallel **Operator** research slices to propose options (claim -> evidence -> source + open questions).
+5. Orchestrator synthesizes 1–3 candidate assumptions with tradeoffs.
+6. Director asks the user to pick (or confirm a safest default), then updates `task_contract` and continues the coder slice.
 
 ### 2.3 Two-phase audit gate (required): spec -> quality
 
