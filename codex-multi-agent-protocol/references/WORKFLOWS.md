@@ -175,6 +175,15 @@ If a coder asks a clarifying question:
 2. If the answer changes scope/constraints, update the slice `task_contract`.
 3. Re-dispatch the coder with the updated contract.
 
+If the user explicitly says they do not know / cannot answer (lack of context or experience):
+
+4. Treat it as a temporary block on missing domain knowledge.
+5. Spawn 2+ parallel **Operator** research slices to propose options:
+    - Each slice returns a minimal claim -> evidence -> source map (plus open questions).
+    - Use disjoint ownership scopes like `web:<topic>/<slice_id>` or `repo:<owner>/<repo>`.
+6. Orchestrator synthesizes into 1–3 candidate answers with tradeoffs and assumptions, then asks the user to pick (or confirm the safest default).
+7. Update `task_contract` with the chosen assumption set and continue the coder slice.
+
 ### 2.3 Two-phase audit gate (required): spec -> quality
 
 Auditor review is explicitly two-phase, reflected in `audit_phases`:
