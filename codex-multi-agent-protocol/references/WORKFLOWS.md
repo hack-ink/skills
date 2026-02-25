@@ -89,6 +89,8 @@ Before dispatching any leaf slice, ensure the slice `task_contract` is self-cont
 - **Evidence:** what to return (`actions` for Operator, `verification_steps` for Coder).
 - **Assumptions policy:** if a detail is unknown, the leaf must research and choose the safest reversible default, then record it (do not ask the user mid-flight).
 
+Prefer many small independent slices over a few large ones (then apply windowed `wait_any` dispatch).
+
 ## 1) Parallel dispatch workflow (independent domains)
 
 Use when you have **2+ independent domains** (different failing tests, subsystems, or files) where fixes can proceed without shared state.
