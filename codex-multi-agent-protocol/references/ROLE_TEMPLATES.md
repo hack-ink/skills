@@ -10,6 +10,136 @@ This document provides copy-pastable templates for the 5-role workflow:
 
 Goal: keep runs fast while preserving reliability via explicit contracts, evidence, and rerun escalation.
 
+## Schema-first output rule (required)
+
+When producing a protocol payload:
+
+- Output **JSON only** (no surrounding commentary).
+- Start from the schema example in `schemas/*.json` and edit values (do not invent new keys).
+- Do not omit required keys; do not add extra top-level keys (`additionalProperties: false` is enforced in many subschemas).
+- Respect enums exactly (common gotcha: many `status` fields are `pass|fail|not_applicable`, not `done`).
+
+### Minimal Operator output skeleton (read_only)
+
+Use this as a fill-in template if you cannot reliably start from the schema `examples`.
+
+```json
+{
+  "ssot_id": "<scenario>-<token>",
+  "protocol_version": "2.0",
+  "task_id": "<task-id>",
+  "subtask_id": "<op-id>",
+  "agent_type": "operator",
+  "workflow_mode": "parallel_dispatch",
+  "routing_mode": "assistant_nested",
+  "slice_id": "<slice-id>",
+  "attempt": 1,
+  "status": "done",
+  "summary": "<one sentence>",
+  "blocked": false,
+  "self_check": { "status": "pass", "command": "<cmd>", "evidence": "<stdout/exit>" },
+  "task_contract": {
+    "goal": "<goal>",
+    "scope": "<scope>",
+    "constraints": ["<c1>"],
+    "expected_output": ["<o1>"],
+    "non_goals": ["<n1>"],
+    "writes_repo": false
+  },
+  "questions": [],
+  "actions": [
+    { "name": "<check>", "command": "<cmd>", "status": "pass", "evidence": "<stdout/exit>" }
+  ],
+  "rationale": "<why this evidence is sufficient>",
+  "blocking_reason": "not_applicable",
+  "allowed_paths": ["<abs/path/or/scope>"]
+}
+```
+
+### Minimal Orchestrator output skeleton (read_only)
+
+```json
+{
+  "ssot_id": "<scenario>-<token>",
+  "protocol_version": "2.0",
+  "task_id": "<task-id>",
+  "subtask_id": "<orch-id>",
+  "agent_type": "orchestrator",
+  "workflow_mode": "parallel_dispatch",
+  "routing_mode": "assistant_nested",
+  "slice_id": "<slice-id>",
+  "coder_subtask_ids": [],
+  "operator_subtask_ids": ["<op-id-1>"],
+  "parallel_peak_inflight": 1,
+  "dispatch_plan": {
+    "independence_assessment": { "conflict_policy": "ownership_lock", "domains": [] },
+    "windowing": { "plan": "windowed", "window_size": 1, "wait_strategy": "wait_any" },
+    "slices": []
+  },
+  "review_phases": [
+    { "phase": "dispatch_safety", "status": "pass", "notes": "<why safe>" },
+    { "phase": "finalization", "status": "pass", "notes": "<what completed>" }
+  ],
+  "status": "done",
+  "blocked": false,
+  "rationale": "REVIEW_ONLY: <brief summary>",
+  "review_only": true,
+  "blocking_reason": "not_applicable",
+  "allowed_paths": ["<abs/path/or/scope>"],
+  "review_loop": {
+    "policy": "adaptive_min2_max3_second_pass_stable",
+    "self_passes": 2,
+    "converged": true,
+    "new_issues_found_in_last_self_pass": false,
+    "escalation_reason": "none"
+  }
+}
+```
+
+### Minimal Auditor output skeleton (read_only)
+
+```json
+{
+  "ssot_id": "<scenario>-<token>",
+  "protocol_version": "2.0",
+  "task_id": "<task-id>",
+  "subtask_id": "<audit-id>",
+  "agent_type": "auditor",
+  "workflow_mode": "parallel_dispatch",
+  "routing_mode": "assistant_nested",
+  "slice_id": "<slice-id>",
+  "coder_subtask_ids": [],
+  "operator_subtask_ids": [],
+  "parallel_peak_inflight": 0,
+  "audit_phases": [
+    { "phase": "spec", "status": "pass", "findings": [], "evidence": "<evidence>" },
+    { "phase": "quality", "status": "pass", "findings": [], "evidence": "<evidence>" }
+  ],
+  "diff_review": {
+    "status": "not_applicable",
+    "base_ref": "not_applicable",
+    "head_ref": "not_applicable",
+    "command": "not_applicable",
+    "evidence": "not_applicable"
+  },
+  "verdict": "PASS",
+  "status": "done",
+  "blocked": false,
+  "rationale": "<why pass>",
+  "review_only": true,
+  "blocking_reason": "not_applicable",
+  "allowed_paths": ["<schema-paths-or-scopes>"],
+  "review_loop": {
+    "policy": "adaptive_min2_max3_second_pass_stable",
+    "auditor_passes": 2,
+    "orchestrator_self_passes": 2,
+    "converged": true,
+    "new_issues_found_in_last_audit_pass": false,
+    "escalation_reason": "none"
+  }
+}
+```
+
 ## Coder `task_contract` template (write)
 
 Use for code/config changes.

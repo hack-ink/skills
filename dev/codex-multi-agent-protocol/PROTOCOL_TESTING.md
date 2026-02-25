@@ -161,9 +161,11 @@ Pass criteria:
 - `coder_subtask_ids` is non-empty.
 - Every referenced coder payload is schema-valid and includes required v2 fields (`protocol_version`, `workflow_mode`, `task_contract`, `verification_steps`).
 - Director does not finalize completion before an Auditor verdict.
-- `review_loop.policy` is `adaptive_min2_max3_second_pass_stable`.
-- `review_loop.auditor_passes` is between 2 and 3 inclusive.
-- `review_loop.orchestrator_self_passes >= 2`.
+- Orchestrator `review_loop.policy` is `adaptive_min2_max3_second_pass_stable`.
+- Orchestrator `review_loop.self_passes >= 2`.
+- Auditor `review_loop.policy` is `adaptive_min2_max3_second_pass_stable`.
+- Auditor `review_loop.auditor_passes` is between 2 and 3 inclusive.
+- Auditor `review_loop.orchestrator_self_passes >= 2`.
 - Orchestrator write output includes `dispatch_plan`, `review_phases`, and `integration_report` with non-empty evidence.
 - Auditor write output includes `verdict="PASS"`, `audit_phases` (spec first, quality second), and a populated `diff_review` (or `not_applicable` with evidence).
 
@@ -263,11 +265,11 @@ Practical guidance:
 - If you see slowdowns, first confirm no completed agents are left unclosed (thread starvation).
 - Always pass a non-empty `message` to `spawn_agent` (omit it and you may get a tool-level failure that looks like a concurrency issue).
 
-## 5b) Mixed-Role Fill Test (depth1/2 mix)
+## 5b) Mixed-Role Fill Test (depth=2)
 
 Purpose:
 
-- Validate depth=2 spawning while saturating `max_threads` with a mixed topology.
+- Saturate `max_threads` with a mixed-role, depth=2 topology and confirm thread-limit behavior + `close_agent` hygiene.
 
 Method (example for `max_threads=32`; substitute your configured `max_threads`):
 
@@ -320,13 +322,10 @@ Pass criteria:
 	"schema_validation": "pass|fail",
 	"routing_mode_selected": "assistant_nested",
 	"e2e_chain": "pass|fail",
-	"negative_director_skip_level": "pass|fail",
-	"negative_auditor_skip_level": "pass|fail",
-	"negative_invalid_parent_stamp": "pass|fail",
-	"negative_depth_limit_tool_level": "pass|fail",
 	"negative_schema_incomplete_coder_payload": "pass|fail",
-	"negative_audit_pass_bounds": "pass|fail",
 	"negative_invalid_routing_mode": "pass|fail",
+	"negative_auditor_verdict_mapping": "pass|fail",
+	"negative_ownership_overlap": "pass|fail",
 	"stall_timeout_handling": "pass|fail",
 	"concurrency_limit_observed": 24,
 	"wait_any_verified": true,
