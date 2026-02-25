@@ -119,6 +119,10 @@ After slice results return:
 Dynamic parallelism is allowed and recommended:
 
 - As slice results arrive, the Orchestrator may:
+  - unblock dependent work,
+  - refine the plan,
+  - and spawn new slices immediately (still subject to independence + ownership lock).
+- Do not wait for the entire wave to finish if new independent work is now ready.
 
 ### 1.6 `awaiter` helper (optional)
 
@@ -135,10 +139,6 @@ Rules:
 - `awaiter` must not spawn agents and must not run command/tool actions other than waiting/polling.
 - `awaiter` outputs status only (completed/inflight ids, last completion timestamp, and any timeout alarms).
 - The Orchestrator remains responsible for `close_agent` hygiene and integration evidence.
-  - unblock dependent work,
-  - refine the plan,
-  - and spawn new slices immediately (still subject to independence + ownership lock).
-- Do not wait for the entire wave to finish if new independent work is now ready.
 
 Hard rules still apply:
 
@@ -146,7 +146,7 @@ Hard rules still apply:
 - Operator slices may run tool/command actions but must not write the repo (`writes_repo=false`).
 - Close completed children to reclaim thread slots.
 
-### 1.6 Slice naming (recommended)
+### 1.7 Slice naming (recommended)
 
 Avoid adding new schema fields just to track waves. Encode it in ids:
 
