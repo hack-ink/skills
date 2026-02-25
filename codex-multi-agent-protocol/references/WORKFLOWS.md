@@ -65,7 +65,10 @@ Use `ssot_id = <scenario>-<token>` (short, ASCII, kebab-case):
 
 User interaction happens only at the Director (main).
 
-When the Director is unsure about any non-trivial claim, dependency, API, command, or external fact:
+Triggers:
+
+- The user explicitly asks for research / comparison / design exploration, or
+- The Director is unsure about any non-trivial claim, dependency, API, command, or external fact.
 
 1. Pause decision-making (do not guess).
 2. Run a **parallel Operator research fanout** under the normal nesting chain:
