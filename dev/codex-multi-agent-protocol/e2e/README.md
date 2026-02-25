@@ -9,12 +9,12 @@ It includes:
 
 ## Validate
 
-From the skill root:
+From the repo root:
 
 ```sh
-cd ~/.codex/skills/codex-multi-agent-protocol
-python3 references/e2e/run_smoke.py
-python3 references/e2e/validate_payloads.py
+cd /path/to/hack-ink/skills
+python3 dev/codex-multi-agent-protocol/e2e/run_smoke.py
+python3 dev/codex-multi-agent-protocol/e2e/validate_payloads.py
 ```
 
 ## Notes

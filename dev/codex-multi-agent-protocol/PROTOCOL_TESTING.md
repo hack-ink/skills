@@ -6,7 +6,7 @@ Operational workflow rules (parallel windowing, spec->quality gates, integration
 
 ## Test tiers (recommended)
 
-- **Smoke (default, < 2 min):** Run `python3 references/e2e/run_smoke.py`. Then run sections **1-3** with **2 coders** and a small window (2). This validates schema/examples + fixtures quickly, then validates depth=2 spawning + wait-any behavior without stressing the thread pool.
+- **Smoke (default, < 2 min):** From the repo root, run `python3 dev/codex-multi-agent-protocol/e2e/run_smoke.py`. Then run sections **1-3** with **2 coders** and a small window (2). This validates schema/examples + fixtures quickly, then validates depth=2 spawning + wait-any behavior without stressing the thread pool.
 - **Stress (on-demand, can be slow):** Run sections **5-7** only when you change runtime concurrency settings (`max_threads`, scheduler) or when debugging liveness/timeout issues.
 
 Notes:
@@ -151,7 +151,7 @@ PY
 
 Optional quick check:
 
-- Validate the bundled sample fixtures and invariants: `python3 references/e2e/validate_payloads.py`
+- Validate the bundled sample fixtures and invariants: `python3 dev/codex-multi-agent-protocol/e2e/validate_payloads.py`
 
 Pass criteria:
 
@@ -208,7 +208,7 @@ Method:
 
 Pass criteria:
 
-- `python3 references/e2e/validate_payloads.py` rejects the fixtures with an overlap error.
+- `python3 dev/codex-multi-agent-protocol/e2e/validate_payloads.py` rejects the fixtures with an overlap error.
 
 ### E) Invalid routing mode
 

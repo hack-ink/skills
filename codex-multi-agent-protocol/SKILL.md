@@ -13,7 +13,6 @@ Provide a reliable, auditable slow-path workflow for multi-agent execution: expl
 
 - The task is non-trivial and benefits from delegated work or review gates (especially multi-slice repo changes or parallel read-only research).
 - You need the Director/Auditor/Orchestrator/leaf-agent protocol with schema-validated outputs.
-- You are validating or evolving the protocol package (schemas, fixtures, and operational workflow rules).
 - The Director is uncertain and wants fast, parallel research with evidence and review gates before answering.
 
 ## Inputs
@@ -37,19 +36,14 @@ Provide a reliable, auditable slow-path workflow for multi-agent execution: expl
 ## How to use
 
 1. Read the operational playbook: `codex-multi-agent-protocol/references/WORKFLOWS.md`.
-2. Use the protocol testing guide: `codex-multi-agent-protocol/references/PROTOCOL_TESTING.md`.
-3. Run the smoke suite (schemas + examples + fixtures + invariants):
-    - `python3 codex-multi-agent-protocol/references/e2e/run_smoke.py`
 
 ## Outputs
 
 - A schema-valid set of payloads that includes evidence fields (verification and integration evidence).
-- If evolving the protocol package: updated schemas/fixtures plus a successful run of `references/e2e/validate_payloads.py`.
 
 ## Notes
 
-- Schemas are structural; invariants are enforced via workflow rules and fixture validation.
+- Schemas are structural; invariants are enforced via workflow rules and evidence requirements.
 - Depth is capped at 2: Director -> (Auditor | Orchestrator) -> leaf.
-- `routing_mode` is pinned by the packaged schemas; if you change it, update schemas, fixtures, and invariants together.
+- `routing_mode` is pinned by the packaged schemas; if you change it, update schemas and operational workflow rules together.
 - Protocol v2 requires `protocol_version="2.0"` and a `dispatch-preflight` that includes sizing + routing. Non-multi-agent routing must short-circuit.
-- For runtime/stress guidance (threads, depth, open-files limits), follow `codex-multi-agent-protocol/references/PROTOCOL_TESTING.md`.

@@ -5,8 +5,9 @@ from pathlib import Path
 
 from jsonschema import Draft202012Validator
 
-ROOT = Path(__file__).resolve().parents[2]
-SCHEMAS_DIR = ROOT / "schemas"
+REPO_ROOT = Path(__file__).resolve().parents[3]
+SKILL_ROOT = REPO_ROOT / "codex-multi-agent-protocol"
+SCHEMAS_DIR = SKILL_ROOT / "schemas"
 E2E_DIR = Path(__file__).resolve().parent
 
 
@@ -23,7 +24,7 @@ def validate_schema_and_examples(schema_path: Path) -> None:
         if errs:
             messages = "; ".join(e.message for e in errs[:5])
             raise AssertionError(
-                f"{schema_path.relative_to(ROOT)} example #{i} invalid: {messages}"
+                f"{schema_path.relative_to(SKILL_ROOT)} example #{i} invalid: {messages}"
             )
 
 
@@ -34,7 +35,7 @@ def main() -> None:
 
     for f in schema_files:
         validate_schema_and_examples(f)
-        print(f"OK: schema + examples ({f.relative_to(ROOT)})")
+        print(f"OK: schema + examples ({f.relative_to(SKILL_ROOT)})")
 
     proc = subprocess.run(
         [sys.executable, str(E2E_DIR / "validate_payloads.py")],

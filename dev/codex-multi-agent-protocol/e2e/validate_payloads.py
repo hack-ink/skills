@@ -4,7 +4,8 @@ from pathlib import Path
 
 from jsonschema import Draft202012Validator
 
-ROOT = Path(__file__).resolve().parents[2]
+REPO_ROOT = Path(__file__).resolve().parents[3]
+ROOT = REPO_ROOT / "codex-multi-agent-protocol"
 E2E_DIR = Path(__file__).resolve().parent
 SSOT_ID_RE = re.compile(r"^[a-z][a-z0-9]*-[a-z0-9][a-z0-9-]{7,127}$")
 

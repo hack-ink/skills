@@ -1,6 +1,6 @@
 # AGENTS.md — codex-multi-agent-protocol
 
-This directory packages the multi-agent protocol skill (schemas, fixtures, and operational workflow rules).
+This directory packages the multi-agent protocol skill (schemas and operational workflow rules).
 
 ## Non-negotiable workflow rules
 
@@ -23,7 +23,6 @@ This directory packages the multi-agent protocol skill (schemas, fixtures, and o
 
 - Operational playbook: `references/WORKFLOWS.md`
 - Role templates/checklists: `references/ROLE_TEMPLATES.md`
-- Testing and fixtures: `references/PROTOCOL_TESTING.md`, `references/e2e/`
 
 ## Research slices
 
