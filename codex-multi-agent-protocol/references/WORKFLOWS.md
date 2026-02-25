@@ -12,6 +12,10 @@ If the schemas answer **"what JSON must look like"**, this answers **"how the wo
   - Orchestrator spawns leaf agents: `operator`, `coder_*`, optional `awaiter` (waiting/polling only; no work execution, no spawns).
   - Auditor spawns no agents (gatekeeping only).
   - Leaf agents (`operator`, `coder_*`, `awaiter`) spawn nothing.
+- Repo-write gate (non-negotiable in multi-agent mode):
+  - Only `coder_*` agents may write the repo or produce code changes.
+  - `director` (main), `orchestrator`, `auditor`, and `operator` must not use `apply_patch`, must not edit files, and must not "implement" code changes themselves once `routing_decision == "multi_agent"`.
+  - Any code/config change required by a slice must be delegated to a `coder_*` leaf slice with explicit `allowed_paths`.
 - Only dispatch a Coder when the slice is clearly a coding task (repo changes). If unsure, keep it at Orchestrator.
 - Do not parallelize without an explicit independence assessment and an ownership lock policy.
 - Auditor review is two-phase: spec must pass before quality runs.
@@ -153,6 +157,8 @@ After slice results return:
 3. Perform `integration_report.conflict_check`.
 4. Run `integration_report.full_test` (or the best available end-to-end verification command).
 5. Only then finalize.
+
+Note: if the Orchestrator discovers new implementation work while integrating, it must spawn a new `coder_*` slice (it must not implement the code change directly).
 
 ### 1.5 Dynamic replanning (supported)
 

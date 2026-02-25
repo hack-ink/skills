@@ -231,6 +231,7 @@ Block if any answer is "no".
 
 - Confirm slices are independent and ownership scopes do not overlap (for parallel runs).
 - Enforce the spawn allowlist: spawn ONLY protocol agent types (Auditor/Orchestrator/Operator/Coder*) plus `awaiter` (waiting/polling only); never spawn built-in/default agent types (for example `worker`, `default`, `explorer`).
+- Enforce the repo-write gate: only `coder_*` may implement repo changes (no `apply_patch` / file edits by Orchestrator/Operator/Auditor).
 - Use `awaiter` only as a waiting/polling helper (optional; prefer Orchestrator direct wait_any for short runs).
 - Enforce windowed concurrency (spawn -> wait_any -> review -> replenish).
 - Leaf agents do not interact with the user; any user checkpoint is Director-only.

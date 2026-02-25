@@ -30,6 +30,7 @@ Provide a reliable, auditable slow-path workflow for multi-agent execution: expl
   - Director (main) spawns `auditor` and `orchestrator` as peers.
   - Orchestrator spawns leaf agents (`operator`, `coder_*`, optional `awaiter` for waiting only).
   - Auditor spawns no agents (gatekeeping only).
+- Enforce the repo-write gate: only `coder_*` may implement repo changes (no file edits by Orchestrator/Operator/Auditor).
 - Enforce spec-first review, evidence-first completion, and stop on `blocked=true`.
 - Close completed leaf agents to avoid thread starvation.
 

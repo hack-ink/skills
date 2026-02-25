@@ -8,6 +8,8 @@ This directory packages the multi-agent protocol skill (schemas and operational 
   - Director (main) spawns `auditor` and `orchestrator` as peers.
   - Orchestrator spawns leaf agents (`operator`, `coder_*`, optional `awaiter` for waiting only).
   - Auditor spawns no agents (gatekeeping only).
+- Repo-write gate (multi-agent mode):
+  - Only `coder_*` may implement repo changes (no `apply_patch` / file edits by Orchestrator/Operator/Auditor).
 - Orchestrator deliverables must be reviewed by Auditor before the Director presents a final conclusion.
 - Auditor contract:
   - Timebox: <= 120 seconds.
