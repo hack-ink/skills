@@ -28,7 +28,7 @@ Provide a reliable, auditable slow-path workflow for multi-agent execution: expl
 - Enforce the spawn allowlist (protocol types only; no built-ins).
 - Enforce the spawn topology:
   - Director (main) spawns `auditor` and `orchestrator` as peers.
-  - Orchestrator spawns leaf agents (`operator`, `coder_*`, optional `awaiter` for waiting only).
+  - Orchestrator spawns leaf agents (`operator`, `coder_*`).
   - Auditor spawns no agents (gatekeeping only).
 - Enforce the repo-write gate: only `coder_*` may implement repo changes (no file edits by Orchestrator/Operator/Auditor).
 - Enforce spec-first review, evidence-first completion, and stop on `blocked=true`.

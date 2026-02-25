@@ -6,7 +6,7 @@ This directory packages the multi-agent protocol skill (schemas and operational 
 
 - Spawn topology (depth=2):
   - Director (main) spawns `auditor` and `orchestrator` as peers.
-  - Orchestrator spawns leaf agents (`operator`, `coder_*`, optional `awaiter` for waiting only).
+  - Orchestrator spawns leaf agents (`operator`, `coder_*`).
   - Auditor spawns no agents (gatekeeping only).
 - Repo-write gate (multi-agent mode):
   - Only `coder_*` may implement repo changes (no `apply_patch` / file edits by Orchestrator/Operator/Auditor).
