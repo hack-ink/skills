@@ -7,6 +7,13 @@ If the schemas answer **"what JSON must look like"**, this answers **"how the wo
 
 - If `dispatch-preflight.routing_decision != "multi_agent"`, short-circuit (no leaf spawns).
 - Spawn allowlist: when `routing_decision == "multi_agent"`, spawn ONLY protocol agent types (Auditor/Orchestrator/Operator/Coder*) plus `awaiter` (waiting/polling only). Never spawn built-in/default agent types (for example `worker`, `default`, `explorer`).
+- Hierarchy gate: spawned agents MUST be direct subordinates of the parent role (multiple subordinates are allowed; same-level spawns are forbidden).
+  - Director (main) -> Auditor
+  - Auditor -> Orchestrator
+  - Orchestrator -> (Operator | Coder* | Awaiter)
+    - `awaiter` is waiting/polling only (no work execution, no spawns).
+  - (Operator | Coder* | Awaiter) -> (spawn nothing)
+- No skip-level spawns: Director MUST NOT spawn Orchestrator/Operator/Coder directly, and Auditor MUST NOT spawn Operator/Coder directly.
 - Only dispatch a Coder when the slice is clearly a coding task (repo changes). If unsure, keep it at Orchestrator.
 - Do not parallelize without an explicit independence assessment and an ownership lock policy.
 - Auditor review is two-phase: spec must pass before quality runs.
@@ -48,7 +55,6 @@ Guidelines:
 - This workflow assumes the runtime supports **depth=3** nesting for the leaf dispatch chain:
   - Director (main) -> Auditor -> Orchestrator -> (Coder | Operator)
 - Recommended: set `max_depth = 3` and treat it as a **hard cap**. Deeper nesting tends to reduce clarity and makes failure modes harder to debug.
-- If your runtime cannot support depth=3, do not force it: switch to a flattened topology (Director directly spawns Orchestrator and leaf agents, with Auditor review gates) and update the SSOT accordingly.
 
 ## 0.3) `ssot_id` convention (recommended)
 

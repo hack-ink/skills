@@ -18,19 +18,22 @@ Notes:
 
 1. Ensure your working tree includes the latest protocol package updates.
 2. Confirm the runtime is configured for depth=3 nesting (recommended: `max_depth = 3`).
-3. Confirm protocol tokens are present across the packaged schema set:
+3. Confirm strict hierarchy for positive tests (no skip-level spawns):
+    - Director (main) -> Auditor -> Orchestrator -> (Coder | Operator | Awaiter)
+    - Do not use `Director -> Orchestrator` for depth testing (it is forbidden by protocol).
+4. Confirm protocol tokens are present across the packaged schema set:
     - `rg -n 'assistant_nested|agent-output\\.auditor|agent-output\\.orchestrator|agent-output\\.(coder|operator)' schemas/*.json`
     - Confirm legacy routing tokens are absent (should return no matches; exit code 1):
         - `rg -n 'assistant_solo|assistant_direct|assistant_router|agent-output\\.director|director-output|auditor-output|orchestrator-output|coder-output' schemas/*.json`
-4. Confirm protocol v2 fields are present across the packaged schema set:
+5. Confirm protocol v2 fields are present across the packaged schema set:
     - `rg -n '\"protocol_version\"|\"workflow_mode\"|\"task_kind\"|\"routing_decision\"' schemas/*.json`
-5. (Recommended for stress runs) Confirm open-files limits are not at the macOS default:
+6. (Recommended for stress runs) Confirm open-files limits are not at the macOS default:
     - `launchctl limit maxfiles`
     - `ulimit -Sn` and `ulimit -Hn`
     - If soft is `256`, expect high-concurrency `exec_command` runs to be flaky or fail with `os error 24`.
     - Note: `launchctl limit` can be higher than the per-shell soft limit (`ulimit -Sn`). Prefer checking both.
     - If you see `os error 24` even with a high `max_threads`, fix the open-files limits (don't rely on protocol-level throttling).
-6. (Recommended for stress runs) Ensure no other long-running Codex sessions are consuming agent threads:
+7. (Recommended for stress runs) Ensure no other long-running Codex sessions are consuming agent threads:
     - `ps -Ao pid,etime,command | rg '\\bcodex( resume)?\\b'`
     - Close/exit other interactive sessions before trying to saturate `max_threads`.
 
@@ -186,7 +189,17 @@ Pass criteria:
 
 - Result blocked with explicit skip-level-edge violation.
 
-### C) Invalid parent stamp
+### C) Same-level spawn attempt
+
+Method:
+
+- Auditor attempts to spawn another Auditor, or Orchestrator attempts to spawn another Orchestrator.
+
+Pass criteria:
+
+- Result blocked with explicit hierarchy violation.
+
+### D) Invalid parent stamp
 
 Method:
 
@@ -196,7 +209,7 @@ Pass criteria:
 
 - Blocked result with explicit parent-stamp violation reason.
 
-### D) Schema-incomplete coder payload
+### E) Schema-incomplete coder payload
 
 Method:
 
@@ -207,7 +220,7 @@ Pass criteria:
 - Auditor returns `status="awaiting_review"`, `blocked=true`.
 - `blocking_reason` indicates schema invalidity.
 
-### E) Audit pass bounds
+### F) Audit pass bounds
 
 Method:
 
@@ -218,7 +231,7 @@ Pass criteria:
 - More than 3 Auditor passes must be blocked.
 - Fourth pass returns `status="awaiting_review"` with an explicit pass-boundary `blocking_reason`.
 
-### F) Invalid routing mode
+### G) Invalid routing mode
 
 Method:
 
@@ -228,7 +241,7 @@ Pass criteria:
 
 - Schema or runtime checks reject the payload.
 
-### G) Depth-limit enforcement (tool-level)
+### H) Depth-limit enforcement (tool-level)
 
 Method:
 
@@ -240,7 +253,7 @@ Pass criteria:
 - Runtime output is schema-valid.
 - `validation_evidence` is present and non-empty.
 
-### H) Routing short-circuit (non-multi-agent)
+### I) Routing short-circuit (non-multi-agent)
 
 Method:
 
@@ -252,7 +265,7 @@ Pass criteria:
 - Chain must short-circuit: no coder spawns.
 - Output indicates blocked/redirected routing with explicit reason.
 
-### I) Ownership overlap in parallel slices
+### J) Ownership overlap in parallel slices
 
 Method:
 

@@ -27,6 +27,7 @@ Provide a reliable, auditable slow-path workflow for multi-agent execution: expl
 
 - Short-circuit if `dispatch-preflight.routing_decision != "multi_agent"` (no leaf spawns).
 - Enforce the spawn allowlist (protocol types only; no built-ins).
+- Enforce the hierarchy gate (subordinate-only spawns; multiple subordinates allowed).
 - Enforce spec-first review, evidence-first completion, and stop on `blocked=true`.
 - Close completed agents to avoid thread starvation.
 
