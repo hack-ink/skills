@@ -124,7 +124,7 @@ For multi-repo operational slices (commit/push, version bumps, config sync), tre
 Run leaf agents in a window:
 
 1. Spawn up to `window_size`.
-2. Use `wait-any` polling.
+2. Use `wait_any` polling.
 3. As one completes, review the result, then spawn the next slice (replenish) until all slices are done.
 4. Always `close_agent` for completed children to avoid thread starvation.
 
@@ -201,7 +201,7 @@ If a coder asks a clarifying question:
 
 1. Avoid user Q&A loops. A well-scoped `task_contract` should be sufficient.
 2. Leaf agents do not interact with the user directly.
-3. If a blocker remains, prefer the Director uncertainty flow in **0.4** (parallel Operator research + Director confirmation), then re-contract and continue.
+3. If a blocker remains, treat it as a slice decomposition bug: resolve via **0.4** (parallel Operator research + safest default), then re-contract and continue.
 
 ### 2.3 Two-phase audit gate (required): spec -> quality
 

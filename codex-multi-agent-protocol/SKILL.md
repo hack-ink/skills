@@ -14,7 +14,7 @@ Provide a reliable, auditable slow-path workflow for multi-agent execution: expl
 - The task is non-trivial and benefits from delegated work or review gates (especially multi-slice repo changes or parallel read-only research).
 - You need the Director/Auditor/Orchestrator/leaf-agent protocol with schema-validated outputs.
 - You are validating or evolving the protocol package (schemas, fixtures, and operational workflow rules).
- - The Director is uncertain during a user conversation and wants fast, parallel research with evidence and review gates before answering.
+- The Director is uncertain and wants fast, parallel research with evidence and review gates before answering.
 
 ## Inputs
 
@@ -51,24 +51,4 @@ Provide a reliable, auditable slow-path workflow for multi-agent execution: expl
 - Schemas are structural; invariants are enforced via workflow rules and fixture validation.
 - Keep `routing_mode="assistant_nested"` unless the SSOT explicitly changes.
 - Protocol v2 requires `protocol_version="2.0"` and a `dispatch-preflight` that includes sizing + routing. Non-multi-agent routing must short-circuit.
-
-## Concurrency budgets (practical)
-
-There are two independent bottlenecks:
-
-- **Agent threads** (e.g. `max_threads=<N>`): how many subagents can be alive concurrently.
-- **Tool/process resources** (FDs, processes, CPU): how many concurrent `exec_command`-style shell actions can run without destabilizing the runner.
-
-Rules of thumb:
-
-- Keep **agent concurrency aggressive** (use windowed dispatch and replenish; aim to saturate `max_threads` when you have independent slices).
-    - Recommended default: keep a small reserve for orchestration and review work.
-      - Example: `reserve_threads=2`, `window_size = max_threads - reserve_threads`
-- Keep **tool concurrency opportunistic**:
-    - If `ulimit -Sn` is high (typically `>= 4096`) and tool steps are short, you can usually run many `exec_command` calls concurrently (often up to `max_threads`) without special throttling.
-    - Prefer **short** tool steps; avoid long `sleep` inside `exec_command` for stress tests (keep agents alive by not closing them instead).
-    - If you see `os error 24` / "Too many open files", treat it as an **environment regression**: re-check `launchctl limit maxfiles` and `ulimit -Sn/-Hn` and fix the limit (don't "paper over" with protocol throttling).
-
-Spawn hygiene:
-
-- Always pass a non-empty initial `message` to `spawn_agent` (some runners fail closed with "Provide one of: message or items" if it's omitted).
+- For runtime/stress guidance (threads, depth, open-files limits), follow `codex-multi-agent-protocol/references/PROTOCOL_TESTING.md`.
