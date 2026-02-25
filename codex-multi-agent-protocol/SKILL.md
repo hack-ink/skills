@@ -15,7 +15,6 @@ Provide a reliable, auditable slow-path workflow for multi-agent execution: expl
 - You need the Director/Auditor/Orchestrator/leaf-agent protocol with schema-validated outputs.
 - You are validating or evolving the protocol package (schemas, fixtures, and operational workflow rules).
 - The Director is uncertain and wants fast, parallel research with evidence and review gates before answering.
-- The user explicitly asks for research/design/comparison work and you want parallel Operator coverage with evidence and review gates.
 
 ## Inputs
 
