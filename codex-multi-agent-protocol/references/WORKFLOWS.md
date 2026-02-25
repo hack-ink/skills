@@ -119,6 +119,22 @@ After slice results return:
 Dynamic parallelism is allowed and recommended:
 
 - As slice results arrive, the Orchestrator may:
+
+### 1.6 `awaiter` helper (optional)
+
+`awaiter` is an allowed helper type for **waiting/polling only**. It is not a worker role.
+
+Use an `awaiter` ONLY when:
+
+- At least one in-flight slice is expected to take `> 30s`, or
+- You are running a large window (suggestion: `window_size >= 8`) and want the Orchestrator to keep integrating/reviewing while completions are polled, or
+- You need a watchdog that reports "no progress" timeouts.
+
+Rules:
+
+- `awaiter` must not spawn agents and must not run command/tool actions other than waiting/polling.
+- `awaiter` outputs status only (completed/inflight ids, last completion timestamp, and any timeout alarms).
+- The Orchestrator remains responsible for `close_agent` hygiene and integration evidence.
   - unblock dependent work,
   - refine the plan,
   - and spawn new slices immediately (still subject to independence + ownership lock).

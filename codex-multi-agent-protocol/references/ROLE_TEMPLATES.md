@@ -82,6 +82,7 @@ Block if any answer is "no".
 
 - Confirm slices are independent and ownership scopes do not overlap (for parallel runs).
 - Enforce the spawn allowlist: spawn ONLY protocol agent types (Auditor/Orchestrator/Operator/Coder*) plus `awaiter` (waiting/polling only); never spawn built-in/default agent types (for example `worker`, `default`, `explorer`).
+- Use `awaiter` only as a waiting/polling helper (optional; prefer Orchestrator direct wait_any for short runs).
 - Enforce windowed concurrency (spawn -> wait_any -> review -> replenish).
 - Default to `high` reasoning effort; use provider fallback only:
   - Availability fallback: `spark` -> `5.3-codex` (only when rate-limited / exhausted).
