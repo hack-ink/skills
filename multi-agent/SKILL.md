@@ -3,7 +3,7 @@ name: multi-agent
 description: Use when a task requires multi-agent execution with Main (Director)/Auditor/Orchestrator and leaf-role routing (Coder for coding, Operator for non-coding) with schema-validated outputs.
 ---
 
-# Codex Multi-Agent Protocol
+# Multi-Agent Protocol
 
 ## Objective
 
