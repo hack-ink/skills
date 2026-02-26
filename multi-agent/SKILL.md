@@ -9,7 +9,7 @@ description: Use when a task benefits from parallel workers (Operator/Coder) wit
 
 All paths in this skill are relative to the **skill root** (the directory that contains this `SKILL.md`).
 
-After installation, the skill root is typically: `$CODEX_HOME/skills/multi-agent/` (for example: `/Users/xavier/.codex/skills/multi-agent/`).
+In Codex, locate the skill root using the runtime’s skills list (it provides the absolute path to this `SKILL.md`), then open `PLAYBOOK.md` in the same directory.
 
 ## Objective
 
