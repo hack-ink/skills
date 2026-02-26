@@ -8,6 +8,9 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 ROOT = REPO_ROOT / "multi-agent"
 E2E_DIR = Path(__file__).resolve().parent
 SSOT_ID_RE = re.compile(r"^[a-z][a-z0-9]*-[a-z0-9][a-z0-9-]{7,127}$")
+REVIEW_LOOP_POLICY = "adaptive_min2_max5_second_pass_stable"
+REVIEW_LOOP_PASSES_MIN = 2
+REVIEW_LOOP_PASSES_MAX = 5
 
 
 def load_json(path: Path) -> dict:
@@ -114,6 +117,16 @@ def assert_dispatch_preflight_invariants(dispatch: dict) -> None:
         "dispatch.review_policy.phase_order",
     )
     assert_equal(
+        dispatch["review_policy"]["auditor_passes_target"],
+        2,
+        "dispatch.review_policy.auditor_passes_target",
+    )
+    assert_equal(
+        dispatch["review_policy"]["auditor_passes_max"],
+        5,
+        "dispatch.review_policy.auditor_passes_max",
+    )
+    assert_equal(
         dispatch["parallel_policy"]["conflict_policy"],
         "ownership_lock",
         "dispatch.parallel_policy.conflict_policy",
@@ -156,6 +169,31 @@ def assert_orchestrator_invariants(orchestrator: dict, suite_name: str) -> None:
         )
 
     slices = orchestrator["dispatch_plan"]["slices"]
+    review_loop = orchestrator["review_loop"]
+    assert_equal(
+        review_loop["policy"],
+        REVIEW_LOOP_POLICY,
+        "orchestrator.review_loop.policy",
+    )
+    self_passes = review_loop["self_passes"]
+    if not (REVIEW_LOOP_PASSES_MIN <= self_passes <= REVIEW_LOOP_PASSES_MAX):
+        raise AssertionError(
+            "orchestrator.review_loop.self_passes must be between "
+            f"{REVIEW_LOOP_PASSES_MIN} and {REVIEW_LOOP_PASSES_MAX} inclusive"
+        )
+
+    if suite_name != "write":
+        if orchestrator.get("coder_subtask_ids"):
+            raise AssertionError(
+                "Expected orchestrator.coder_subtask_ids to be empty for read_only workflows"
+            )
+        if any(
+            s.get("leaf_agent_type") in {"coder_spark", "coder_codex"} for s in slices
+        ):
+            raise AssertionError(
+                "Expected dispatch_plan.slices[*].leaf_agent_type == 'operator' for read_only workflows"
+            )
+
     ownership_sets = [set(s["ownership_paths"]) for s in slices]
     for i in range(len(ownership_sets)):
         for j in range(i + 1, len(ownership_sets)):
@@ -168,6 +206,24 @@ def assert_orchestrator_invariants(orchestrator: dict, suite_name: str) -> None:
 
 def assert_auditor_invariants(auditor: dict) -> None:
     assert_equal(auditor["verdict"], "PASS", "auditor.verdict")
+    review_loop = auditor["review_loop"]
+    assert_equal(
+        review_loop["policy"],
+        REVIEW_LOOP_POLICY,
+        "auditor.review_loop.policy",
+    )
+    auditor_passes = review_loop["auditor_passes"]
+    if not (REVIEW_LOOP_PASSES_MIN <= auditor_passes <= REVIEW_LOOP_PASSES_MAX):
+        raise AssertionError(
+            "auditor.review_loop.auditor_passes must be between "
+            f"{REVIEW_LOOP_PASSES_MIN} and {REVIEW_LOOP_PASSES_MAX} inclusive"
+        )
+    orch_passes = review_loop["orchestrator_self_passes"]
+    if not (REVIEW_LOOP_PASSES_MIN <= orch_passes <= REVIEW_LOOP_PASSES_MAX):
+        raise AssertionError(
+            "auditor.review_loop.orchestrator_self_passes must be between "
+            f"{REVIEW_LOOP_PASSES_MIN} and {REVIEW_LOOP_PASSES_MAX} inclusive"
+        )
     phases = auditor["audit_phases"]
     # Schema enforces ordering via prefixItems; assert statuses for fixtures.
     assert_equal(phases[0]["phase"], "spec", "auditor.audit_phases[0].phase")
@@ -288,11 +344,49 @@ def assert_cross_payload_invariants(
         "auditor.operator_subtask_ids",
     )
     assert_orchestrator_slice_alignment(orchestrator)
+    if auditor["review_loop"]["auditor_passes"] > dispatch["review_policy"]["auditor_passes_max"]:
+        raise AssertionError(
+            "auditor.review_loop.auditor_passes must not exceed dispatch.review_policy.auditor_passes_max"
+        )
 
 
 def assert_negative_invariants_examples(
-    dispatch: dict, orchestrator: dict, coders: list[dict], operators: list[dict]
+    *,
+    suite_name: str,
+    dispatch: dict,
+    orchestrator: dict,
+    auditor: dict,
+    coders: list[dict],
+    operators: list[dict],
 ) -> None:
+    # review_loop policy + budget must be enforced.
+    bad_orch_policy = json.loads(json.dumps(orchestrator))
+    bad_orch_policy["review_loop"]["policy"] = "bad_policy"
+    try:
+        assert_orchestrator_invariants(bad_orch_policy, suite_name=suite_name)
+    except AssertionError:
+        pass
+    else:
+        raise AssertionError("Negative test failed: bad orchestrator review_loop.policy not detected")
+
+    bad_orch_passes = json.loads(json.dumps(orchestrator))
+    bad_orch_passes["review_loop"]["self_passes"] = REVIEW_LOOP_PASSES_MAX + 1
+    try:
+        assert_orchestrator_invariants(bad_orch_passes, suite_name=suite_name)
+    except AssertionError:
+        pass
+    else:
+        raise AssertionError("Negative test failed: orchestrator review_loop.self_passes out of range not detected")
+
+    bad_audit_passes = json.loads(json.dumps(auditor))
+    bad_audit_passes["review_loop"]["auditor_passes"] = REVIEW_LOOP_PASSES_MAX + 1
+    try:
+        assert_auditor_invariants(bad_audit_passes)
+    except AssertionError:
+        pass
+    else:
+        raise AssertionError("Negative test failed: auditor review_loop.auditor_passes out of range not detected")
+
     # Ownership overlap must fail.
     bad_orch = json.loads(json.dumps(orchestrator))
     if len(bad_orch["dispatch_plan"]["slices"]) >= 2:
@@ -300,7 +394,7 @@ def assert_negative_invariants_examples(
             "dispatch_plan"
         ]["slices"][0]["ownership_paths"]
         try:
-            assert_orchestrator_invariants(bad_orch, suite_name="write")
+            assert_orchestrator_invariants(bad_orch, suite_name=suite_name)
         except AssertionError:
             pass
         else:
@@ -310,7 +404,7 @@ def assert_negative_invariants_examples(
     bad_orch2 = json.loads(json.dumps(orchestrator))
     bad_orch2["parallel_peak_inflight"] = 1
     try:
-        assert_orchestrator_invariants(bad_orch2, suite_name="write")
+        assert_orchestrator_invariants(bad_orch2, suite_name=suite_name)
     except AssertionError:
         pass
     else:
@@ -358,6 +452,20 @@ def assert_negative_invariants_examples(
             raise AssertionError(
                 "Negative test failed: orchestrator operator_subtask_ids mismatch not detected"
             )
+
+    if suite_name != "write":
+        # read_only workflows must not dispatch coders.
+        bad_orch_ro = json.loads(json.dumps(orchestrator))
+        if bad_orch_ro["dispatch_plan"]["slices"]:
+            bad_orch_ro["dispatch_plan"]["slices"][0]["leaf_agent_type"] = "coder_spark"
+            try:
+                assert_orchestrator_invariants(bad_orch_ro, suite_name=suite_name)
+            except AssertionError:
+                pass
+            else:
+                raise AssertionError(
+                    "Negative test failed: read_only coder dispatch not detected"
+                )
 
 
 def main() -> None:
@@ -421,7 +529,21 @@ def main() -> None:
 
         if suite["name"] == "write":
             assert_negative_invariants_examples(
-                dispatch, orchestrator, coders, operators
+                suite_name=suite["name"],
+                dispatch=dispatch,
+                orchestrator=orchestrator,
+                auditor=auditor,
+                coders=coders,
+                operators=operators,
+            )
+        else:
+            assert_negative_invariants_examples(
+                suite_name=suite["name"],
+                dispatch=dispatch,
+                orchestrator=orchestrator,
+                auditor=auditor,
+                coders=coders,
+                operators=operators,
             )
 
         print(f"OK: invariants ({suite['name']})")
