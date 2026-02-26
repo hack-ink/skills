@@ -121,32 +121,22 @@ def main(argv: list[str]) -> int:
         Draft202012Validator.check_schema(schema)
         leaf_dispatch_validator = Draft202012Validator(schema)
 
-    # Identify the root Director thread_id for this ssot_id by finding a root-level spawn message
-    # that contains the ssot_id (this is the only reliable linkage without ToolResult ids).
+    # Identify the root Director thread_id for this ssot_id by finding root-level spawn messages
+    # that contain the ssot_id (this is the only reliable linkage without ToolResult ids).
     root_markers = [
-        c
-        for c in spawn_calls
-        if c.nesting == 1 and args.ssot_id in str(c.payload.get("message", ""))
+        c for c in spawn_calls if c.nesting == 1 and args.ssot_id in str(c.payload.get("message", ""))
     ]
     if not root_markers:
-        fail(
-            "no root-level spawn_agent ToolCall lines found containing "
-            f"ssot_id={args.ssot_id!r}"
-        )
-    root = root_markers[-1]
-    root_thread_id = root.caller_thread_id
+        fail(f"no root-level spawn_agent ToolCall lines found containing ssot_id={args.ssot_id!r}")
 
-    # Restrict the scan range to this run: from the root marker to the next root-level spawn_agent.
-    next_root_spawn = next(
-        (
-            c
-            for c in spawn_calls
-            if c.nesting == 1 and c.lineno > root.lineno
-        ),
-        None,
-    )
+    # Restrict the scan range to this run: from the first ssot-tagged root spawn to the next root-level
+    # spawn_agent after the last ssot-tagged root spawn.
+    start = root_markers[0]
+    root_thread_id = start.caller_thread_id
+    last_marker = root_markers[-1]
+    next_root_spawn = next((c for c in spawn_calls if c.nesting == 1 and c.lineno > last_marker.lineno), None)
     end_line = next_root_spawn.lineno if next_root_spawn else (len(lines) + 1)
-    in_range = [c for c in calls if root.lineno <= c.lineno < end_line]
+    in_range = [c for c in calls if start.lineno <= c.lineno < end_line]
 
     def is_nested_under_root(c: ToolCall) -> bool:
         if c.nesting < 2:
@@ -191,10 +181,24 @@ def main(argv: list[str]) -> int:
                 "root-level spawn_agent must be auditor/orchestrator only; got "
                 f"{agent_type!r} (line {c.lineno})"
             )
+    root_types = {c.payload.get("agent_type") for c in root_spawns}
+    if "auditor" not in root_types or "orchestrator" not in root_types:
+        fail(
+            "expected Director to spawn both 'auditor' and 'orchestrator' at root "
+            f"for ssot_id={args.ssot_id!r}; got root agent_types={sorted(t for t in root_types if t)!r}"
+        )
 
     # Nested spawns under this root thread should only be leaf.
     if not nested_spawns:
         fail("expected at least one nested spawn_agent under the root thread (leaf dispatch)")
+    nested_spawn_callers = {c.caller_thread_id for c in nested_spawns}
+    if len(nested_spawn_callers) != 1:
+        bad = sorted(nested_spawns, key=lambda c: c.lineno)[0]
+        fail(
+            "expected all nested leaf spawn_agent calls to originate from a single depth-1 thread "
+            f"(Orchestrator). Got callers={sorted(nested_spawn_callers)!r} (example line {bad.lineno})"
+        )
+    leaf_spawner_thread_id = next(iter(nested_spawn_callers))
     for c in nested_spawns:
         agent_type = c.payload.get("agent_type")
         if agent_type not in LEAF_SPAWN_ALLOWLIST:
@@ -231,6 +235,14 @@ def main(argv: list[str]) -> int:
     # Heuristic windowing check: at least one nested `wait` call under this root thread.
     if not nested_waits:
         fail("expected at least one nested ToolCall: wait under the root thread (windowing)")
+    wait_callers = {c.caller_thread_id for c in nested_waits}
+    if leaf_spawner_thread_id not in wait_callers:
+        bad = sorted(nested_waits, key=lambda c: c.lineno)[0]
+        fail(
+            "expected the leaf-spawning depth-1 thread to also call wait (windowing loop). "
+            f"leaf_spawner_thread_id={leaf_spawner_thread_id!r} wait_callers={sorted(wait_callers)!r} "
+            f"(example wait line {bad.lineno})"
+        )
 
     print("OK")
     return 0
@@ -238,4 +250,3 @@ def main(argv: list[str]) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main(sys.argv[1:]))
-
