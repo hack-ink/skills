@@ -92,6 +92,20 @@
 			"additionalProperties": true
 		}
 	},
+	"allOf": [
+		{
+			"if": { "properties": { "leaf_agent_type": { "const": "operator" } } },
+			"then": { "properties": { "task_contract": { "properties": { "writes_repo": { "const": false } } } } }
+		},
+		{
+			"if": {
+				"properties": {
+					"leaf_agent_type": { "enum": ["coder_spark", "coder_codex"] }
+				}
+			},
+			"then": { "properties": { "task_contract": { "properties": { "writes_repo": { "const": true } } } } }
+		}
+	],
 	"examples": [
 		{
 			"schema": "leaf-dispatch/1",
@@ -117,4 +131,3 @@
 		}
 	]
 }
-
