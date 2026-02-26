@@ -15,7 +15,7 @@ This repository hosts reusable agent skills for Codex workflows.
 
 To add or update a skill:
 
-1. Copy `_template/SKILL.template.md` into your new skill folder as `<skill-name>/SKILL.md` and replace placeholders.
+1. Create a new `<skill-name>/SKILL.md` with required frontmatter (`name`, `description`).
 2. Keep instructions concise, testable, and narrowly scoped.
 3. Update this `README.md` catalog when new skills are added.
 
