@@ -8,6 +8,10 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 ROOT = REPO_ROOT / "multi-agent"
 E2E_DIR = Path(__file__).resolve().parent
 SSOT_ID_RE = re.compile(r"^[a-z][a-z0-9]*-[a-z0-9][a-z0-9-]{7,127}$")
+SSOT_ID_UUID_SUFFIX_RE = re.compile(
+    r"[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$"
+)
+SSOT_ID_HEX_SUFFIX_RE = re.compile(r"[0-9a-f]{8,64}$")
 REVIEW_LOOP_POLICY = "adaptive_min2_max5_second_pass_stable"
 REVIEW_LOOP_PASSES_MIN = 2
 REVIEW_LOOP_PASSES_MAX = 5
@@ -38,6 +42,18 @@ def assert_ssot_id_format(ssot_id: str) -> None:
     if not SSOT_ID_RE.match(ssot_id):
         raise AssertionError(
             "ssot_id must be ASCII kebab-case and include a scenario prefix, e.g. 'ops-9f2c0d6a1b3e'"
+        )
+
+    # Enforce scenario-token convention: scenario-<hash|uuid>.
+    # This intentionally rejects date-like suffixes (e.g. ...-2026-02-26) because they collide and are ambiguous in logs.
+    suffix_ok = bool(SSOT_ID_UUID_SUFFIX_RE.search(ssot_id))
+    if not suffix_ok:
+        last_seg = ssot_id.split("-")[-1]
+        suffix_ok = bool(SSOT_ID_HEX_SUFFIX_RE.fullmatch(last_seg))
+    if not suffix_ok:
+        raise AssertionError(
+            "ssot_id must end with a UUID or a hex token (8..64 chars), e.g. "
+            "'pack-configs-pubfi-cli-9f2c0d6a1b3e' or 'e2e-write-550e8400-e29b-41d4-a716-446655440000'"
         )
 
     # Disallow epoch-like numeric segments (opaque and easy to misread in logs).

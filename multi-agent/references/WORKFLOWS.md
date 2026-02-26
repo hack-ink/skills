@@ -73,6 +73,9 @@ Guidelines:
 - This workflow assumes the runtime supports **depth=2** nesting:
 - Director (main) -> (Auditor | Orchestrator) -> (coder_spark | coder_codex | operator)
 - Recommended: set `max_depth = 2` and treat it as a **hard cap**.
+- Hardening (recommended): disable collab tools for non-spawners at the role config layer:
+  - Auditor: set `[features] collab=false` so it cannot call `spawn_agent` even if the prompt fails.
+  - Leaf roles (Operator/Coders): also set `[features] collab=false` (defense-in-depth).
 - Parameter rationales (timeboxes, review-loop budgets, window sizing): `references/PARAMETERS.md`.
 
 ## 0.2.1) `write` vs `read_only` workflows (required)
@@ -91,7 +94,12 @@ Use `ssot_id = <scenario>-<token>` (short, ASCII, kebab-case):
 - Requirements:
   - One run -> one `ssot_id` shared across all payloads
   - Different runs -> different `ssot_id` (avoid collisions)
+- Suggested generators:
+  - Short hex token (default): `python3 multi-agent/tools/make_ssot_id.py pack-configs-pubfi-cli`
+  - UUID token: `python3 multi-agent/tools/make_ssot_id.py pack-configs-pubfi-cli --token uuid`
+  - Deterministic token (when you want a stable repro label): `python3 multi-agent/tools/make_ssot_id.py pack-configs-pubfi-cli --token sha256 --seed '<stable-seed>'`
 - Avoid raw epoch seconds (e.g. `...-1771782960`): they are opaque in logs and easy to misread.
+- Avoid date suffixes (e.g. `...-2026-02-26`): they collide and are ambiguous in logs; use a hash/uuid token instead.
 
 ## 0.4) Director uncertainty -> parallel research (recommended)
 
