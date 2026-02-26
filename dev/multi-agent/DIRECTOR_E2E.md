@@ -56,12 +56,14 @@ Pass criteria:
 - No same-level or cross-level spawns occur (especially: Orchestrator never spawns Orchestrator/Auditor/Director).
 - Orchestrator calls `functions.wait` at least once during the run.
 - The run stays within depth=2.
+- Orchestrator dispatches leaf slices using schema-dispatched `spawn_agent` messages (`schemas/leaf-dispatch.schema.json`).
 
 Optional automated check (log-based):
 
 1. Identify the `ssot_id` used in the run.
 2. Run:
    - `python3 dev/multi-agent/e2e/verify_codex_tui_log.py --ssot-id <ssot_id>`
+   - (Recommended) `python3 dev/multi-agent/e2e/verify_codex_tui_log.py --ssot-id <ssot_id> --validate-leaf-dispatch`
 
 ## Test C — Supervision (stall / crash handling)
 

@@ -64,6 +64,35 @@ Use this as a fill-in template if you cannot reliably start from the schema `exa
 - No same-level spawns: director never delegates to peers/leafs; orchestrator never delegates to director/auditor/orchestrator; auditors and leafs do not delegate.
 - Continuity gate: for one `ssot_id`, keep the same Auditor + Orchestrator pair. If blocked, dispatch only fresh leaf slices under that existing pair.
 
+## Schema-dispatched leaf message (required)
+
+When the Orchestrator calls `spawn_agent` for a leaf slice, set the `message` payload to **JSON only** (no surrounding text) matching `schemas/leaf-dispatch.schema.json`:
+
+```json
+{
+  "schema": "leaf-dispatch/1",
+  "ssot_id": "<scenario>-<token>",
+  "protocol_version": "2.0",
+  "task_id": "<task-id>",
+  "parent_subtask_id": "<orch-subtask-id>",
+  "leaf_subtask_id": "<op-or-code-id>",
+  "leaf_agent_type": "operator|coder_spark|coder_codex",
+  "ownership_paths": ["<scope-or-path>"],
+  "task_contract": {
+    "goal": "<goal>",
+    "scope": "<scope>",
+    "constraints": ["<c1>"],
+    "expected_output": ["<o1>"],
+    "non_goals": ["<n1>"],
+    "writes_repo": false
+  },
+  "allowed_paths": ["<abs/path/or/scope>"],
+  "context": {
+    "notes": "<optional extra context>"
+  }
+}
+```
+
 ### Minimal Orchestrator output skeleton (read_only)
 
 This is an Orchestrator output schema variant for a read-only workflow. It is not a separate agent role and must not be produced by spawning a new Orchestrator.

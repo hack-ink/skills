@@ -9,6 +9,8 @@ import re
 import sys
 from dataclasses import dataclass
 
+from jsonschema import Draft202012Validator
+
 
 ROOT_SPAWN_ALLOWLIST = {"auditor", "orchestrator"}
 LEAF_SPAWN_ALLOWLIST = {"operator", "coder_spark", "coder_codex"}
@@ -35,6 +37,11 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         "--log-path",
         default=os.path.expanduser("~/.codex/log/codex-tui.log"),
         help="Path to codex-tui.log (default: ~/.codex/log/codex-tui.log)",
+    )
+    p.add_argument(
+        "--validate-leaf-dispatch",
+        action="store_true",
+        help="Validate leaf spawn_agent message JSON against schemas/leaf-dispatch.schema.json",
     )
     return p.parse_args(argv)
 
@@ -102,6 +109,24 @@ def main(argv: list[str]) -> int:
             "detected non-leaf spawn_agent nested under a session_loop for this ssot_id "
             f"(line {bad.lineno}, nesting={bad.nesting}, agent_type={bad.payload.get('agent_type')!r})"
         )
+
+    leaf_dispatch_validator: Draft202012Validator | None = None
+    if args.validate_leaf_dispatch:
+        schema_path = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)),
+            "..",
+            "..",
+            "multi-agent",
+            "schemas",
+            "leaf-dispatch.schema.json",
+        )
+        schema_path = os.path.normpath(schema_path)
+        try:
+            schema = json.loads(open(schema_path, "r", encoding="utf-8").read())
+        except Exception as e:
+            fail(f"failed to load leaf-dispatch schema at {schema_path!r}: {e}")
+        Draft202012Validator.check_schema(schema)
+        leaf_dispatch_validator = Draft202012Validator(schema)
 
     # Identify the root Director thread_id for this ssot_id by finding a root-level spawn message
     # that contains the ssot_id (this is the only reliable linkage without ToolResult ids).
@@ -184,6 +209,31 @@ def main(argv: list[str]) -> int:
                 "nested spawn_agent under root thread must be leaf only; got "
                 f"{agent_type!r} (line {c.lineno})"
             )
+        if leaf_dispatch_validator is not None:
+            msg = c.payload.get("message", "")
+            try:
+                dispatch = json.loads(msg)
+            except Exception:
+                fail(
+                    "leaf spawn_agent message must be JSON when --validate-leaf-dispatch is set; "
+                    f"line {c.lineno} agent_type={agent_type!r}"
+                )
+            errs = list(leaf_dispatch_validator.iter_errors(dispatch))
+            if errs:
+                fail(
+                    "leaf dispatch JSON failed schema validation; "
+                    f"line {c.lineno} first_error={errs[0].message!r}"
+                )
+            if dispatch.get("leaf_agent_type") != agent_type:
+                fail(
+                    "leaf dispatch JSON leaf_agent_type must match spawn_agent agent_type; "
+                    f"line {c.lineno} leaf_agent_type={dispatch.get('leaf_agent_type')!r} agent_type={agent_type!r}"
+                )
+            if dispatch.get("ssot_id") != args.ssot_id:
+                fail(
+                    "leaf dispatch JSON ssot_id must match --ssot-id; "
+                    f"line {c.lineno} ssot_id={dispatch.get('ssot_id')!r}"
+                )
 
     # Heuristic windowing check: at least one nested `wait` call under this root thread.
     if not nested_waits:

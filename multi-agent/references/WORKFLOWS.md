@@ -188,6 +188,27 @@ Recommended default:
 
 Do not spawn a dedicated waiting agent. The Orchestrator must perform `functions.wait` polling itself as part of the windowing loop.
 
+### 1.3.1 Schema-dispatched leaf contracts (required)
+
+When the Orchestrator calls `spawn_agent` for a leaf slice, the `message` payload must be a **single JSON object** (no surrounding commentary) matching:
+
+- `schemas/leaf-dispatch.schema.json` (`schema="leaf-dispatch/1"`)
+
+Rationale:
+
+- Reduces ambiguity and role confusion.
+- Makes dispatch auditable in `~/.codex/log/codex-tui.log`.
+- Mirrors the reliability benefits of schema-driven tool calls (structured arguments instead of free-form instructions).
+
+Minimum required fields to include in the dispatch JSON:
+
+- `ssot_id`, `protocol_version`, `task_id`
+- `parent_subtask_id` (the Orchestrator subtask id)
+- `leaf_subtask_id`, `leaf_agent_type`
+- `ownership_paths`
+- `task_contract` (self-contained; no user Q&A)
+- `allowed_paths` (filesystem paths and/or synthetic scopes)
+
 ### 1.4 Integration loop (required)
 
 After slice results return:

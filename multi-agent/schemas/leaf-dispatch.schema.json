@@ -1,0 +1,120 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "file:///.codex/leaf-dispatch.schema.json",
+	"title": "Leaf Dispatch Contract (Input)",
+	"description": "Structural schema for schema-based spawn_agent dispatch messages to leaf roles (Operator/Coder). This is an input contract embedded in the spawn_agent message string.",
+	"type": "object",
+	"additionalProperties": false,
+	"required": [
+		"schema",
+		"ssot_id",
+		"protocol_version",
+		"task_id",
+		"parent_subtask_id",
+		"leaf_subtask_id",
+		"leaf_agent_type",
+		"ownership_paths",
+		"task_contract",
+		"allowed_paths"
+	],
+	"properties": {
+		"schema": {
+			"type": "string",
+			"const": "leaf-dispatch/1"
+		},
+		"ssot_id": {
+			"type": "string",
+			"minLength": 1
+		},
+		"protocol_version": {
+			"type": "string",
+			"const": "2.0"
+		},
+		"task_id": {
+			"type": "string",
+			"minLength": 1
+		},
+		"parent_subtask_id": {
+			"type": "string",
+			"minLength": 1,
+			"description": "Orchestrator subtask id that is dispatching this leaf slice."
+		},
+		"leaf_subtask_id": {
+			"type": "string",
+			"minLength": 1
+		},
+		"leaf_agent_type": {
+			"type": "string",
+			"enum": ["operator", "coder_spark", "coder_codex"]
+		},
+		"ownership_paths": {
+			"type": "array",
+			"minItems": 1,
+			"items": { "type": "string", "minLength": 1 }
+		},
+		"task_contract": {
+			"type": "object",
+			"additionalProperties": false,
+			"required": [
+				"goal",
+				"scope",
+				"constraints",
+				"expected_output",
+				"non_goals",
+				"writes_repo"
+			],
+			"properties": {
+				"goal": { "type": "string", "minLength": 1 },
+				"scope": { "type": "string", "minLength": 1 },
+				"constraints": {
+					"type": "array",
+					"items": { "type": "string", "minLength": 1 }
+				},
+				"expected_output": {
+					"type": "array",
+					"items": { "type": "string", "minLength": 1 }
+				},
+				"non_goals": {
+					"type": "array",
+					"items": { "type": "string", "minLength": 1 }
+				},
+				"writes_repo": { "type": "boolean" }
+			}
+		},
+		"allowed_paths": {
+			"type": "array",
+			"minItems": 1,
+			"items": { "type": "string", "minLength": 1 }
+		},
+		"context": {
+			"type": "object",
+			"description": "Optional additional context required to complete the slice without asking the user.",
+			"additionalProperties": true
+		}
+	},
+	"examples": [
+		{
+			"schema": "leaf-dispatch/1",
+			"ssot_id": "ops-9f2c0d6a1b3e",
+			"protocol_version": "2.0",
+			"task_id": "task-ops-9f2c0d6a1b3e",
+			"parent_subtask_id": "orch-001",
+			"leaf_subtask_id": "op-w1-01",
+			"leaf_agent_type": "operator",
+			"ownership_paths": ["repo:example/foo"],
+			"task_contract": {
+				"goal": "Run one diagnostic command and return evidence.",
+				"scope": "Read-only; do not modify the repo.",
+				"constraints": ["No file edits", "No network secrets"],
+				"expected_output": ["Command + stdout/stderr + exit code"],
+				"non_goals": ["No implementation changes"],
+				"writes_repo": false
+			},
+			"allowed_paths": ["/abs/path/to/repo"],
+			"context": {
+				"notes": "Any extra details can go here as structured fields."
+			}
+		}
+	]
+}
+
