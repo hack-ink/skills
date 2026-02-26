@@ -3,16 +3,23 @@ name: rust-style
 description: Use when implementing or reviewing Rust code and you need hack-ink mandatory Rust conventions.
 ---
 
-# Rust Development Style Guide
+# Rust Style (hack-ink)
 
-These rules are hack-ink mandatory conventions for Rust code and Rust development workflows in this repository.
+## Overview
+
+Mandatory conventions for Rust code and Rust development workflows in this repository.
 
 ## Scope
 
 - These rules apply to Rust crates, binaries, and tooling in this repository.
 - They do not apply to non-Rust projects.
 
-## Tooling and workflow
+## When to use
+
+- You are about to implement, refactor, or review Rust code in this repo.
+- You are about to change error handling, logging, time/TLS deps, or module layout.
+
+## Tooling and workflow (required)
 
 - The Rust toolchain is pinned. Do not modify `rust-toolchain.toml`, `.cargo/config.toml`, or `.rustfmt.toml`.
 - Do not install, update, or override toolchains.
@@ -54,6 +61,19 @@ These rules are hack-ink mandatory conventions for Rust code and Rust developmen
 - Do not use scope blocks solely to end a borrow.
 - When an early release is required, use an explicit `drop`.
 - When the value is a reference and you need to end a borrow without a drop warning, use `let _ = value;`.
+
+## Quick reference
+
+- Formatting: `rustfmt` is final; tabs indentation.
+- Error type: `color_eyre::eyre::Result` (do not add `anyhow`).
+- Time: `time` crate (do not add `chrono`).
+- TLS: rustls (native-tls only if rustls is unsupported).
+
+## Common mistakes
+
+- Adding `chrono`/`anyhow` out of habit (violates repo conventions).
+- Using `unwrap()` in non-test code.
+- Keeping/adding `mod.rs` instead of flattening modules.
 
 ## Outputs
 

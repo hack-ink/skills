@@ -21,5 +21,6 @@ To add or update a skill:
 
 ## Repository layout
 
-- `AGENTS.md` - repository-specific operating instructions.
+- This repo intentionally ships **skills only**.
+- Routing/push policy (if any) should live in your Codex home configuration (outside this repo).
 - `<skill-name>/SKILL.md` - required skill definition.

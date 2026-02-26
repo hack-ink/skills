@@ -5,7 +5,7 @@ description: Use when the user requests research, investigation, best practices,
 
 # Research
 
-## Objective
+## Overview
 
 Turn an ambiguous question into a decision-ready recommendation backed by explicit evidence.
 
@@ -123,6 +123,18 @@ Different domains have different norms. Use this as a default ordering, and expl
 - If the topic is safety- or compliance-critical, treat web sources as guidance only and ask for domain constraints and required standards.
 - If you cannot meet the 3-source default, say so early and propose a path to reach higher confidence (additional materials to request, which primary docs to locate, or a small experiment to run).
 - If sources materially disagree, call it out explicitly and explain what you trust and why.
+
+## Quick reference
+
+- Minimum bar (default): 3 independent external sources + an evidence map (claim -> evidence -> source).
+- Always include: options + tradeoffs + recommendation + confidence + “what would change my mind”.
+- Keep a search log: queries + date.
+
+## Common mistakes
+
+- Recommending before reading provided materials or before confirming the actual pain points.
+- Treating “two blog posts that cite each other” as independent evidence.
+- Leaking internal identifiers in web queries (always generalize).
 
 ## References (for how to evaluate sources / record decisions)
 

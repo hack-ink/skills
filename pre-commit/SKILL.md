@@ -1,6 +1,6 @@
 ---
 name: pre-commit
-description: Trigger when preparing a commit where repo-specific pre-commit checks are required.
+description: Use when preparing a commit or push and repo-specific pre-commit checks are required.
 ---
 
 # Pre-commit

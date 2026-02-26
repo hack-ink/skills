@@ -55,3 +55,21 @@ Provide a reliable, auditable slow-path workflow for multi-agent execution: expl
 - `write` vs `read_only` are workflow/output-schema variants, not additional agent roles. Orchestrator must never spawn another Orchestrator; choose the Orchestrator output schema based on whether the task changes repo state.
 - `routing_mode` is pinned by the packaged schemas; if you change it, update schemas and operational workflow rules together.
 - Protocol v2 requires `protocol_version="2.0"` and a `dispatch-preflight` that includes sizing + routing. Non-multi-agent routing must short-circuit.
+
+## Quick reference
+
+- Playbook: `multi-agent/references/WORKFLOWS.md`
+- Parameters/magic numbers: `multi-agent/references/PARAMETERS.md`
+- Supervision (timeouts/crashes): `multi-agent/references/SUPERVISION.md`
+- Leaf dispatch input contract: `multi-agent/schemas/leaf-dispatch.schema.json` (`schema="leaf-dispatch/1"`, JSON-only `spawn_agent.message`)
+- ssot_id generator: `multi-agent/tools/make_ssot_id.py`
+- Local schema/invariant smoke: `python3 dev/multi-agent/e2e/run_smoke.py`
+- Runtime log verifier (topology + wait-any): `python3 dev/multi-agent/e2e/verify_codex_tui_log.py --ssot-id <id> --validate-leaf-dispatch`
+
+## Common mistakes
+
+- Same-level/cross-level spawns (e.g., Orchestrator spawning Orchestrator/Auditor).
+- Leaf dispatch message not being JSON-only `leaf-dispatch/1`.
+- “Wait-all” behavior: dispatching a wave then idle-waiting instead of wait-any replenishment.
+- Not calling `close_agent` for completed children (thread starvation).
+- Orchestrator/Operator/Auditor editing files or using `apply_patch` in multi-agent mode (repo-write gate violation).

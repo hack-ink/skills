@@ -117,6 +117,20 @@ Return a report with these sections (Markdown is fine):
 - Prefer to treat generated/vendor directories as out-of-scope unless the user asks.
 - If the repository already has linters (Clippy/Ruff/ESLint/etc.), use them for evidence; do not add new tooling as part of this skill.
 
+## Quick reference
+
+- Primary tools: `rg`, repo-native linters, build/test entrypoints.
+- Keywords: `compat`, `legacy`, `workaround`, `shim`, `polyfill`, `fallback`, `deprecated`, `TODO(remove)`, `TODO(drop)`.
+- Rust suppressed-unused: `#[allow(dead_code)]`, `#[allow(unused)]`.
+- Python suppressed-unused: `noqa: F401`, `F841`, `type: ignore`.
+- JS/TS suppressed-unused: `eslint-disable no-unused-vars`, `@ts-ignore`, `@ts-expect-error`.
+
+## Common mistakes
+
+- Deleting “because no references”: dynamic imports/registries can hide usage; downgrade confidence and ask for verification entrypoints.
+- Mixing detection with cleanup: this skill is report-first; deletion is a separate user-approved follow-up.
+- Reporting without evidence: every candidate needs concrete pointers (paths/symbols + search output or tooling signal).
+
 ## References
 
 - Repo-local conventions: search for existing "housekeeping" or "cleanup" docs before inventing new rules.
