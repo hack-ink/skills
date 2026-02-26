@@ -20,11 +20,6 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         help="Scenario slug (ASCII kebab-case), e.g. 'pack-configs-pubfi-cli'",
     )
     p.add_argument(
-        "--namespace",
-        default=None,
-        help="Optional namespace prefix for hashing (improves uniqueness across repos).",
-    )
-    p.add_argument(
         "--hex-len",
         type=int,
         default=12,
@@ -48,9 +43,7 @@ def main(argv: list[str]) -> int:
         print("ERROR: --hex-len must be 8..64", file=sys.stderr)
         return 2
 
-    ns = (args.namespace or "").strip()
-    payload = f"{ns}:{scenario}" if ns else scenario
-    token = hashlib.sha256(payload.encode("utf-8")).hexdigest()[:hex_len]
+    token = hashlib.sha256(scenario.encode("utf-8")).hexdigest()[:hex_len]
 
     print(f"{scenario}-{token}")
     return 0
@@ -58,4 +51,3 @@ def main(argv: list[str]) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main(sys.argv[1:]))
-

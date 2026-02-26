@@ -130,4 +130,3 @@ Use `scenario-hash` (no dates, no secrets).
 
 Generator:
 - `python3 multi-agent/tools/make_ssot_id.py <scenario>`
-
