@@ -63,8 +63,8 @@ Provide a reliable, auditable slow-path workflow for multi-agent execution: expl
 - Supervision (timeouts/crashes): `multi-agent/references/SUPERVISION.md`
 - Leaf dispatch input contract: `multi-agent/schemas/leaf-dispatch.schema.json` (`schema="leaf-dispatch/1"`, JSON-only `spawn_agent.message`)
 - ssot_id generator: `multi-agent/tools/make_ssot_id.py`
-- Local schema/invariant smoke: `python3 dev/multi-agent/e2e/run_smoke.py`
-- Runtime log verifier (topology + wait-any): `python3 dev/multi-agent/e2e/verify_codex_tui_log.py --ssot-id <id> --validate-leaf-dispatch`
+- Runtime log verifier (topology + wait-any): `python3 tools/verify_codex_tui_log.py --ssot-id <id> --validate-leaf-dispatch`
+- Repo-only fixture smoke (not shipped with the installed skill): `python3 dev/multi-agent/e2e/run_smoke.py`
 
 ## Common mistakes
 

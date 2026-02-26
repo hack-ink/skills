@@ -95,9 +95,10 @@ Use `ssot_id = <scenario>-<token>` (short, ASCII, kebab-case):
   - One run -> one `ssot_id` shared across all payloads
   - Different runs -> different `ssot_id` (avoid collisions)
 - Suggested generators:
-  - Short hex token (default): `python3 multi-agent/tools/make_ssot_id.py pack-configs-pubfi-cli`
-  - UUID token: `python3 multi-agent/tools/make_ssot_id.py pack-configs-pubfi-cli --token uuid`
-  - Deterministic token (when you want a stable repro label): `python3 multi-agent/tools/make_ssot_id.py pack-configs-pubfi-cli --token sha256 --seed '<stable-seed>'`
+  - From the `multi-agent/` directory:
+    - Short hex token (default): `python3 tools/make_ssot_id.py pack-configs-pubfi-cli`
+    - UUID token: `python3 tools/make_ssot_id.py pack-configs-pubfi-cli --token uuid`
+    - Deterministic token (stable repro label): `python3 tools/make_ssot_id.py pack-configs-pubfi-cli --token sha256 --seed '<stable-seed>'`
 - Avoid raw epoch seconds (e.g. `...-1771782960`): they are opaque in logs and easy to misread.
 - Avoid date suffixes (e.g. `...-2026-02-26`): they collide and are ambiguous in logs; use a hash/uuid token instead.
 
