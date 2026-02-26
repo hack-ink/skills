@@ -40,7 +40,7 @@
 	"validation_evidence": "All required v2 review fields present; no blocking findings.",
 	"allowed_paths": ["/abs/repo/multi-agent"],
 	"review_loop": {
-		"policy": "adaptive_min2_max3_second_pass_stable",
+		"policy": "adaptive_min2_max5_second_pass_stable",
 		"auditor_passes": 2,
 		"orchestrator_self_passes": 2,
 		"converged": true,

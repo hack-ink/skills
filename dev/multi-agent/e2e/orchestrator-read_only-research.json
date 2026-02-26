@@ -89,7 +89,7 @@
 	"blocking_reason": "not_applicable",
 	"allowed_paths": ["web:topic/research-e2e", "repo:obra/superpowers"],
 	"review_loop": {
-		"policy": "adaptive_min2_max3_second_pass_stable",
+		"policy": "adaptive_min2_max5_second_pass_stable",
 		"self_passes": 2,
 		"converged": true,
 		"new_issues_found_in_last_self_pass": false,

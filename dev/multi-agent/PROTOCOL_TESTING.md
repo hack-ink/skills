@@ -161,10 +161,10 @@ Pass criteria:
 - `coder_subtask_ids` is non-empty.
 - Every referenced coder payload is schema-valid and includes required v2 fields (`protocol_version`, `workflow_mode`, `task_contract`, `verification_steps`).
 - Director does not finalize completion before an Auditor verdict.
-- Orchestrator `review_loop.policy` is `adaptive_min2_max3_second_pass_stable`.
+- Orchestrator `review_loop.policy` is `adaptive_min2_max5_second_pass_stable`.
 - Orchestrator `review_loop.self_passes >= 2`.
-- Auditor `review_loop.policy` is `adaptive_min2_max3_second_pass_stable`.
-- Auditor `review_loop.auditor_passes` is between 2 and 3 inclusive.
+- Auditor `review_loop.policy` is `adaptive_min2_max5_second_pass_stable`.
+- Auditor `review_loop.auditor_passes` is between 2 and 5 inclusive.
 - Auditor `review_loop.orchestrator_self_passes >= 2`.
 - Orchestrator write output includes `dispatch_plan`, `review_phases`, and `integration_report` with non-empty evidence.
 - Auditor write output includes `verdict="PASS"`, `audit_phases` (spec first, quality second), and a populated `diff_review` (or `not_applicable` with evidence).

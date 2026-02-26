@@ -358,14 +358,15 @@
 				"escalation_reason"
 			],
 			"properties": {
-				"policy": {
-					"type": "string",
-					"const": "adaptive_min2_max3_second_pass_stable"
-				},
-				"self_passes": {
-					"type": "integer",
-					"minimum": 2
-				},
+					"policy": {
+						"type": "string",
+						"const": "adaptive_min2_max5_second_pass_stable"
+					},
+					"self_passes": {
+						"type": "integer",
+						"minimum": 2,
+						"maximum": 5
+					},
 				"converged": {
 					"type": "boolean"
 				},
@@ -514,13 +515,13 @@
 			"blocking_reason": "not_applicable",
 			"validation_evidence": "All orchestrator invariants satisfied; integration report attached.",
 			"allowed_paths": ["/abs/runtime/.codex/AGENTS.md"],
-			"review_loop": {
-				"policy": "adaptive_min2_max3_second_pass_stable",
-				"self_passes": 2,
-				"converged": true,
-				"new_issues_found_in_last_self_pass": false,
-				"escalation_reason": "none"
-			}
+				"review_loop": {
+					"policy": "adaptive_min2_max5_second_pass_stable",
+					"self_passes": 2,
+					"converged": true,
+					"new_issues_found_in_last_self_pass": false,
+					"escalation_reason": "none"
+				}
 		}
 	],
 	"additionalProperties": false

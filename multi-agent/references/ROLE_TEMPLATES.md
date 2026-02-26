@@ -95,7 +95,7 @@ Use this as a fill-in template if you cannot reliably start from the schema `exa
   "blocking_reason": "not_applicable",
   "allowed_paths": ["<abs/path/or/scope>"],
   "review_loop": {
-    "policy": "adaptive_min2_max3_second_pass_stable",
+    "policy": "adaptive_min2_max5_second_pass_stable",
     "self_passes": 2,
     "converged": true,
     "new_issues_found_in_last_self_pass": false,
@@ -138,7 +138,7 @@ Use this as a fill-in template if you cannot reliably start from the schema `exa
   "blocking_reason": "not_applicable",
   "allowed_paths": ["<schema-paths-or-scopes>"],
   "review_loop": {
-    "policy": "adaptive_min2_max3_second_pass_stable",
+    "policy": "adaptive_min2_max5_second_pass_stable",
     "auditor_passes": 2,
     "orchestrator_self_passes": 2,
     "converged": true,

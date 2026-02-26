@@ -112,6 +112,20 @@ Before dispatching any leaf slice, ensure the slice `task_contract` is self-cont
 
 Prefer many small independent slices over a few large ones (then apply windowed `functions.wait` dispatch).
 
+Avoid oversplitting:
+
+- Do not create slices whose “work” is just context switching (a slice must return evidence, not questions).
+- Prefer slices that each end in one verifiable artifact (logs / a diff / a schema-valid payload) within one ownership scope.
+- If slices are highly coupled (shared files, shared decisions, or a strict order), keep them sequential under one owner.
+
+## 0.6) Review loop budget (required)
+
+The protocol uses an adaptive review loop to converge without infinite cycling:
+
+- `dispatch-preflight.review_policy.auditor_passes_target` is the minimum expected audit passes (current schema pins this to 2).
+- `dispatch-preflight.review_policy.auditor_passes_max` is the hard cap to stop runaway loops (current schema pins this to 5).
+- Output payloads must report the loop policy as `review_loop.policy="adaptive_min2_max5_second_pass_stable"` and keep passes within that budget.
+
 ## 1) Parallel dispatch workflow (independent domains)
 
 Use when you have **2+ independent domains** (different failing tests, subsystems, or files) where fixes can proceed without shared state.

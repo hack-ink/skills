@@ -262,19 +262,20 @@
 				"escalation_reason"
 			],
 			"properties": {
-				"policy": {
-					"type": "string",
-					"const": "adaptive_min2_max3_second_pass_stable"
-				},
-				"auditor_passes": {
-					"type": "integer",
-					"minimum": 2,
-					"maximum": 3
-				},
-				"orchestrator_self_passes": {
-					"type": "integer",
-					"minimum": 2
-				},
+					"policy": {
+						"type": "string",
+						"const": "adaptive_min2_max5_second_pass_stable"
+					},
+					"auditor_passes": {
+						"type": "integer",
+						"minimum": 2,
+						"maximum": 5
+					},
+					"orchestrator_self_passes": {
+						"type": "integer",
+						"minimum": 2,
+						"maximum": 5
+					},
 				"converged": {
 					"type": "boolean"
 				},
@@ -408,14 +409,14 @@
 			"review_only": true,
 			"blocking_reason": "not_applicable",
 			"allowed_paths": ["/abs/runtime/.codex/dispatch-preflight.schema.json"],
-			"review_loop": {
-				"policy": "adaptive_min2_max3_second_pass_stable",
-				"auditor_passes": 2,
-				"orchestrator_self_passes": 2,
-				"converged": true,
-				"new_issues_found_in_last_audit_pass": false,
-				"escalation_reason": "none"
-			}
+				"review_loop": {
+					"policy": "adaptive_min2_max5_second_pass_stable",
+					"auditor_passes": 2,
+					"orchestrator_self_passes": 2,
+					"converged": true,
+					"new_issues_found_in_last_audit_pass": false,
+					"escalation_reason": "none"
+				}
 		}
 	],
 	"additionalProperties": false
