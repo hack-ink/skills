@@ -73,16 +73,21 @@ This keeps parallelism high without degrading throughput via merge conflicts and
 
 Do not “spawn-wave then wait-all”.
 
-Director loop:
-1. Maintain a queue of runnable slices (dependency-satisfied).
-2. Spawn until in-flight reaches `window_size` (and ownership locks permit).
-3. Call `functions.wait` (wait-any) with a bounded timeout.
-4. As soon as one finishes:
-   - record its result
-   - immediately spawn the next runnable slice if capacity exists
-5. Repeat until all slices are done or blocked.
+Director scheduling loop (mandatory):
+1. Maintain:
+   - `pending`: slices not yet dispatched
+   - `inflight`: spawned slices not yet finished + closed
+   - `done`: completed slices
+2. While `pending` is not empty OR `inflight` is not empty:
+   - Spawn from `pending` into `inflight` until either:
+     - `len(inflight) == window_size`, or
+     - no slice is runnable due to dependencies/ownership locks.
+   - If `inflight` is non-empty: call `functions.wait` (wait-any) with a bounded timeout and handle whichever child finishes.
+     - On timeout: do **not** exit; loop and poll again.
+     - On completion: record result, `close_agent`, remove from `inflight`, and immediately try to refill from `pending`.
+   - If `inflight` is empty but `pending` is non-empty: the run is blocked (dependency cycle, ownership deadlock, or dispatch error). Stop and report `blocked` with the reason.
 
-Only block on waiting if every remaining slice is dependency-blocked or ownership-blocked.
+Hard rule: if you have spawned at least one child and `inflight` is non-empty, you must keep polling `functions.wait` until `inflight` becomes empty (or you explicitly mark the run blocked). Never “spawn then stop”.
 
 ## 6) Dispatch schema (Director → worker)
 

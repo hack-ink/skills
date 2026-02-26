@@ -62,5 +62,6 @@ Read `multi-agent/PLAYBOOK.md` and follow it literally.
 - Non-Director spawning (impossible under `max_depth=1`, but still a common prompt mistake).
 - Dispatch message not being JSON-only `task-dispatch/1`.
 - “Wait-all” behavior: spawn a wave then idle-wait instead of wait-any replenishment.
+- “Spawn-then-stop” behavior: returning/exiting while any child is still in-flight (must keep polling `functions.wait` until children are finished + closed, or explicitly mark blocked).
 - Forgetting to `close_agent` for completed children.
 - Over-splitting (coordination overhead > work).

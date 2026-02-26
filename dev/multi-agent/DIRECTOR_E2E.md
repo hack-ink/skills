@@ -55,6 +55,7 @@ Pass criteria:
 
 - No non-Director spawns occur (brokered collab).
 - The Director calls `functions.wait` at least once during the run.
+- The Director does not stop/exit while any child is still in-flight (keeps polling wait-any until all children are finished + closed, or the run is explicitly blocked).
 - The run stays within depth=1.
 - Leaf slices are dispatched using JSON-only `task-dispatch/1` (`multi-agent/schemas/task-dispatch.schema.json`).
 
