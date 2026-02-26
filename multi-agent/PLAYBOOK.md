@@ -17,7 +17,7 @@ Example (estimate only; not a hardcoded constant): `t_max_s = 900` (15 minutes).
 
 ## 1) Roles (vNext)
 
-- **Director (main thread)**: plans slices, spawns workers, schedules wait-any, integrates results, decides done/blocked, and (optionally) requests Auditor review.
+- **Director (main thread)**: plans slices, spawns workers, schedules wait-any, integrates results, decides done/blocked, and (optionally) requests Auditor review. In `multi`, Director does **not** write the repo (no `apply_patch` / file edits).
 - **Operator (worker)**: non-coding execution (repo reads, commands, triage, reproductions, measurements, log inspection).
 - **Coder (worker)**: repo writes (edits + tests). Use `coder_spark`; fall back to `coder_codex` only if needed.
 - **Auditor (optional worker)**: review gate for correctness, evidence quality, and risk.

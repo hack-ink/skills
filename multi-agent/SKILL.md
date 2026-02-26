@@ -25,6 +25,7 @@ Provide a reliable, auditable workflow for multi-agent execution: explicit routi
 ## Hard gates (non-negotiable)
 
 - Short-circuit unless `route="multi"` (no spawns in `single`).
+- Director must not write repo content in `multi` (no `apply_patch`, no file edits). All repo writes must be delegated to a Coder.
 - Enforce brokered spawning (requires runtime `max_depth=1`):
   - Director is the only role that uses collab tools (`spawn_agent`, `wait`, `send_input`, `close_agent`).
   - Director spawns depth=1 children only: `operator`, `coder_spark` (fallback `coder_codex`), optional `auditor`.
