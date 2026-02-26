@@ -17,7 +17,7 @@ Example (estimate only; not a hardcoded constant): `t_max_s = 900` (15 minutes).
 
 ## 1) Roles (vNext)
 
-- **Director (main thread)**: plans slices, spawns workers, schedules wait-any, integrates results, decides done/blocked, and (optionally) requests Auditor review. In `multi`, Director does **not** write the repo (no `apply_patch` / file edits).
+- **Director (main thread)**: plans slices, spawns workers, schedules wait-any, integrates *decisions*, decides done/blocked, and (optionally) requests Auditor review. In `multi`, Director does **not** write the repo (no `apply_patch` / file edits). Any repo writes (including “integration”) must be delegated to a Coder slice.
 - **Operator (worker)**: non-coding execution (repo reads, commands, triage, reproductions, measurements, log inspection).
 - **Coder (worker)**: repo writes (edits + tests). Use `coder_spark`; fall back to `coder_codex` only if needed.
 - **Auditor (optional worker)**: review gate for correctness, evidence quality, and risk.
@@ -38,7 +38,7 @@ Recommended timeboxes:
 - **Probe** (Operator): 2–6 min (fast evidence to reduce uncertainty).
 - **Work** (Operator): 4–12 min (commands + analysis + concrete next steps).
 - **Work** (Coder): 6–18 min (small coherent change + verification).
-- **Merge/Integrate** (Director): 8–25 min (resolve conflicts, run higher-scope checks).
+- **Integrate** (Coder): 8–25 min (resolve conflicts, run higher-scope checks).
 
 When to split:
 - Independent paths (different dirs/modules) with **disjoint write ownership**.
@@ -88,6 +88,9 @@ Director scheduling loop (mandatory):
    - If `inflight` is empty but `pending` is non-empty: the run is blocked (dependency cycle, ownership deadlock, or dispatch error). Stop and report `blocked` with the reason.
 
 Hard rule: if you have spawned at least one child and `inflight` is non-empty, you must keep polling `functions.wait` until `inflight` becomes empty (or you explicitly mark the run blocked). Never “spawn then stop”.
+
+Integration rule (prevents “Director writes code”):
+- If results require applying edits, resolving conflicts, or running final verification in the repo, dispatch a dedicated **Coder Integrate** slice (broad `ownership_paths` as needed). The Director remains broker-only.
 
 ## 6) Dispatch schema (Director → worker)
 
