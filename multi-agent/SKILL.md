@@ -5,6 +5,12 @@ description: Use when a task benefits from parallel workers (Operator/Coder) wit
 
 # Multi-Agent (vNext)
 
+## Path conventions
+
+All paths in this skill are relative to the **skill root** (the directory that contains this `SKILL.md`).
+
+After installation, the skill root is typically: `$CODEX_HOME/skills/multi-agent/` (for example: `/Users/xavier/.codex/skills/multi-agent/`).
+
 ## Objective
 
 Provide a reliable, auditable workflow for multi-agent execution: explicit routing, explicit ownership, evidence-backed verification, and optional Auditor review.
@@ -36,7 +42,7 @@ Provide a reliable, auditable workflow for multi-agent execution: explicit routi
 
 ## How to use
 
-Read `multi-agent/PLAYBOOK.md` and follow it literally.
+Read `PLAYBOOK.md` and follow it literally.
 
 ## Outputs
 
@@ -49,14 +55,14 @@ Read `multi-agent/PLAYBOOK.md` and follow it literally.
 
 ## Quick reference
 
-- Playbook: `multi-agent/PLAYBOOK.md`
-- Dispatch schema: `multi-agent/schemas/task-dispatch.schema.json` (`schema="task-dispatch/1"`, JSON-only `spawn_agent.message`)
+- Playbook: `PLAYBOOK.md`
+- Dispatch schema: `schemas/task-dispatch.schema.json` (`schema="task-dispatch/1"`, JSON-only `spawn_agent.message`)
 - Worker result schemas:
-  - `multi-agent/schemas/worker-result.operator.schema.json` (`schema="worker-result.operator/1"`)
-  - `multi-agent/schemas/worker-result.coder.schema.json` (`schema="worker-result.coder/1"`)
-- Auditor schema: `multi-agent/schemas/review-result.auditor.schema.json` (`schema="review-result.auditor/1"`)
-- `ssot_id` generator: `multi-agent/tools/make_ssot_id.py`
-- Dev-only smoke: `python3 dev/multi-agent/e2e/run_smoke.py`
+  - `schemas/worker-result.operator.schema.json` (`schema="worker-result.operator/1"`)
+  - `schemas/worker-result.coder.schema.json` (`schema="worker-result.coder/1"`)
+- Auditor schema: `schemas/review-result.auditor.schema.json` (`schema="review-result.auditor/1"`)
+- `ssot_id` generator: `tools/make_ssot_id.py`
+- Dev-only smoke (skills repo only): `python3 dev/multi-agent/e2e/run_smoke.py`
 
 ## Common mistakes
 
