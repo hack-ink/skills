@@ -52,6 +52,12 @@ Terminology note:
 - `coder_spark` is the coding leaf role for repo write work (code/config changes with verification evidence).
 - `operator` is the non-coding leaf role for command execution, fetching, and inspection tasks without repo writes.
 
+Role boundary note:
+
+- Director (main) is the user-facing task router and final decision-maker. It owns scope, acceptance criteria, and `single_agent` vs `multi_agent` routing.
+- Orchestrator is a subordinate scheduler for leaf slices. It owns slice decomposition, windowed dispatch, integration evidence, and packaging an Auditor-ready evidence pack.
+- Within one `ssot_id`, keep exactly one Auditor + one Orchestrator identity (continuity). If more capacity is needed, the Orchestrator must report back to the Director to start a new, separate run (new `ssot_id`).
+
 ## 0.1) `review_only` flag (briefs vs work)
 
 The `review_only` boolean distinguishes "a deliverable that is only a brief/review artifact" from "work that changes state".
@@ -67,6 +73,13 @@ Guidelines:
 - This workflow assumes the runtime supports **depth=2** nesting:
 - Director (main) -> (Auditor | Orchestrator) -> (coder_spark | coder_codex | operator)
 - Recommended: set `max_depth = 2` and treat it as a **hard cap**.
+
+## 0.2.1) `write` vs `read_only` workflows (required)
+
+These labels exist to keep evidence requirements unambiguous:
+
+- `read_only`: Orchestrator dispatches Operator slices and returns research/inspection evidence. No repo mutation claims.
+- `write`: Orchestrator dispatches Coder slice(s) and returns integration evidence (conflict checks + verification command), but still must not implement code changes itself (repo-write gate).
 
 ## 0.3) `ssot_id` convention (recommended)
 

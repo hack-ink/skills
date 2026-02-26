@@ -66,6 +66,8 @@ Use this as a fill-in template if you cannot reliably start from the schema `exa
 
 ### Minimal Orchestrator output skeleton (read_only)
 
+This is an Orchestrator output schema variant for a read-only workflow. It is not a separate agent role and must not be produced by spawning a new Orchestrator.
+
 ```json
 {
   "ssot_id": "<scenario>-<token>",

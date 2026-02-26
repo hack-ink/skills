@@ -26,17 +26,14 @@ Provide a reliable, auditable slow-path workflow for multi-agent execution: expl
 
 - Short-circuit if `dispatch-preflight.routing_decision != "multi_agent"` (no leaf spawns).
 - Enforce the spawn allowlist (protocol types only; no built-ins).
-- Enforce role-scoped spawn allowlists:
-  - Director (main) may spawn only `auditor` and `orchestrator`.
-  - Orchestrator may spawn only `operator`, `coder_spark`, and `coder_codex` (fallback only).
-  - Auditor and leaf roles spawn no agents.
-- Enforce no same-level spawns:
-  - Director must not spawn peers or leaf agents.
-  - Orchestrator must not spawn `director`, `auditor`, or `orchestrator`.
-  - Auditor must never spawn.
+- Enforce the depth=2 spawn topology:
   - Director (main) spawns `auditor` and `orchestrator` as peers.
-  - Orchestrator spawns leaf agents (`operator`, `coder_spark`; fallback `coder_codex` only).
-  - Auditor spawns no agents (gatekeeping only).
+  - Orchestrator spawns leaf agents: `operator`, `coder_spark` (primary), `coder_codex` (fallback only).
+  - Auditor and leaf roles spawn no agents.
+- Enforce no same-level or cross-level spawns:
+  - Director must not spawn leaf roles and must not replace itself.
+  - Orchestrator must never spawn `director`, `auditor`, or `orchestrator`.
+  - Auditor and leaf roles must never spawn any agents.
 - Enforce continuity: for a given `ssot_id`, keep the same Auditor + Orchestrator pairing. If blocked, spawn new coding/research leaf slices under that same Orchestrator.
 - Enforce the repo-write gate: only coders (spawned via `coder_spark` or fallback `coder_codex`) may implement repo changes (no file edits by Orchestrator/Operator/Auditor).
 - Enforce spec-first review, evidence-first completion, and stop on `blocked=true`.
@@ -54,5 +51,6 @@ Provide a reliable, auditable slow-path workflow for multi-agent execution: expl
 
 - Schemas are structural; invariants are enforced via workflow rules and evidence requirements.
 - Depth is capped at 2: Director -> (Auditor | Orchestrator) -> leaf.
+- `write` vs `read_only` are workflow/output-schema variants, not additional agent roles. Orchestrator must never spawn another Orchestrator; choose the Orchestrator output schema based on whether the task changes repo state.
 - `routing_mode` is pinned by the packaged schemas; if you change it, update schemas and operational workflow rules together.
 - Protocol v2 requires `protocol_version="2.0"` and a `dispatch-preflight` that includes sizing + routing. Non-multi-agent routing must short-circuit.
