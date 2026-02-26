@@ -14,6 +14,18 @@ Notes:
 - `codex exec` is **not required** to run these tests. It is only useful when you want a **clean, ephemeral, non-interactive** reproduction (e.g., regression runs) and a single captured final JSON output.
 - Always **`close_agent` for completed children**. Finished-but-not-closed agents continue consuming thread slots and can make later tasks appear "stuck" due to thread starvation.
 
+## 0) Director interactive E2E (routing + topology)
+
+The schema/fixture smoke tests do not exercise real tool registration, thread limits, or depth caps. For that, use:
+
+- `dev/multi-agent/DIRECTOR_E2E.md`
+
+This covers:
+
+- The 90-second routing gate (`single_agent` vs `multi_agent`).
+- Depth=2 spawn topology and allowlists.
+- Orchestrator windowed scheduling via `functions.wait`.
+
 ## 1) Preconditions
 
 1. Ensure your working tree includes the latest protocol package updates.
