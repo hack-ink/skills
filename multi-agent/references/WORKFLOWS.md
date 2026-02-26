@@ -73,6 +73,7 @@ Guidelines:
 - This workflow assumes the runtime supports **depth=2** nesting:
 - Director (main) -> (Auditor | Orchestrator) -> (coder_spark | coder_codex | operator)
 - Recommended: set `max_depth = 2` and treat it as a **hard cap**.
+- Parameter rationales (timeboxes, review-loop budgets, window sizing): `references/PARAMETERS.md`.
 
 ## 0.2.1) `write` vs `read_only` workflows (required)
 
@@ -177,11 +178,13 @@ Run leaf agents in a window:
 2. Use `functions.wait` polling.
 3. As one completes, review the result, then spawn the next slice (replenish) until all slices are done.
 4. Always `close_agent` for completed children to avoid thread starvation.
+5. If a child stalls or fails, apply the supervision policy in `references/SUPERVISION.md` (soft interrupt -> hard cancel/retry/escalate).
 
 Recommended default:
 
 - Keep a small reserve for orchestration/review work.
   - Example: `reserve_threads=2`, `window_size = max_threads - reserve_threads`
+  - Prefer capping `window_size` to a modest `window_cap` (often `4..8`) unless slices are demonstrably independent and the bottleneck is tool IO.
 
 Do not spawn a dedicated waiting agent. The Orchestrator must perform `functions.wait` polling itself as part of the windowing loop.
 

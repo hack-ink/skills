@@ -42,6 +42,7 @@ Provide a reliable, auditable slow-path workflow for multi-agent execution: expl
 ## How to use
 
 1. Read the operational playbook: `multi-agent/references/WORKFLOWS.md`.
+2. For sizing/timeboxes and stall handling: `multi-agent/references/PARAMETERS.md` and `multi-agent/references/SUPERVISION.md`.
 
 ## Outputs
 

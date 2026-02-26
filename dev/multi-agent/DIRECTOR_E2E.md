@@ -63,8 +63,22 @@ Optional automated check (log-based):
 2. Run:
    - `python3 dev/multi-agent/e2e/verify_codex_tui_log.py --ssot-id <ssot_id>`
 
+## Test C — Supervision (stall / crash handling)
+
+Goal: confirm the Orchestrator does not “wait forever” and can recover from stalled or failed leaf slices.
+
+1. Pick a task with at least 2 Operator slices where one can plausibly stall (for example: a command that might hang, or a web research slice that can get stuck).
+2. As Director, ensure the Orchestrator follows `multi-agent/references/SUPERVISION.md`:
+   - bounded `functions.wait` polling (wait-any),
+   - soft timeout interruption via `send_input(interrupt=true)`,
+   - hard timeout recovery (close/re-dispatch or escalate with `blocking_reason="timeout:..."`).
+
+Pass criteria:
+
+- Orchestrator continues making progress while other runnable work exists (does not block on one stalled slice).
+- If a slice fails or stalls beyond the hard timeout, the Orchestrator either retries safely or escalates as blocked with an explicit `timeout:` reason.
+
 ## Notes
 
 - This test intentionally relies on real runtime behavior (tool registration, depth caps, and thread scheduling).
 - The log verifier is conservative: it checks spawn topology and wait usage; it does not attempt to prove every windowing detail.
-

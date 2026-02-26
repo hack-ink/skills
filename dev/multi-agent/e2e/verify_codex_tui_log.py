@@ -86,6 +86,23 @@ def main(argv: list[str]) -> int:
     spawn_calls = [c for c in calls if c.tool == "spawn_agent"]
     wait_calls = [c for c in calls if c.tool == "wait"]
 
+    # Fast-fail: if we can see any nested spawn that mentions this ssot_id and is not a leaf role,
+    # it's almost certainly an illegal same-level or cross-level spawn (e.g., Orchestrator spawning Orchestrator).
+    ssot_tagged_spawns = [
+        c for c in spawn_calls if args.ssot_id in str(c.payload.get("message", ""))
+    ]
+    illegal_ssot_nested_spawns = [
+        c
+        for c in ssot_tagged_spawns
+        if c.nesting >= 2 and c.payload.get("agent_type") not in LEAF_SPAWN_ALLOWLIST
+    ]
+    if illegal_ssot_nested_spawns:
+        bad = illegal_ssot_nested_spawns[0]
+        fail(
+            "detected non-leaf spawn_agent nested under a session_loop for this ssot_id "
+            f"(line {bad.lineno}, nesting={bad.nesting}, agent_type={bad.payload.get('agent_type')!r})"
+        )
+
     # Identify the root Director thread_id for this ssot_id by finding a root-level spawn message
     # that contains the ssot_id (this is the only reliable linkage without ToolResult ids).
     root_markers = [

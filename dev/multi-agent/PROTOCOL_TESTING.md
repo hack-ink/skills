@@ -316,7 +316,7 @@ Pass criteria:
 
 Method:
 
-1. Run a long-running action under each role with poll intervals from your active AGENTS protocol section 9.
+1. Run a long-running action under each role (Operator and/or Coder) using windowed `functions.wait` polling.
 2. Verify escalation path when timeout threshold is reached.
 
 Pass criteria:
@@ -325,6 +325,11 @@ Pass criteria:
 - Final blocked output has `status="awaiting_review"`.
 - `blocking_reason` starts with `timeout:`.
 - Output includes non-empty `validation_evidence` where required.
+
+References:
+
+- Polling/windowing + sizing rationale: `multi-agent/references/PARAMETERS.md`
+- Supervision policy (soft interrupt, hard timeout, retry/escalate): `multi-agent/references/SUPERVISION.md`
 
 ## 8) Result Recording Template
 
