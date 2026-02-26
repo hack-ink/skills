@@ -14,7 +14,7 @@ If you change a parameter, update this file and the relevant schemas/fixtures to
   - If uncertain or `t_max_s > 90`, prefer `routing_decision="multi"`.
 - **Recommended defaults:**
   - Small edits: `t_max_s=90` (or less).
-  - Multi-agent runs: pick a concrete number (example: `t_max_s=1200` for a 20-minute run) and record `t_why`.
+  - Multi-agent runs: pick a concrete number (example: `t_max_s=900` for a 15-minute run) and record `t_why`.
 
 ## Review loop budget (Auditor + Orchestrator)
 
