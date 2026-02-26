@@ -40,7 +40,7 @@ This protocol is a **slow path**: it trades overhead for correctness, auditabili
 ### Do not run multi-agent for micro tasks
 
 If the task is `instruction_only`, `vcs_only`, or a tiny `single_file_edit` with clear acceptance criteria, stay in `single_agent`.
-This routing decision should be made by your global `AGENTS.md` before invoking this protocol.
+This routing decision should be made by your routing gate (configured outside this skill) before invoking this protocol.
 
 ### Defense-in-depth: short-circuit if mis-invoked
 

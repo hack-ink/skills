@@ -2,7 +2,7 @@
 	"$schema": "https://json-schema.org/draft/2020-12/schema",
 	"$id": "file:///.codex/dispatch-preflight.schema.json",
 	"title": "Codex Dispatch Preflight",
-	"description": "Structural schema for Director Dispatch Preflight JSON. Cross-field/runtime invariants are enforced by AGENTS.md.",
+	"description": "Structural schema for Director Dispatch Preflight JSON. Cross-field/runtime invariants are enforced by protocol workflow rules and runtime configuration (see references/WORKFLOWS.md).",
 	"type": "object",
 	"required": [
 		"ssot_id",

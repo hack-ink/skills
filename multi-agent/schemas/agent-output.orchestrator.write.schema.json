@@ -514,7 +514,7 @@
 			"review_only": false,
 			"blocking_reason": "not_applicable",
 			"validation_evidence": "All orchestrator invariants satisfied; integration report attached.",
-			"allowed_paths": ["/abs/runtime/.codex/AGENTS.md"],
+			"allowed_paths": ["/abs/repo"],
 				"review_loop": {
 					"policy": "adaptive_min2_max5_second_pass_stable",
 					"self_passes": 2,
