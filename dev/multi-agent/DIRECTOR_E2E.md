@@ -1,4 +1,4 @@
-# Director E2E (interactive)
+# Director E2E (interactive, vNext)
 
 This is an **interactive** end-to-end test that exercises the protocol in a real Codex session (as the Director).
 
@@ -7,14 +7,14 @@ It is intentionally separate from `dev/multi-agent/e2e/run_smoke.py`, which vali
 ## Goals
 
 - Verify the Director routing gate (the 90-second rule) is applied consistently.
-- Verify the depth=2 spawn topology and spawn allowlists are respected in practice.
-- Verify Orchestrator uses windowed scheduling (`functions.wait`) and closes completed children.
-- Verify Auditor gating (spec -> quality) happens before the Director finalizes.
+- Verify the max_depth=1 broker topology and spawn allowlists are respected in practice.
+- Verify the Director uses windowed scheduling (`functions.wait`) and closes completed children.
+- Verify optional Auditor review works (recommended for write/mixed).
 
 ## Preconditions
 
 - Runtime config:
-  - `max_depth = 2`
+  - `max_depth = 1`
   - `max_threads` is non-trivial (>= 8 is usually enough for a small window).
 - You can access the Codex TUI log: `~/.codex/log/codex-tui.log`.
 
@@ -46,34 +46,34 @@ Goal: confirm uncertain or >90s work escalates to multi-agent and follows the pr
    - `t_max_s` (> 90) and `t_why`, **or** explicitly note uncertainty.
    - `route="multi"`
 3. Run the protocol:
-   - Director spawns exactly one `auditor` and one `orchestrator` peer for a single `ssot_id`.
-   - Orchestrator spawns only leaf slices (`operator`, `coder_spark`, `coder_codex` fallback).
-   - Orchestrator uses windowed `functions.wait` scheduling.
-   - Auditor gates completion (spec then quality) before the Director finalizes.
+   - Director plans a slice queue.
+   - Director spawns depth=1 workers (`operator`, `coder_spark`/`coder_codex`) using JSON-only `task-dispatch/1`.
+   - Director schedules with windowed wait-any (`functions.wait`) and replenishes as slots free up.
+   - (Recommended for write/mixed) Director spawns an `auditor` to review evidence before finalizing.
 
 Pass criteria:
 
-- No same-level or cross-level spawns occur (especially: Orchestrator never spawns Orchestrator/Auditor/Director).
-- Orchestrator calls `functions.wait` at least once during the run.
-- The run stays within depth=2.
-- Orchestrator dispatches leaf slices using schema-dispatched `spawn_agent` messages (`schemas/leaf-dispatch.schema.json`).
+- No non-Director spawns occur (brokered collab).
+- The Director calls `functions.wait` at least once during the run.
+- The run stays within depth=1.
+- Leaf slices are dispatched using JSON-only `task-dispatch/1` (`multi-agent/schemas/task-dispatch.schema.json`).
 
 ## Test C — Supervision (stall / crash handling)
 
-Goal: confirm the Orchestrator does not “wait forever” and can recover from stalled or failed leaf slices.
+Goal: confirm the Director does not “wait forever” and can recover from stalled or failed leaf slices.
 
 1. Pick a task with at least 2 Operator slices where one can plausibly stall (for example: a command that might hang, or a web research slice that can get stuck).
-2. As Director, ensure the Orchestrator follows `multi-agent/references/SUPERVISION.md`:
+2. As Director, ensure the brokered supervision follows `multi-agent/PLAYBOOK.md`:
    - bounded `functions.wait` polling (wait-any),
    - soft timeout interruption via `send_input(interrupt=true)`,
    - hard timeout recovery (close/re-dispatch or escalate with `blocking_reason="timeout:..."`).
 
 Pass criteria:
 
-- Orchestrator continues making progress while other runnable work exists (does not block on one stalled slice).
-- If a slice fails or stalls beyond the hard timeout, the Orchestrator either retries safely or escalates as blocked with an explicit `timeout:` reason.
+- The Director continues making progress while other runnable work exists (does not block on one stalled slice).
+- If a slice fails or stalls beyond the hard timeout, the run either retries safely or escalates as blocked with an explicit `timeout:` reason.
 
 ## Notes
 
 - This test intentionally relies on real runtime behavior (tool registration, depth caps, and thread scheduling).
-- The log verifier is conservative: it checks spawn topology and wait usage; it does not attempt to prove every windowing detail.
+- Use the TUI log as evidence; this doc does not prescribe an automated log verifier.

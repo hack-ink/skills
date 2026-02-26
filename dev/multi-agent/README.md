@@ -12,5 +12,5 @@ python3 dev/multi-agent/e2e/run_smoke.py
 
 ## Docs
 
-- Methodology: `dev/multi-agent/PROTOCOL_TESTING.md`
-- Fixtures: `dev/multi-agent/e2e/`
+- Director interactive e2e: `dev/multi-agent/DIRECTOR_E2E.md`
+- Fixtures + validators: `dev/multi-agent/e2e/`

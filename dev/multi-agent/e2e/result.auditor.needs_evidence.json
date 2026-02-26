@@ -1,0 +1,14 @@
+{
+  "schema": "review-result.auditor/1",
+  "ssot_id": "e2e-write-4aeb119f4748",
+  "task_id": "e2e-write_mixed",
+  "role": "auditor",
+  "verdict": "NEEDS_EVIDENCE",
+  "summary": "Need proof that the tool produces stable scenario-hash tokens.",
+  "findings": [
+    { "severity": "minor", "message": "Tool behavior not evidenced in outputs." }
+  ],
+  "required_fixes": [],
+  "required_evidence": ["Command output showing make_ssot_id.py for one scenario."]
+}
+

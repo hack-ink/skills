@@ -1,0 +1,307 @@
+[
+  {
+    "schema": "task-dispatch/1",
+    "ssot_id": "e2e-read-04c9d864d719",
+    "task_id": "e2e-read_only",
+    "slice_id": "op-01",
+    "agent_type": "operator",
+    "slice_kind": "probe",
+    "timebox_minutes": 4,
+    "allowed_paths": [],
+    "ownership_paths": [],
+    "dependencies": [],
+    "task_contract": {
+      "goal": "Quickly inventory relevant files and risks.",
+      "acceptance": ["List candidate files and one recommended next slice."],
+      "constraints": ["Read-only; do not propose edits."],
+      "no_touch": []
+    },
+    "evidence_requirements": ["files_read"]
+  },
+  {
+    "schema": "task-dispatch/1",
+    "ssot_id": "e2e-read-04c9d864d719",
+    "task_id": "e2e-read_only",
+    "slice_id": "op-02",
+    "agent_type": "operator",
+    "slice_kind": "probe",
+    "timebox_minutes": 4,
+    "allowed_paths": [],
+    "ownership_paths": [],
+    "dependencies": [],
+    "task_contract": {
+      "goal": "Check for existing invariants and identify ambiguity.",
+      "acceptance": ["Return concrete questions or confirmations with evidence."],
+      "constraints": ["Read-only."],
+      "no_touch": []
+    },
+    "evidence_requirements": ["files_read"]
+  },
+  {
+    "schema": "task-dispatch/1",
+    "ssot_id": "e2e-read-04c9d864d719",
+    "task_id": "e2e-read_only",
+    "slice_id": "op-03",
+    "agent_type": "operator",
+    "slice_kind": "probe",
+    "timebox_minutes": 4,
+    "allowed_paths": [],
+    "ownership_paths": [],
+    "dependencies": [],
+    "task_contract": {
+      "goal": "Locate any relevant configs and summarize current values.",
+      "acceptance": ["Return paths + the exact current values."],
+      "constraints": ["Read-only."],
+      "no_touch": []
+    },
+    "evidence_requirements": ["commands", "files_read"]
+  },
+  {
+    "schema": "task-dispatch/1",
+    "ssot_id": "e2e-read-04c9d864d719",
+    "task_id": "e2e-read_only",
+    "slice_id": "op-04",
+    "agent_type": "operator",
+    "slice_kind": "probe",
+    "timebox_minutes": 4,
+    "allowed_paths": [],
+    "ownership_paths": [],
+    "dependencies": [],
+    "task_contract": {
+      "goal": "Scan for leftover references to removed roles and report them.",
+      "acceptance": ["Return a list of matches (file + line) and a quick classification."],
+      "constraints": ["Read-only."],
+      "no_touch": []
+    },
+    "evidence_requirements": ["commands"]
+  },
+  {
+    "schema": "task-dispatch/1",
+    "ssot_id": "e2e-read-04c9d864d719",
+    "task_id": "e2e-read_only",
+    "slice_id": "op-05",
+    "agent_type": "operator",
+    "slice_kind": "work",
+    "timebox_minutes": 6,
+    "allowed_paths": [],
+    "ownership_paths": [],
+    "dependencies": [],
+    "task_contract": {
+      "goal": "Draft a minimal director runbook for wait-any scheduling.",
+      "acceptance": ["Return a short checklist the Director can follow."],
+      "constraints": ["Read-only; propose text only."],
+      "no_touch": []
+    },
+    "evidence_requirements": []
+  },
+  {
+    "schema": "task-dispatch/1",
+    "ssot_id": "e2e-read-04c9d864d719",
+    "task_id": "e2e-read_only",
+    "slice_id": "op-06",
+    "agent_type": "operator",
+    "slice_kind": "work",
+    "timebox_minutes": 6,
+    "allowed_paths": [],
+    "ownership_paths": [],
+    "dependencies": [],
+    "task_contract": {
+      "goal": "Summarize failure modes (stall, crash, schema mismatch) and recommended handling.",
+      "acceptance": ["Return a concise table: symptom -> director action."],
+      "constraints": ["Read-only."],
+      "no_touch": []
+    },
+    "evidence_requirements": []
+  },
+  {
+    "schema": "task-dispatch/1",
+    "ssot_id": "e2e-read-04c9d864d719",
+    "task_id": "e2e-read_only",
+    "slice_id": "op-07",
+    "agent_type": "operator",
+    "slice_kind": "work",
+    "timebox_minutes": 6,
+    "allowed_paths": [],
+    "ownership_paths": [],
+    "dependencies": [],
+    "task_contract": {
+      "goal": "Suggest an initial slice breakdown for a hypothetical mixed task.",
+      "acceptance": ["Return 6–12 slices with ownership scopes and timeboxes."],
+      "constraints": ["Read-only."],
+      "no_touch": []
+    },
+    "evidence_requirements": []
+  },
+  {
+    "schema": "task-dispatch/1",
+    "ssot_id": "e2e-read-04c9d864d719",
+    "task_id": "e2e-read_only",
+    "slice_id": "op-08",
+    "agent_type": "operator",
+    "slice_kind": "work",
+    "timebox_minutes": 6,
+    "allowed_paths": [],
+    "ownership_paths": [],
+    "dependencies": [],
+    "task_contract": {
+      "goal": "Confirm ssot_id generation policy and sample output.",
+      "acceptance": ["Return an ssot_id example and explain its derivation."],
+      "constraints": ["Read-only."],
+      "no_touch": []
+    },
+    "evidence_requirements": []
+  },
+  {
+    "schema": "task-dispatch/1",
+    "ssot_id": "e2e-read-04c9d864d719",
+    "task_id": "e2e-read_only",
+    "slice_id": "op-09",
+    "agent_type": "operator",
+    "slice_kind": "work",
+    "timebox_minutes": 6,
+    "allowed_paths": [],
+    "ownership_paths": [],
+    "dependencies": [],
+    "task_contract": {
+      "goal": "Enumerate protocol defaults and ensure they are stated as defaults (no hidden magic numbers).",
+      "acceptance": ["Return a list of defaults with a 1-line rationale each."],
+      "constraints": ["Read-only."],
+      "no_touch": []
+    },
+    "evidence_requirements": []
+  },
+  {
+    "schema": "task-dispatch/1",
+    "ssot_id": "e2e-read-04c9d864d719",
+    "task_id": "e2e-read_only",
+    "slice_id": "op-10",
+    "agent_type": "operator",
+    "slice_kind": "work",
+    "timebox_minutes": 6,
+    "allowed_paths": [],
+    "ownership_paths": [],
+    "dependencies": [],
+    "task_contract": {
+      "goal": "Review the schema contracts for executability and ambiguity.",
+      "acceptance": ["Return top 3 ambiguities and suggested fixes."],
+      "constraints": ["Read-only."],
+      "no_touch": []
+    },
+    "evidence_requirements": ["files_read"]
+  },
+  {
+    "schema": "task-dispatch/1",
+    "ssot_id": "e2e-read-04c9d864d719",
+    "task_id": "e2e-read_only",
+    "slice_id": "op-11",
+    "agent_type": "operator",
+    "slice_kind": "work",
+    "timebox_minutes": 6,
+    "allowed_paths": [],
+    "ownership_paths": [],
+    "dependencies": [],
+    "task_contract": {
+      "goal": "Check for any config changes required to enforce max_depth=1.",
+      "acceptance": ["Return exact file path(s) and suggested minimal change(s)."],
+      "constraints": ["Read-only."],
+      "no_touch": []
+    },
+    "evidence_requirements": ["files_read"]
+  },
+  {
+    "schema": "task-dispatch/1",
+    "ssot_id": "e2e-read-04c9d864d719",
+    "task_id": "e2e-read_only",
+    "slice_id": "op-12",
+    "agent_type": "operator",
+    "slice_kind": "work",
+    "timebox_minutes": 6,
+    "allowed_paths": [],
+    "ownership_paths": [],
+    "dependencies": [],
+    "task_contract": {
+      "goal": "Propose an owner-safe way to cap write concurrency.",
+      "acceptance": ["Return one recommended cap and why it is safe."],
+      "constraints": ["Read-only."],
+      "no_touch": []
+    },
+    "evidence_requirements": []
+  },
+  {
+    "schema": "task-dispatch/1",
+    "ssot_id": "e2e-read-04c9d864d719",
+    "task_id": "e2e-read_only",
+    "slice_id": "op-13",
+    "agent_type": "operator",
+    "slice_kind": "work",
+    "timebox_minutes": 6,
+    "allowed_paths": [],
+    "ownership_paths": [],
+    "dependencies": [],
+    "task_contract": {
+      "goal": "Summarize how to handle worker schema mismatches.",
+      "acceptance": ["Return a short director checklist for recovery."],
+      "constraints": ["Read-only."],
+      "no_touch": []
+    },
+    "evidence_requirements": []
+  },
+  {
+    "schema": "task-dispatch/1",
+    "ssot_id": "e2e-read-04c9d864d719",
+    "task_id": "e2e-read_only",
+    "slice_id": "op-14",
+    "agent_type": "operator",
+    "slice_kind": "work",
+    "timebox_minutes": 6,
+    "allowed_paths": [],
+    "ownership_paths": [],
+    "dependencies": [],
+    "task_contract": {
+      "goal": "Evaluate whether Auditor is necessary for read-only runs.",
+      "acceptance": ["Return a clear rule and rationale."],
+      "constraints": ["Read-only."],
+      "no_touch": []
+    },
+    "evidence_requirements": []
+  },
+  {
+    "schema": "task-dispatch/1",
+    "ssot_id": "e2e-read-04c9d864d719",
+    "task_id": "e2e-read_only",
+    "slice_id": "op-15",
+    "agent_type": "operator",
+    "slice_kind": "work",
+    "timebox_minutes": 6,
+    "allowed_paths": [],
+    "ownership_paths": [],
+    "dependencies": [],
+    "task_contract": {
+      "goal": "Check that no docs suggest same-level spawn or cross-level spawn.",
+      "acceptance": ["Return PASS/FAIL with evidence."],
+      "constraints": ["Read-only."],
+      "no_touch": []
+    },
+    "evidence_requirements": ["commands"]
+  },
+  {
+    "schema": "task-dispatch/1",
+    "ssot_id": "e2e-read-04c9d864d719",
+    "task_id": "e2e-read_only",
+    "slice_id": "op-16",
+    "agent_type": "operator",
+    "slice_kind": "work",
+    "timebox_minutes": 6,
+    "allowed_paths": [],
+    "ownership_paths": [],
+    "dependencies": [],
+    "task_contract": {
+      "goal": "Propose improvements to slice granularity and parallel efficiency.",
+      "acceptance": ["Return 3 concrete heuristics with examples."],
+      "constraints": ["Read-only."],
+      "no_touch": []
+    },
+    "evidence_requirements": []
+  }
+]
+

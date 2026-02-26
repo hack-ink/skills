@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "worker-result.coder/1",
+  "title": "worker-result.coder/1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "ssot_id",
+    "task_id",
+    "slice_id",
+    "role",
+    "status",
+    "summary",
+    "allowed_paths",
+    "changeset",
+    "verification"
+  ],
+  "properties": {
+    "schema": { "const": "worker-result.coder/1" },
+    "ssot_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*-[0-9a-f]{8,64}$"
+    },
+    "task_id": { "type": "string", "minLength": 1 },
+    "slice_id": { "type": "string", "minLength": 1 },
+    "role": { "const": "coder" },
+    "agent_type": { "type": "string", "enum": ["coder_spark", "coder_codex"] },
+    "status": { "type": "string", "enum": ["done", "blocked", "partial"] },
+    "summary": { "type": "string", "minLength": 1 },
+    "allowed_paths": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "minItems": 1
+    },
+    "changeset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["touched_paths"],
+      "properties": {
+        "touched_paths": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1
+        },
+        "notes": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "default": []
+        }
+      }
+    },
+    "verification": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["cmd", "exit_code"],
+        "properties": {
+          "cmd": { "type": "string", "minLength": 1 },
+          "cwd": { "type": "string", "minLength": 1 },
+          "exit_code": { "type": "integer" },
+          "stdout_excerpt": { "type": "string" },
+          "stderr_excerpt": { "type": "string" }
+        }
+      },
+      "minItems": 1
+    }
+  },
+  "examples": [
+    {
+      "schema": "worker-result.coder/1",
+      "ssot_id": "e2e-write-4aeb119f4748",
+      "task_id": "e2e",
+      "slice_id": "coder-1",
+      "role": "coder",
+      "agent_type": "coder_spark",
+      "status": "done",
+      "summary": "Updated multi-agent playbook and schemas; smoke tests pass.",
+      "allowed_paths": ["multi-agent/"],
+      "changeset": {
+        "touched_paths": ["multi-agent/PLAYBOOK.md", "multi-agent/schemas/task-dispatch.schema.json"]
+      },
+      "verification": [
+        {
+          "cmd": "python3 dev/multi-agent/e2e/run_smoke.py",
+          "cwd": "/Users/xavier/code/trusted/x/hack-ink/skills",
+          "exit_code": 0,
+          "stdout_excerpt": "OK: e2e fixtures + invariants"
+        }
+      ]
+    }
+  ]
+}

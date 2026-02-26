@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "task-dispatch/1",
+  "title": "task-dispatch/1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "ssot_id",
+    "task_id",
+    "slice_id",
+    "agent_type",
+    "timebox_minutes",
+    "allowed_paths",
+    "ownership_paths",
+    "task_contract"
+  ],
+  "properties": {
+    "schema": { "const": "task-dispatch/1" },
+    "ssot_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*-[0-9a-f]{8,64}$"
+    },
+    "task_id": { "type": "string", "minLength": 1 },
+    "slice_id": { "type": "string", "minLength": 1 },
+    "agent_type": {
+      "type": "string",
+      "enum": ["operator", "coder_spark", "coder_codex", "auditor"]
+    },
+    "slice_kind": {
+      "type": "string",
+      "enum": ["probe", "work", "review", "merge"],
+      "default": "work"
+    },
+    "timebox_minutes": { "type": "integer", "minimum": 1, "maximum": 60 },
+    "allowed_paths": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "default": []
+    },
+    "ownership_paths": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "default": []
+    },
+    "dependencies": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "default": []
+    },
+    "task_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["goal", "acceptance", "constraints"],
+      "properties": {
+        "goal": { "type": "string", "minLength": 1 },
+        "acceptance": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1
+        },
+        "constraints": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "default": []
+        },
+        "no_touch": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "default": []
+        }
+      }
+    },
+    "evidence_requirements": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "default": []
+    }
+  },
+  "examples": [
+    {
+      "schema": "task-dispatch/1",
+      "ssot_id": "e2e-write-4aeb119f4748",
+      "task_id": "e2e",
+      "slice_id": "coder-1",
+      "agent_type": "coder_spark",
+      "slice_kind": "work",
+      "timebox_minutes": 12,
+      "allowed_paths": ["multi-agent/"],
+      "ownership_paths": ["multi-agent/schemas/"],
+      "dependencies": [],
+      "task_contract": {
+        "goal": "Add a new schema file.",
+        "acceptance": ["Schema validates with Draft202012Validator."],
+        "constraints": ["Do not edit unrelated directories."],
+        "no_touch": []
+      },
+      "evidence_requirements": ["commands", "verification"]
+    }
+  ]
+}

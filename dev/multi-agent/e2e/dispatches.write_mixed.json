@@ -1,0 +1,231 @@
+[
+  {
+    "schema": "task-dispatch/1",
+    "ssot_id": "e2e-write-4aeb119f4748",
+    "task_id": "e2e-write_mixed",
+    "slice_id": "coder-01",
+    "agent_type": "coder_spark",
+    "slice_kind": "work",
+    "timebox_minutes": 12,
+    "allowed_paths": ["multi-agent/schemas/"],
+    "ownership_paths": ["multi-agent/schemas/"],
+    "dependencies": [],
+    "task_contract": {
+      "goal": "Update schema files under multi-agent/schemas/.",
+      "acceptance": ["Schemas validate under Draft202012Validator."],
+      "constraints": ["Only edit the owned directory."],
+      "no_touch": []
+    },
+    "evidence_requirements": ["verification"]
+  },
+  {
+    "schema": "task-dispatch/1",
+    "ssot_id": "e2e-write-4aeb119f4748",
+    "task_id": "e2e-write_mixed",
+    "slice_id": "coder-02",
+    "agent_type": "coder_spark",
+    "slice_kind": "work",
+    "timebox_minutes": 12,
+    "allowed_paths": ["multi-agent/tools/"],
+    "ownership_paths": ["multi-agent/tools/"],
+    "dependencies": [],
+    "task_contract": {
+      "goal": "Update tools under multi-agent/tools/.",
+      "acceptance": ["Tool runs and produces expected output."],
+      "constraints": ["Only edit the owned directory."],
+      "no_touch": []
+    },
+    "evidence_requirements": ["verification"]
+  },
+  {
+    "schema": "task-dispatch/1",
+    "ssot_id": "e2e-write-4aeb119f4748",
+    "task_id": "e2e-write_mixed",
+    "slice_id": "coder-03",
+    "agent_type": "coder_spark",
+    "slice_kind": "work",
+    "timebox_minutes": 12,
+    "allowed_paths": ["dev/multi-agent/"],
+    "ownership_paths": ["dev/multi-agent/DIRECTOR_E2E.md"],
+    "dependencies": [],
+    "task_contract": {
+      "goal": "Update dev docs for Director interactive testing.",
+      "acceptance": ["Doc matches vNext roles and schemas."],
+      "constraints": ["Only edit the owned file."],
+      "no_touch": []
+    },
+    "evidence_requirements": []
+  },
+  {
+    "schema": "task-dispatch/1",
+    "ssot_id": "e2e-write-4aeb119f4748",
+    "task_id": "e2e-write_mixed",
+    "slice_id": "coder-04",
+    "agent_type": "coder_spark",
+    "slice_kind": "work",
+    "timebox_minutes": 12,
+    "allowed_paths": ["dev/multi-agent/e2e/"],
+    "ownership_paths": ["dev/multi-agent/e2e/"],
+    "dependencies": [],
+    "task_contract": {
+      "goal": "Update dev fixtures + validator scripts.",
+      "acceptance": ["python3 dev/multi-agent/e2e/run_smoke.py passes."],
+      "constraints": ["Only edit the owned directory."],
+      "no_touch": []
+    },
+    "evidence_requirements": ["verification"]
+  },
+  {
+    "schema": "task-dispatch/1",
+    "ssot_id": "e2e-write-4aeb119f4748",
+    "task_id": "e2e-write_mixed",
+    "slice_id": "coder-05",
+    "agent_type": "coder_spark",
+    "slice_kind": "work",
+    "timebox_minutes": 12,
+    "allowed_paths": ["rust-style/"],
+    "ownership_paths": ["rust-style/"],
+    "dependencies": [],
+    "task_contract": {
+      "goal": "Update rust-style docs (example only).",
+      "acceptance": ["No ambiguity introduced."],
+      "constraints": ["Only edit the owned directory."],
+      "no_touch": []
+    },
+    "evidence_requirements": []
+  },
+  {
+    "schema": "task-dispatch/1",
+    "ssot_id": "e2e-write-4aeb119f4748",
+    "task_id": "e2e-write_mixed",
+    "slice_id": "coder-06",
+    "agent_type": "coder_spark",
+    "slice_kind": "work",
+    "timebox_minutes": 12,
+    "allowed_paths": ["python-style/"],
+    "ownership_paths": ["python-style/"],
+    "dependencies": [],
+    "task_contract": {
+      "goal": "Update python-style docs (example only).",
+      "acceptance": ["No ambiguity introduced."],
+      "constraints": ["Only edit the owned directory."],
+      "no_touch": []
+    },
+    "evidence_requirements": []
+  },
+  {
+    "schema": "task-dispatch/1",
+    "ssot_id": "e2e-write-4aeb119f4748",
+    "task_id": "e2e-write_mixed",
+    "slice_id": "op-01",
+    "agent_type": "operator",
+    "slice_kind": "probe",
+    "timebox_minutes": 4,
+    "allowed_paths": [],
+    "ownership_paths": [],
+    "dependencies": [],
+    "task_contract": {
+      "goal": "Run smoke checks and collect evidence.",
+      "acceptance": ["Provide command outputs for schema/fixture validation."],
+      "constraints": ["Read-only."],
+      "no_touch": []
+    },
+    "evidence_requirements": ["commands"]
+  },
+  {
+    "schema": "task-dispatch/1",
+    "ssot_id": "e2e-write-4aeb119f4748",
+    "task_id": "e2e-write_mixed",
+    "slice_id": "op-02",
+    "agent_type": "operator",
+    "slice_kind": "probe",
+    "timebox_minutes": 4,
+    "allowed_paths": [],
+    "ownership_paths": [],
+    "dependencies": [],
+    "task_contract": {
+      "goal": "Check for ownership overlaps among coder slices.",
+      "acceptance": ["Return PASS/FAIL with evidence."],
+      "constraints": ["Read-only."],
+      "no_touch": []
+    },
+    "evidence_requirements": []
+  },
+  {
+    "schema": "task-dispatch/1",
+    "ssot_id": "e2e-write-4aeb119f4748",
+    "task_id": "e2e-write_mixed",
+    "slice_id": "op-03",
+    "agent_type": "operator",
+    "slice_kind": "probe",
+    "timebox_minutes": 4,
+    "allowed_paths": [],
+    "ownership_paths": [],
+    "dependencies": [],
+    "task_contract": {
+      "goal": "Scan for forbidden role references in docs.",
+      "acceptance": ["Return list of matches or explicit none."],
+      "constraints": ["Read-only."],
+      "no_touch": []
+    },
+    "evidence_requirements": ["commands"]
+  },
+  {
+    "schema": "task-dispatch/1",
+    "ssot_id": "e2e-write-4aeb119f4748",
+    "task_id": "e2e-write_mixed",
+    "slice_id": "op-04",
+    "agent_type": "operator",
+    "slice_kind": "work",
+    "timebox_minutes": 6,
+    "allowed_paths": [],
+    "ownership_paths": [],
+    "dependencies": [],
+    "task_contract": {
+      "goal": "Confirm ssot_id stability policy (scenario-hash).",
+      "acceptance": ["Explain how ssot_id is generated and why no secrets/dates."],
+      "constraints": ["Read-only."],
+      "no_touch": []
+    },
+    "evidence_requirements": []
+  },
+  {
+    "schema": "task-dispatch/1",
+    "ssot_id": "e2e-write-4aeb119f4748",
+    "task_id": "e2e-write_mixed",
+    "slice_id": "op-05",
+    "agent_type": "operator",
+    "slice_kind": "work",
+    "timebox_minutes": 6,
+    "allowed_paths": [],
+    "ownership_paths": [],
+    "dependencies": [],
+    "task_contract": {
+      "goal": "Draft the final integration checklist for Director.",
+      "acceptance": ["Return a short checklist for merging worker results."],
+      "constraints": ["Read-only."],
+      "no_touch": []
+    },
+    "evidence_requirements": []
+  },
+  {
+    "schema": "task-dispatch/1",
+    "ssot_id": "e2e-write-4aeb119f4748",
+    "task_id": "e2e-write_mixed",
+    "slice_id": "op-06",
+    "agent_type": "operator",
+    "slice_kind": "work",
+    "timebox_minutes": 6,
+    "allowed_paths": [],
+    "ownership_paths": [],
+    "dependencies": [],
+    "task_contract": {
+      "goal": "Identify the highest-risk failure mode in this protocol and mitigation.",
+      "acceptance": ["Return one mitigation that is actionable."],
+      "constraints": ["Read-only."],
+      "no_touch": []
+    },
+    "evidence_requirements": []
+  }
+]
+

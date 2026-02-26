@@ -5,42 +5,30 @@ from __future__ import annotations
 import argparse
 import hashlib
 import re
-import secrets
 import sys
-import uuid
 
 
 SCENARIO_RE = re.compile(r"^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$")
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
-    p = argparse.ArgumentParser(description="Generate a protocol v2 ssot_id.")
+    p = argparse.ArgumentParser(
+        description="Generate an ssot_id as scenario-hash (stable, no dates, no secrets)."
+    )
     p.add_argument(
         "scenario",
         help="Scenario slug (ASCII kebab-case), e.g. 'pack-configs-pubfi-cli'",
     )
     p.add_argument(
-        "--token",
-        choices=["hex", "uuid", "sha256"],
-        default="hex",
-        help="Token strategy (default: hex).",
-    )
-    p.add_argument(
-        "--hex-bytes",
-        type=int,
-        default=6,
-        help="Bytes for hex token (default: 6 -> 12 hex chars). Ignored for uuid/sha256.",
-    )
-    p.add_argument(
-        "--seed",
+        "--namespace",
         default=None,
-        help="Seed for sha256 token (required when --token sha256).",
+        help="Optional namespace prefix for hashing (improves uniqueness across repos).",
     )
     p.add_argument(
-        "--sha256-hex-len",
+        "--hex-len",
         type=int,
         default=12,
-        help="Hex length for sha256 token prefix (default: 12).",
+        help="Hex length for token prefix (default: 12; range: 8..64).",
     )
     return p.parse_args(argv)
 
@@ -55,22 +43,14 @@ def main(argv: list[str]) -> int:
         )
         return 2
 
-    if args.token == "uuid":
-        token = str(uuid.uuid4())
-    elif args.token == "sha256":
-        if not args.seed:
-            print("ERROR: --seed is required when --token sha256", file=sys.stderr)
-            return 2
-        hex_len = int(args.sha256_hex_len)
-        if hex_len < 8 or hex_len > 64:
-            print("ERROR: --sha256-hex-len must be 8..64", file=sys.stderr)
-            return 2
-        token = hashlib.sha256(args.seed.encode("utf-8")).hexdigest()[:hex_len]
-    else:
-        if args.hex_bytes < 4 or args.hex_bytes > 32:
-            print("ERROR: --hex-bytes must be 4..32 (8..64 hex chars)", file=sys.stderr)
-            return 2
-        token = secrets.token_hex(args.hex_bytes)
+    hex_len = int(args.hex_len)
+    if hex_len < 8 or hex_len > 64:
+        print("ERROR: --hex-len must be 8..64", file=sys.stderr)
+        return 2
+
+    ns = (args.namespace or "").strip()
+    payload = f"{ns}:{scenario}" if ns else scenario
+    token = hashlib.sha256(payload.encode("utf-8")).hexdigest()[:hex_len]
 
     print(f"{scenario}-{token}")
     return 0

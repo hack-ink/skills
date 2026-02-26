@@ -1,0 +1,23 @@
+{
+  "schema": "worker-result.coder/1",
+  "ssot_id": "e2e-write-4aeb119f4748",
+  "task_id": "e2e-write_mixed",
+  "slice_id": "coder-01",
+  "role": "coder",
+  "agent_type": "coder_spark",
+  "status": "done",
+  "summary": "Implemented vNext schemas and validated them locally.",
+  "allowed_paths": ["multi-agent/"],
+  "changeset": {
+    "touched_paths": ["multi-agent/schemas/task-dispatch.schema.json"]
+  },
+  "verification": [
+    {
+      "cmd": "python3 dev/multi-agent/e2e/run_smoke.py",
+      "cwd": "/Users/xavier/code/trusted/x/hack-ink/skills",
+      "exit_code": 0,
+      "stdout_excerpt": "OK: e2e fixtures + invariants"
+    }
+  ]
+}
+

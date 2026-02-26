@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "worker-result.operator/1",
+  "title": "worker-result.operator/1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "ssot_id", "task_id", "slice_id", "role", "status", "summary"],
+  "properties": {
+    "schema": { "const": "worker-result.operator/1" },
+    "ssot_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*-[0-9a-f]{8,64}$"
+    },
+    "task_id": { "type": "string", "minLength": 1 },
+    "slice_id": { "type": "string", "minLength": 1 },
+    "role": { "const": "operator" },
+    "status": { "type": "string", "enum": ["done", "blocked", "partial"] },
+    "summary": { "type": "string", "minLength": 1 },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "commands": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["cmd", "exit_code"],
+            "properties": {
+              "cmd": { "type": "string", "minLength": 1 },
+              "cwd": { "type": "string", "minLength": 1 },
+              "exit_code": { "type": "integer" },
+              "stdout_excerpt": { "type": "string" },
+              "stderr_excerpt": { "type": "string" }
+            }
+          },
+          "default": []
+        },
+        "files_read": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "default": []
+        }
+      },
+      "default": {}
+    },
+    "next_actions": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "default": []
+    }
+  },
+  "examples": [
+    {
+      "schema": "worker-result.operator/1",
+      "ssot_id": "e2e-read-04c9d864d719",
+      "task_id": "e2e",
+      "slice_id": "op-1",
+      "role": "operator",
+      "status": "done",
+      "summary": "Confirmed schemas validate locally and listed files to update.",
+      "evidence": {
+        "commands": [
+          {
+            "cmd": "python3 dev/multi-agent/e2e/run_smoke.py",
+            "cwd": "/Users/xavier/code/trusted/x/hack-ink/skills",
+            "exit_code": 0,
+            "stdout_excerpt": "OK: schema + examples ..."
+          }
+        ],
+        "files_read": ["multi-agent/SKILL.md"]
+      },
+      "next_actions": ["Proceed to coder slice to implement changes."]
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "review-result.auditor/1",
+  "title": "review-result.auditor/1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "ssot_id", "task_id", "role", "verdict", "findings"],
+  "properties": {
+    "schema": { "const": "review-result.auditor/1" },
+    "ssot_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*-[0-9a-f]{8,64}$"
+    },
+    "task_id": { "type": "string", "minLength": 1 },
+    "role": { "const": "auditor" },
+    "verdict": { "type": "string", "enum": ["PASS", "BLOCK", "NEEDS_EVIDENCE"] },
+    "summary": { "type": "string" },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["severity", "message"],
+        "properties": {
+          "severity": { "type": "string", "enum": ["info", "minor", "major", "critical"] },
+          "message": { "type": "string", "minLength": 1 },
+          "evidence": { "type": "string" }
+        }
+      }
+    },
+    "required_fixes": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "default": []
+    },
+    "required_evidence": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "default": []
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "verdict": { "const": "BLOCK" } } },
+      "then": { "properties": { "required_fixes": { "minItems": 1 } } }
+    },
+    {
+      "if": { "properties": { "verdict": { "const": "NEEDS_EVIDENCE" } } },
+      "then": { "properties": { "required_evidence": { "minItems": 1 } } }
+    }
+  ],
+  "examples": [
+    {
+      "schema": "review-result.auditor/1",
+      "ssot_id": "e2e-write-4aeb119f4748",
+      "task_id": "e2e",
+      "role": "auditor",
+      "verdict": "PASS",
+      "summary": "Protocol rules are followed and evidence is sufficient.",
+      "findings": [
+        { "severity": "info", "message": "max_depth=1 broker model prevents same-level spawns." }
+      ]
+    }
+  ]
+}

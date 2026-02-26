@@ -1,24 +1,21 @@
-# E2E Sample Fixtures (v2)
+# E2E Sample Fixtures (vNext)
 
-This directory contains minimal, schema-valid **example payloads** for the protocol v2 E2E test.
+This directory contains schema-valid **example payloads** for the vNext broker model:
 
-It includes:
+- Director-only spawning (`max_depth=1`)
+- No Orchestrator role
+- JSON-only dispatch + JSON-only worker results
 
-- A `write` workflow suite (`*-write.json`)
-- A non-write ops workflow suite (`*-research.json` + `operator-*.json`) (filenames kept for compatibility)
-
-## Validate
+## Validate (repo-local)
 
 From the repo root:
 
 ```sh
-cd /path/to/hack-ink/skills
 python3 dev/multi-agent/e2e/run_smoke.py
 python3 dev/multi-agent/e2e/validate_payloads.py
 ```
 
-## Notes
+## What this proves / doesn’t prove
 
-- These fixtures validate schema shape and required fields.
-- `validate_payloads.py` also enforces cross-payload invariants (ID alignment, coder set consistency, allowed_paths containment) and runs a small negative suite to ensure the invariant checks actually fail when they should.
-- They do not prove runtime behavior (actual spawning, functions.wait, close_agent hygiene).
+- Proves: schema validity, ssot_id format (scenario-hash), and fixture invariants (no forbidden roles, no write ownership overlap).
+- Does not prove: runtime behavior (actual spawning, `functions.wait`, `close_agent` hygiene).
