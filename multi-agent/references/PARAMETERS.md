@@ -10,8 +10,8 @@ If you change a parameter, update this file and the relevant schemas/fixtures to
 - **Where it appears:** Director status notes and sometimes logs.
 - **Why it exists:** forces an explicit routing decision and prevents “accidental multi-agent” for tiny tasks.
 - **Policy:**
-  - If `t_max_s <= 90` and the task is clear/low-risk, prefer `routing_decision="single_agent"`.
-  - If uncertain or `t_max_s > 90`, prefer `routing_decision="multi_agent"`.
+  - If `t_max_s <= 90` and the task is clear/low-risk, prefer `routing_decision="single"`.
+  - If uncertain or `t_max_s > 90`, prefer `routing_decision="multi"`.
 - **Recommended defaults:**
   - Small edits: `t_max_s=90` (or less).
   - Multi-agent runs: pick a concrete number (example: `t_max_s=1200` for a 20-minute run) and record `t_why`.
@@ -58,4 +58,3 @@ You should treat “subagent runs too long” as a supervision problem (see `SUP
 
 - **Soft timeout:** cooperative interruption + request partial results.
 - **Hard timeout:** close/cancel and re-dispatch as a fresh slice, or escalate as `blocked` if progress cannot be recovered safely.
-

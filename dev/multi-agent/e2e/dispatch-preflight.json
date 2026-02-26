@@ -8,7 +8,7 @@
 		"rationale": "E2E sample fixtures for protocol v2 validation.",
 		"timebox_minutes": 30
 	},
-	"routing_decision": "multi_agent",
+	"routing_decision": "multi",
 	"ssot": {
 		"goal": "Run the v2 E2E chain and produce schema-valid payloads with required evidence.",
 		"non_goals": ["No unrelated refactors"],

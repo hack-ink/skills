@@ -62,7 +62,7 @@
 		},
 		"routing_decision": {
 			"type": "string",
-			"enum": ["single_agent", "multi_agent"]
+			"enum": ["single", "multi"]
 		},
 		"ssot": {
 			"type": "object",
@@ -224,7 +224,7 @@
 			},
 			"then": {
 				"properties": {
-						"routing_decision": { "const": "single_agent" },
+						"routing_decision": { "const": "single" },
 					"sizing": { "properties": { "class": { "enum": ["micro", "small"] } } },
 					"parallel_policy": { "properties": { "window_size": { "const": 1 } } }
 				}
@@ -238,7 +238,7 @@
 			},
 			"then": {
 				"properties": {
-					"routing_decision": { "const": "multi_agent" },
+					"routing_decision": { "const": "multi" },
 					"sizing": { "properties": { "class": { "enum": ["medium", "large"] } } }
 				}
 			}
@@ -246,7 +246,7 @@
 		{
 			"if": {
 				"properties": {
-						"routing_decision": { "enum": ["single_agent"] }
+						"routing_decision": { "enum": ["single"] }
 				}
 			},
 			"then": {
@@ -267,7 +267,7 @@
 				"rationale": "Multi-file protocol/schema changes with review gates and validation evidence required.",
 				"timebox_minutes": 30
 			},
-			"routing_decision": "multi_agent",
+			"routing_decision": "multi",
 			"ssot": {
 				"goal": "Apply requested file updates with Auditor-gated Orchestrator execution and evidence-backed verification.",
 				"non_goals": ["No unrelated refactors"],

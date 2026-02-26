@@ -18,7 +18,7 @@ It is intentionally separate from `dev/multi-agent/e2e/run_smoke.py`, which vali
   - `max_threads` is non-trivial (>= 8 is usually enough for a small window).
 - You can access the Codex TUI log: `~/.codex/log/codex-tui.log`.
 
-## Test A — Routing gate (should stay single_agent)
+## Test A — Routing gate (should stay single)
 
 Goal: confirm small, clear tasks do **not** enter multi-agent mode.
 
@@ -26,15 +26,15 @@ Goal: confirm small, clear tasks do **not** enter multi-agent mode.
 2. As Director, record:
    - `t_max_s` (must be <= 90)
    - `t_why`
-   - `route="single_agent"`
-3. Execute the change in `single_agent`.
+   - `route="single"`
+3. Execute the change in `single`.
 
 Pass criteria:
 
 - The Director does not spawn any agents.
-- The task completes with `route="single_agent"`.
+- The task completes with `route="single"`.
 
-## Test B — Routing gate (should escalate to multi_agent)
+## Test B — Routing gate (should escalate to multi)
 
 Goal: confirm uncertain or >90s work escalates to multi-agent and follows the protocol.
 
@@ -44,7 +44,7 @@ Goal: confirm uncertain or >90s work escalates to multi-agent and follows the pr
    - multi-file / risky coordination.
 2. As Director, record:
    - `t_max_s` (> 90) and `t_why`, **or** explicitly note uncertainty.
-   - `route="multi_agent"`
+   - `route="multi"`
 3. Run the protocol:
    - Director spawns exactly one `auditor` and one `orchestrator` peer for a single `ssot_id`.
    - Orchestrator spawns only leaf slices (`operator`, `coder_spark`, `coder_codex` fallback).

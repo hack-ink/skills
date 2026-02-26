@@ -123,9 +123,7 @@ def is_within_allowed_paths(touched: str, allowed_paths: list[str]) -> bool:
 def assert_dispatch_preflight_invariants(dispatch: dict) -> None:
     assert_equal(dispatch["protocol_version"], "2.0", "dispatch.protocol_version")
     assert_equal(dispatch["routing_mode"], "assistant_nested", "dispatch.routing_mode")
-    assert_equal(
-        dispatch["routing_decision"], "multi_agent", "dispatch.routing_decision"
-    )
+    assert_equal(dispatch["routing_decision"], "multi", "dispatch.routing_decision")
     assert_ssot_id_format(dispatch["ssot_id"])
     assert_equal(
         dispatch["review_policy"]["phase_order"],

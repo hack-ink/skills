@@ -8,7 +8,7 @@
 		"rationale": "Parallel read-only research slices to improve coverage.",
 		"timebox_minutes": 15
 	},
-	"routing_decision": "multi_agent",
+	"routing_decision": "multi",
 	"ssot": {
 		"goal": "Run two independent research slices in parallel and return evidence-rich summaries.",
 		"non_goals": ["No repo writes", "No unrelated implementation work"],

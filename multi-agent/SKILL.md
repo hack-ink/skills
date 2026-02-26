@@ -24,7 +24,7 @@ Provide a reliable, auditable slow-path workflow for multi-agent execution: expl
 
 ## Hard gates (non-negotiable)
 
-- Short-circuit if `dispatch-preflight.routing_decision != "multi_agent"` (no leaf spawns).
+- Short-circuit if `dispatch-preflight.routing_decision != "multi"` (no leaf spawns).
 - Enforce the spawn allowlist (protocol types only; no built-ins).
 - Enforce the depth=2 spawn topology:
   - Director (main) spawns `auditor` and `orchestrator` as peers.

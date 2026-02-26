@@ -22,7 +22,7 @@ The schema/fixture smoke tests do not exercise real tool registration, thread li
 
 This covers:
 
-- The 90-second routing gate (`single_agent` vs `multi_agent`).
+- The 90-second routing gate (`single` vs `multi`).
 - Depth=2 spawn topology and allowlists.
 - Orchestrator windowed scheduling via `functions.wait`.
 
@@ -112,7 +112,7 @@ Goal:
 2. Produce a v2 `dispatch-preflight` with:
     - `protocol_version="2.0"`
     - `routing_mode="assistant_nested"`
-    - `routing_decision="multi_agent"`
+    - `routing_decision="multi"`
     - `review_policy.phase_order=["spec","quality"]`
     - `parallel_policy.wait_strategy="functions.wait"`, `parallel_policy.conflict_policy="ownership_lock"`, `parallel_policy.window_size=2`
 3. Execute the chain in your runtime:
@@ -238,7 +238,7 @@ Pass criteria:
 
 Method:
 
-- Provide a `dispatch-preflight` with `routing_decision` set to `single_agent`.
+- Provide a `dispatch-preflight` with `routing_decision` set to `single`.
 - Attempt to proceed with spawning coders anyway.
 
 Pass criteria:

@@ -5,8 +5,8 @@ If the schemas answer **"what JSON must look like"**, this answers **"how the wo
 
 ## Hard gates summary (printable)
 
-- If `dispatch-preflight.routing_decision != "multi_agent"`, short-circuit (no leaf spawns).
-- Spawn allowlist: when `routing_decision == "multi_agent"`, spawn ONLY these configured protocol agent types:
+- If `dispatch-preflight.routing_decision != "multi"`, short-circuit (no leaf spawns).
+- Spawn allowlist: when `routing_decision == "multi"`, spawn ONLY these configured protocol agent types:
   - `auditor`, `orchestrator`, `operator`, `coder_spark` (primary), `coder_codex` (fallback only)
   - Never spawn built-in/default agent types (for example `worker`, `default`, `explorer`).
 - Enforce role-scoped allowlists by role:
@@ -23,7 +23,7 @@ If the schemas answer **"what JSON must look like"**, this answers **"how the wo
   - Orchestrator does not spawn Director/Auditor/Orchestrator.
 - Repo-write gate (non-negotiable in multi-agent mode):
   - Only Coders may write the repo or produce code changes (spawn via `coder_spark`, fallback `coder_codex` only).
-  - `director` (main), `orchestrator`, `auditor`, and `operator` must not use `apply_patch`, must not edit files, and must not "implement" code changes themselves once `routing_decision == "multi_agent"`.
+  - `director` (main), `orchestrator`, `auditor`, and `operator` must not use `apply_patch`, must not edit files, and must not "implement" code changes themselves once `routing_decision == "multi"`.
   - Any code/config change required by a slice must be delegated to a Coder leaf slice with explicit `allowed_paths`.
 - Continuity gate for `ssot_id`: keep the same Auditor + Orchestrator identities for the same `ssot_id`. If a phase is blocked, rework by dispatching additional leaf slices under the existing Orchestrator (do not close/restart Auditor/Orchestrator solely to reset context).
 - Only dispatch a Coder when the slice is clearly a coding task (repo changes). If unsure, keep it at Orchestrator.
@@ -39,13 +39,13 @@ This protocol is a **slow path**: it trades overhead for correctness, auditabili
 
 ### Do not run multi-agent for micro tasks
 
-If the task is `instruction_only`, `vcs_only`, or a tiny `single_file_edit` with clear acceptance criteria, stay in `single_agent`.
+If the task is `instruction_only`, `vcs_only`, or a tiny `single_file_edit` with clear acceptance criteria, stay in `single`.
 This routing decision should be made by your routing gate (configured outside this skill) before invoking this protocol.
 
 ### Defense-in-depth: short-circuit if mis-invoked
 
-If a `dispatch-preflight` indicates `routing_decision != "multi_agent"`, **do not spawn leaf agents**.
-Return a blocked/redirected result that recommends `single_agent` execution.
+If a `dispatch-preflight` indicates `routing_decision != "multi"`, **do not spawn leaf agents**.
+Return a blocked/redirected result that recommends `single` execution.
 
 Terminology note:
 
@@ -54,7 +54,7 @@ Terminology note:
 
 Role boundary note:
 
-- Director (main) is the user-facing task router and final decision-maker. It owns scope, acceptance criteria, and `single_agent` vs `multi_agent` routing.
+- Director (main) is the user-facing task router and final decision-maker. It owns scope, acceptance criteria, and `single` vs `multi` routing.
 - Orchestrator is a subordinate scheduler for leaf slices. It owns slice decomposition, windowed dispatch, integration evidence, and packaging an Auditor-ready evidence pack.
 - Within one `ssot_id`, keep exactly one Auditor + one Orchestrator identity (continuity). If more capacity is needed, the Orchestrator must report back to the Director to start a new, separate run (new `ssot_id`).
 
@@ -73,9 +73,6 @@ Guidelines:
 - This workflow assumes the runtime supports **depth=2** nesting:
 - Director (main) -> (Auditor | Orchestrator) -> (coder_spark | coder_codex | operator)
 - Recommended: set `max_depth = 2` and treat it as a **hard cap**.
-- Hardening (recommended): disable collab tools for non-spawners at the role config layer:
-  - Auditor: set `[features] collab=false` so it cannot call `spawn_agent` even if the prompt fails.
-  - Leaf roles (Operator/Coders): also set `[features] collab=false` (defense-in-depth).
 - Parameter rationales (timeboxes, review-loop budgets, window sizing): `references/PARAMETERS.md`.
 
 ## 0.2.1) `write` vs `read_only` workflows (required)
