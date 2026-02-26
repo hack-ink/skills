@@ -9,15 +9,23 @@ If the schemas answer **"what JSON must look like"**, this answers **"how the wo
 - Spawn allowlist: when `routing_decision == "multi_agent"`, spawn ONLY these configured protocol agent types:
   - `auditor`, `orchestrator`, `operator`, `coder_spark` (primary), `coder_codex` (fallback only)
   - Never spawn built-in/default agent types (for example `worker`, `default`, `explorer`).
+- Enforce role-scoped allowlists by role:
+  - Director (main): only `auditor`, `orchestrator`.
+  - Orchestrator: only `operator`, `coder_spark`, `coder_codex` (fallback only).
+  - Auditor and leaf roles: spawn none.
 - Spawn topology gate (depth=2):
   - Director (main) spawns `auditor` and `orchestrator` as peers.
   - Orchestrator spawns leaf agents: `operator`, `coder_spark` (fallback `coder_codex` only).
   - Auditor spawns no agents (gatekeeping only).
   - Leaf agents (`operator`, `coder_spark`, `coder_codex`) spawn nothing.
+- No same-level spawns:
+  - Director does not spawn leaf agents and does not replace itself.
+  - Orchestrator does not spawn Director/Auditor/Orchestrator.
 - Repo-write gate (non-negotiable in multi-agent mode):
   - Only Coders may write the repo or produce code changes (spawn via `coder_spark`, fallback `coder_codex` only).
   - `director` (main), `orchestrator`, `auditor`, and `operator` must not use `apply_patch`, must not edit files, and must not "implement" code changes themselves once `routing_decision == "multi_agent"`.
   - Any code/config change required by a slice must be delegated to a Coder leaf slice with explicit `allowed_paths`.
+- Continuity gate for `ssot_id`: keep the same Auditor + Orchestrator identities for the same `ssot_id`. If a phase is blocked, rework by dispatching additional leaf slices under the existing Orchestrator (do not close/restart Auditor/Orchestrator solely to reset context).
 - Only dispatch a Coder when the slice is clearly a coding task (repo changes). If unsure, keep it at Orchestrator.
 - Do not parallelize without an explicit independence assessment and an ownership lock policy.
 - Auditor review is two-phase: spec must pass before quality runs.
@@ -31,17 +39,17 @@ This protocol is a **slow path**: it trades overhead for correctness, auditabili
 
 ### Do not run multi-agent for micro tasks
 
-If the task is `instruction_only`, `vcs_only`, or a tiny `single_file_edit` with clear acceptance criteria, stay in `micro_solo`.
+If the task is `instruction_only`, `vcs_only`, or a tiny `single_file_edit` with clear acceptance criteria, stay in `single_agent`.
 This routing decision should be made by your global `AGENTS.md` before invoking this protocol.
 
 ### Defense-in-depth: short-circuit if mis-invoked
 
 If a `dispatch-preflight` indicates `routing_decision != "multi_agent"`, **do not spawn leaf agents**.
-Return a blocked/redirected result that recommends `micro_solo` execution.
+Return a blocked/redirected result that recommends `single_agent` execution.
 
 Terminology note:
 
-- `coder` is the coding leaf role for repo write work (code/config changes with verification evidence).
+- `coder_spark` is the coding leaf role for repo write work (code/config changes with verification evidence).
 - `operator` is the non-coding leaf role for command execution, fetching, and inspection tasks without repo writes.
 
 ## 0.1) `review_only` flag (briefs vs work)
@@ -57,7 +65,7 @@ Guidelines:
 ## 0.2) Runtime preconditions (depth + threads)
 
 - This workflow assumes the runtime supports **depth=2** nesting:
-  - Director (main) -> (Auditor | Orchestrator) -> (Coder | Operator)
+- Director (main) -> (Auditor | Orchestrator) -> (coder_spark | coder_codex | operator)
 - Recommended: set `max_depth = 2` and treat it as a **hard cap**.
 
 ## 0.3) `ssot_id` convention (recommended)
@@ -102,7 +110,7 @@ Before dispatching any leaf slice, ensure the slice `task_contract` is self-cont
 - **Evidence:** what to return (`actions` for Operator, `verification_steps` for Coder).
 - **Assumptions policy:** if a detail is unknown, the leaf must research and choose the safest reversible default, then record it (do not ask the user mid-flight).
 
-Prefer many small independent slices over a few large ones (then apply windowed `wait_any` dispatch).
+Prefer many small independent slices over a few large ones (then apply windowed `functions.wait` dispatch).
 
 ## 1) Parallel dispatch workflow (independent domains)
 
@@ -139,7 +147,7 @@ For multi-repo operational slices (commit/push, version bumps, config sync), tre
 Run leaf agents in a window:
 
 1. Spawn up to `window_size`.
-2. Use `wait_any` polling.
+2. Use `functions.wait` polling.
 3. As one completes, review the result, then spawn the next slice (replenish) until all slices are done.
 4. Always `close_agent` for completed children to avoid thread starvation.
 
@@ -148,7 +156,7 @@ Recommended default:
 - Keep a small reserve for orchestration/review work.
   - Example: `reserve_threads=2`, `window_size = max_threads - reserve_threads`
 
-Do not spawn a dedicated waiting agent. The Orchestrator must perform `wait_any` polling itself as part of the windowing loop.
+Do not spawn a dedicated waiting agent. The Orchestrator must perform `functions.wait` polling itself as part of the windowing loop.
 
 ### 1.4 Integration loop (required)
 

@@ -6,7 +6,7 @@ from pathlib import Path
 from jsonschema import Draft202012Validator
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-SKILL_ROOT = REPO_ROOT / "codex-multi-agent-protocol"
+SKILL_ROOT = REPO_ROOT / "multi-agent"
 SCHEMAS_DIR = SKILL_ROOT / "schemas"
 E2E_DIR = Path(__file__).resolve().parent
 

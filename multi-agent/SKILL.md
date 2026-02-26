@@ -1,5 +1,5 @@
 ---
-name: codex-multi-agent-protocol
+name: multi-agent
 description: Use when a task requires multi-agent execution with Main (Director)/Auditor/Orchestrator and leaf-role routing (Coder for coding, Operator for non-coding) with schema-validated outputs.
 ---
 
@@ -26,17 +26,25 @@ Provide a reliable, auditable slow-path workflow for multi-agent execution: expl
 
 - Short-circuit if `dispatch-preflight.routing_decision != "multi_agent"` (no leaf spawns).
 - Enforce the spawn allowlist (protocol types only; no built-ins).
-- Enforce the spawn topology:
+- Enforce role-scoped spawn allowlists:
+  - Director (main) may spawn only `auditor` and `orchestrator`.
+  - Orchestrator may spawn only `operator`, `coder_spark`, and `coder_codex` (fallback only).
+  - Auditor and leaf roles spawn no agents.
+- Enforce no same-level spawns:
+  - Director must not spawn peers or leaf agents.
+  - Orchestrator must not spawn `director`, `auditor`, or `orchestrator`.
+  - Auditor must never spawn.
   - Director (main) spawns `auditor` and `orchestrator` as peers.
   - Orchestrator spawns leaf agents (`operator`, `coder_spark`; fallback `coder_codex` only).
   - Auditor spawns no agents (gatekeeping only).
+- Enforce continuity: for a given `ssot_id`, keep the same Auditor + Orchestrator pairing. If blocked, spawn new coding/research leaf slices under that same Orchestrator.
 - Enforce the repo-write gate: only coders (spawned via `coder_spark` or fallback `coder_codex`) may implement repo changes (no file edits by Orchestrator/Operator/Auditor).
 - Enforce spec-first review, evidence-first completion, and stop on `blocked=true`.
 - Close completed leaf agents to avoid thread starvation.
 
 ## How to use
 
-1. Read the operational playbook: `codex-multi-agent-protocol/references/WORKFLOWS.md`.
+1. Read the operational playbook: `multi-agent/references/WORKFLOWS.md`.
 
 ## Outputs
 

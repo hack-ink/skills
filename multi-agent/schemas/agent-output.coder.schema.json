@@ -301,7 +301,7 @@
 			"questions": [],
 			"changeset": {
 				"touched_paths": [
-					"/abs/repo/codex-multi-agent-protocol/schemas/dispatch-preflight.schema.json"
+					"/abs/repo/multi-agent/schemas/dispatch-preflight.schema.json"
 				],
 				"notes": "Added protocol_version/workflow_mode and routing sizing fields; updated example."
 			},

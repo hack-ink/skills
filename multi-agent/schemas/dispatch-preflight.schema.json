@@ -62,7 +62,7 @@
 		},
 		"routing_decision": {
 			"type": "string",
-			"enum": ["micro_solo", "single_agent", "multi_agent"]
+			"enum": ["single_agent", "multi_agent"]
 		},
 		"ssot": {
 			"type": "object",
@@ -184,7 +184,7 @@
 				},
 				"auditor_passes_max": {
 					"type": "integer",
-					"const": 3
+					"const": 5
 				}
 			},
 			"additionalProperties": false
@@ -197,10 +197,10 @@
 					"type": "string",
 					"const": "windowed"
 				},
-				"wait_strategy": {
-					"type": "string",
-					"const": "wait_any"
-				},
+						"wait_strategy": {
+							"type": "string",
+							"enum": ["functions.wait"]
+						},
 				"conflict_policy": {
 					"type": "string",
 					"const": "ownership_lock"
@@ -224,7 +224,7 @@
 			},
 			"then": {
 				"properties": {
-					"routing_decision": { "const": "micro_solo" },
+						"routing_decision": { "const": "single_agent" },
 					"sizing": { "properties": { "class": { "enum": ["micro", "small"] } } },
 					"parallel_policy": { "properties": { "window_size": { "const": 1 } } }
 				}
@@ -246,7 +246,7 @@
 		{
 			"if": {
 				"properties": {
-					"routing_decision": { "enum": ["micro_solo", "single_agent"] }
+						"routing_decision": { "enum": ["single_agent"] }
 				}
 			},
 			"then": {
@@ -273,14 +273,17 @@
 				"non_goals": ["No unrelated refactors"],
 				"constraints": [
 					"SSOT frozen during execution",
-					"Director spawns Auditor and Orchestrator as peers; Orchestrator delegates to leaf agents; Auditor gates Orchestrator output."
+					"Role-scoped spawn allowlist: Director may spawn only auditor/orchestrator; Orchestrator may spawn only operator, coder_spark, coder_codex.",
+					"Orchestrator/Auditor/leaf roles spawn no lower-level agents.",
+					"No same-level spawns: Director does not spawn peers or leaf agents; Orchestrator does not spawn director/auditor/orchestrator."
 				],
 				"acceptance_criteria": [
 					"Schema-valid director/auditor/orchestrator chain outputs",
 					"Requested files updated"
 				],
 				"decisions": [
-					"Use depth=2 peer-spawn topology: Director -> (Auditor | Orchestrator) -> leaf"
+					"Use depth=2 peer-spawn topology: Director -> (Auditor | Orchestrator) -> leaf",
+					"Continuity gate: for each ssot_id keep the same Auditor+Orchestrator pair; blocked phases spawn fresh leaf slices under that same pair."
 				]
 			},
 			"routing_mode": "assistant_nested",
@@ -306,11 +309,11 @@
 			"review_policy": {
 				"phase_order": ["spec", "quality"],
 				"auditor_passes_target": 2,
-				"auditor_passes_max": 3
+				"auditor_passes_max": 5
 			},
 			"parallel_policy": {
 				"scheduler_plan": "windowed",
-				"wait_strategy": "wait_any",
+				"wait_strategy": "functions.wait",
 				"conflict_policy": "ownership_lock",
 				"window_size": 2
 			}

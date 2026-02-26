@@ -14,13 +14,19 @@
 		"non_goals": ["No repo writes", "No unrelated implementation work"],
 		"constraints": [
 			"routing_mode must remain assistant_nested",
-			"spec phase must complete before quality phase"
+			"spec phase must complete before quality phase",
+			"Role-scoped spawn allowlist: Director -> auditor/orchestrator; Orchestrator -> operator/coder_spark/coder_codex; Auditor and leaf roles spawn none.",
+			"No same-level spawns: Director does not spawn peers or leaf agents; Orchestrator does not spawn director/auditor/orchestrator.",
+			"Continuity gate: for this ssot_id, keep the same Auditor+Orchestrator pairing for the entire run."
 		],
 		"acceptance_criteria": [
 			"All payloads validate against packaged schemas",
 			"Ownership scopes are disjoint across slices"
 		],
-		"decisions": ["Use windowed wait_any dispatch with ownership_lock"]
+		"decisions": [
+			"Use windowed functions.wait dispatch with ownership_lock",
+			"Continuity gate: If blocked, rework by dispatching additional leaf slices under the same ssot_id Auditor+Orchestrator pair without replacing either role."
+		]
 	},
 	"routing_mode": "assistant_nested",
 	"subtasks": [
@@ -37,11 +43,11 @@
 	"review_policy": {
 		"phase_order": ["spec", "quality"],
 		"auditor_passes_target": 2,
-		"auditor_passes_max": 3
+		"auditor_passes_max": 5
 	},
 	"parallel_policy": {
 		"scheduler_plan": "windowed",
-		"wait_strategy": "wait_any",
+		"wait_strategy": "functions.wait",
 		"conflict_policy": "ownership_lock",
 		"window_size": 2
 	}

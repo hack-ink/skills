@@ -6,7 +6,7 @@ Operational workflow rules (parallel windowing, spec->quality gates, integration
 
 ## Test tiers (recommended)
 
-- **Smoke (default, < 2 min):** From the repo root, run `python3 dev/codex-multi-agent-protocol/e2e/run_smoke.py`. Then run sections **1-3** with **2 coders** and a small window (2). This validates schema/examples + fixtures quickly, then validates depth=2 spawning + wait-any behavior without stressing the thread pool.
+- **Smoke (default, < 2 min):** From the repo root, run `python3 dev/multi-agent/e2e/run_smoke.py`. Then run sections **1-3** with **2 coders** and a small window (2). This validates schema/examples + fixtures quickly, then validates depth=2 spawning + `functions.wait` behavior without stressing the thread pool.
 - **Stress (on-demand, can be slow):** Run sections **5-7** only when you change runtime concurrency settings (`max_threads`, scheduler) or when debugging liveness/timeout issues.
 
 Notes:
@@ -20,7 +20,7 @@ Notes:
 2. Confirm the runtime is configured for depth=2 spawning (recommended: `max_depth = 2`).
 3. Confirm the spawn topology for positive tests:
     - Director (main) -> (Auditor | Orchestrator)
-    - Orchestrator -> (Coder | Operator)
+    - Orchestrator -> (coder_spark | coder_codex | operator)
 4. Confirm protocol tokens are present across the packaged schema set:
     - `rg -n 'assistant_nested|agent-output\\.auditor|agent-output\\.orchestrator|agent-output\\.(coder|operator)' schemas/*.json`
     - Confirm legacy routing tokens are absent (should return no matches; exit code 1):
@@ -44,10 +44,10 @@ Pass criteria:
 
 ## 2) Schema Validation (Structural)
 
-Run from the skill root (so `schemas/` resolves correctly). If you are editing this repo directly, run from the repo root and prefix paths with `codex-multi-agent-protocol/`.
+Run from the skill root (so `schemas/` resolves correctly). If you are editing this repo directly, run from the repo root and prefix paths with `multi-agent/`.
 
 ```sh
-cd /path/to/codex-multi-agent-protocol
+cd /path/to/multi-agent
 ```
 
 Then run:
@@ -87,7 +87,7 @@ Pass criteria:
 
 Goal:
 
-- Exercise **windowed** parallel dispatch (`wait_any`) with ownership lock.
+- Exercise **windowed** parallel dispatch (`functions.wait`) with ownership lock.
 - Exercise **spec -> quality** audit phases.
 - Exercise Orchestrator **integration evidence** (`integration_report`).
 
@@ -102,11 +102,11 @@ Goal:
     - `routing_mode="assistant_nested"`
     - `routing_decision="multi_agent"`
     - `review_policy.phase_order=["spec","quality"]`
-    - `parallel_policy.wait_strategy="wait_any"`, `parallel_policy.conflict_policy="ownership_lock"`, `parallel_policy.window_size=2`
+    - `parallel_policy.wait_strategy="functions.wait"`, `parallel_policy.conflict_policy="ownership_lock"`, `parallel_policy.window_size=2`
 3. Execute the chain in your runtime:
     - Director runs Orchestrator execution
     - Director requests Auditor review of the Orchestrator deliverable
-    - Orchestrator runs **2+ coders** in a **windowed** pattern (`spawn-first -> wait-any -> review -> spawn-next`)
+    - Orchestrator runs **2+ coders** in a **windowed** pattern (`spawn-first -> functions.wait -> review -> spawn-next`)
     - Close completed leaf agents (coders/operators); close Auditor/Orchestrator at the end of the run
 
 ### Artifacts to capture
@@ -151,7 +151,7 @@ PY
 
 Optional quick check:
 
-- Validate the bundled sample fixtures and invariants: `python3 dev/codex-multi-agent-protocol/e2e/validate_payloads.py`
+- Validate the bundled sample fixtures and invariants: `python3 dev/multi-agent/e2e/validate_payloads.py`
 
 Pass criteria:
 
@@ -210,7 +210,7 @@ Method:
 
 Pass criteria:
 
-- `python3 dev/codex-multi-agent-protocol/e2e/validate_payloads.py` rejects the fixtures with an overlap error.
+- `python3 dev/multi-agent/e2e/validate_payloads.py` rejects the fixtures with an overlap error.
 
 ### E) Invalid routing mode
 
@@ -226,7 +226,7 @@ Pass criteria:
 
 Method:
 
-- Provide a `dispatch-preflight` with `routing_decision` set to `micro_solo` or `single_agent`.
+- Provide a `dispatch-preflight` with `routing_decision` set to `single_agent`.
 - Attempt to proceed with spawning coders anyway.
 
 Pass criteria:
@@ -288,12 +288,12 @@ Pass criteria:
 - Extra spawn fails with `agent thread limit reached (max 32)` (or equivalent runtime message; value depends on your config).
 - All marker files exist under the run dir.
 
-## 6) Wait-Any Test
+## 6) functions.wait Test
 
 Method:
 
 1. Spawn probes with delays (for example 10s, 20s, 30s).
-2. Call `wait` on all ids repeatedly.
+2. Call `functions.wait` on all ids repeatedly.
 
 Pass criteria:
 
@@ -328,7 +328,7 @@ Pass criteria:
 	"negative_ownership_overlap": "pass|fail",
 	"stall_timeout_handling": "pass|fail",
 	"concurrency_limit_observed": 24,
-	"wait_any_verified": true,
+	"wait_strategy_verified": "functions.wait",
 	"notes": []
 }
 ```

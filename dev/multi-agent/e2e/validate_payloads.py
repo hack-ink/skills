@@ -5,7 +5,7 @@ from pathlib import Path
 from jsonschema import Draft202012Validator
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-ROOT = REPO_ROOT / "codex-multi-agent-protocol"
+ROOT = REPO_ROOT / "multi-agent"
 E2E_DIR = Path(__file__).resolve().parent
 SSOT_ID_RE = re.compile(r"^[a-z][a-z0-9]*-[a-z0-9][a-z0-9-]{7,127}$")
 
@@ -48,6 +48,52 @@ def assert_ssot_id_format(ssot_id: str) -> None:
             )
 
 
+def has_token_line(lines: list[str], tokens: tuple[str, ...]) -> bool:
+    return any(
+        all(token in line for token in tokens)
+        for line in [s.lower() for s in lines]
+    )
+
+
+def assert_ssot_invariants_in_text(ssot: dict) -> None:
+    constraints = [str(x).lower() for x in ssot.get("constraints", [])]
+    decisions = [str(x).lower() for x in ssot.get("decisions", [])]
+
+    if not has_token_line(
+        constraints, ("role-scoped", "director", "auditor", "orchestrator")
+    ):
+        raise AssertionError(
+            "dispatch.ssot.constraints must include role-scoped Director spawn allowlist"
+        )
+    if not has_token_line(
+        constraints,
+        ("orchestrator", "operator", "coder_spark", "coder_codex"),
+    ):
+        raise AssertionError(
+            "dispatch.ssot.constraints must include role-scoped Orchestrator spawn allowlist"
+        )
+    if not has_token_line(constraints, ("auditor", "leaf", "spawn", "none")) and not has_token_line(
+        constraints, ("auditor", "spawn", "none")
+    ):
+        raise AssertionError(
+            "dispatch.ssot.constraints must include Auditor/leaf no-spawn invariant"
+        )
+    if not has_token_line(constraints, ("no", "same-level", "spawns")):
+        raise AssertionError(
+            "dispatch.ssot.constraints must include no same-level spawn invariant"
+        )
+    if not has_token_line(decisions, ("continuity", "ssot_id", "auditor", "orchestrator")):
+        raise AssertionError(
+            "dispatch.ssot.decisions must include continuity gate pairing rule"
+        )
+    if not has_token_line(decisions, ("blocked", "fresh", "leaf", "pair")) and not has_token_line(
+        decisions, ("blocked", "existing", "leaf", "pair")
+    ) and not has_token_line(decisions, ("blocked", "additional", "leaf", "pair")):
+        raise AssertionError(
+            "dispatch.ssot.decisions must include blocked-phase rework rule under same pair"
+        )
+
+
 def is_within_allowed_paths(touched: str, allowed_paths: list[str]) -> bool:
     for allowed in allowed_paths:
         if touched == allowed or touched.startswith(allowed.rstrip("/") + "/"):
@@ -74,9 +120,10 @@ def assert_dispatch_preflight_invariants(dispatch: dict) -> None:
     )
     assert_equal(
         dispatch["parallel_policy"]["wait_strategy"],
-        "wait_any",
+        "functions.wait",
         "dispatch.parallel_policy.wait_strategy",
     )
+    assert_ssot_invariants_in_text(dispatch["ssot"])
 
 
 def assert_orchestrator_invariants(orchestrator: dict, suite_name: str) -> None:
@@ -162,7 +209,7 @@ def assert_orchestrator_slice_alignment(orchestrator: dict) -> None:
     coder_from_slices = {
         s["leaf_subtask_id"]
         for s in slices
-        if s.get("leaf_agent_type") == "coder"
+        if s.get("leaf_agent_type") in {"coder_spark", "coder_codex"}
     }
     ops_from_slices = {
         s["leaf_subtask_id"] for s in slices if s.get("leaf_agent_type") == "operator"

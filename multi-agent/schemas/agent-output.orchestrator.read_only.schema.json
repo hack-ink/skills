@@ -1,8 +1,8 @@
 {
 	"$schema": "https://json-schema.org/draft/2020-12/schema",
-	"$id": "file:///.codex/agent-output-orchestrator-write.schema.json",
-	"title": "Codex Orchestrator Output (Write)",
-	"description": "Structural schema for orchestrator outputs that report completion of write subtasks. Write workflows may dispatch a mix of coding Coder slices and non-coding Operator slices.",
+	"$id": "file:///.codex/agent-output-orchestrator-read-only.schema.json",
+	"title": "Codex Orchestrator Output (Read Only)",
+	"description": "Structural schema for orchestrator outputs that report completion of read_only subtasks. Read-only workflows may dispatch non-coding Operator slices; coding leaves are `coder_spark` (fallback `coder_codex`).",
 	"type": "object",
 	"required": [
 		"ssot_id",
@@ -18,13 +18,11 @@
 		"parallel_peak_inflight",
 		"dispatch_plan",
 		"review_phases",
-		"integration_report",
 		"status",
 		"blocked",
 		"rationale",
 		"review_only",
 		"blocking_reason",
-		"validation_evidence",
 		"allowed_paths",
 		"review_loop"
 	],
@@ -74,25 +72,6 @@
 				}
 			},
 			"additionalProperties": false
-		},
-		"evidence_check": {
-			"type": "object",
-			"required": ["command", "status", "evidence"],
-			"properties": {
-				"command": {
-					"type": "string",
-					"minLength": 1
-				},
-				"status": {
-					"type": "string",
-					"enum": ["pass", "fail", "not_applicable"]
-				},
-				"evidence": {
-					"type": "string",
-					"minLength": 1
-				}
-			},
-			"additionalProperties": false
 		}
 	},
 	"properties": {
@@ -130,7 +109,6 @@
 		},
 		"coder_subtask_ids": {
 			"type": "array",
-			"minItems": 1,
 			"items": {
 				"type": "string",
 				"minLength": 1
@@ -145,7 +123,7 @@
 		},
 		"parallel_peak_inflight": {
 			"type": "integer",
-			"minimum": 1
+			"minimum": 0
 		},
 		"dispatch_plan": {
 			"type": "object",
@@ -205,7 +183,7 @@
 						},
 						"wait_strategy": {
 							"type": "string",
-							"const": "wait_any"
+							"enum": ["functions.wait"]
 						}
 					},
 					"additionalProperties": false
@@ -229,7 +207,7 @@
 							},
 							"leaf_agent_type": {
 								"type": "string",
-								"enum": ["coder", "operator"]
+								"enum": ["coder_spark", "coder_codex", "operator"]
 							},
 							"domain_id": {
 								"type": "string",
@@ -284,7 +262,7 @@
 					"properties": {
 						"phase": {
 							"type": "string",
-							"const": "integration"
+							"const": "finalization"
 						},
 						"status": {
 							"type": "string",
@@ -299,23 +277,6 @@
 				}
 			],
 			"items": false
-		},
-		"integration_report": {
-			"type": "object",
-			"required": ["conflict_check", "full_test", "notes"],
-			"properties": {
-				"conflict_check": {
-					"$ref": "#/$defs/evidence_check"
-				},
-				"full_test": {
-					"$ref": "#/$defs/evidence_check"
-				},
-				"notes": {
-					"type": "string",
-					"minLength": 1
-				}
-			},
-			"additionalProperties": false
 		},
 		"status": {
 			"type": "string",
@@ -332,10 +293,6 @@
 			"type": "boolean"
 		},
 		"blocking_reason": {
-			"type": "string",
-			"minLength": 1
-		},
-		"validation_evidence": {
 			"type": "string",
 			"minLength": 1
 		},
@@ -436,48 +393,47 @@
 		{
 			"ssot_id": "dev-9f2c0d6a1b3e",
 			"protocol_version": "2.0",
-			"task_id": "task-write-001",
-			"subtask_id": "s2-write",
+			"task_id": "task-brief-001",
+			"subtask_id": "s1-brief",
 			"agent_type": "orchestrator",
-			"workflow_mode": "mixed",
+			"workflow_mode": "parallel_dispatch",
 			"routing_mode": "assistant_nested",
-			"slice_id": "slice-orchestrate-write-a",
-			"coder_subtask_ids": ["coder-1", "coder-2"],
-			"operator_subtask_ids": [],
-			"parallel_peak_inflight": 2,
+			"slice_id": "slice-orchestrate-prework-a",
+			"coder_subtask_ids": [],
+			"operator_subtask_ids": ["op-brief-1"],
+			"parallel_peak_inflight": 0,
 			"dispatch_plan": {
 				"independence_assessment": {
 					"conflict_policy": "ownership_lock",
 					"domains": [
 						{
-							"domain_id": "schemas",
-							"description": "Schema updates and example alignment",
-							"can_parallelize": true,
-							"shared_state_risks": []
+							"domain_id": "brief",
+							"description": "Prework brief generation",
+							"can_parallelize": false,
+							"shared_state_risks": ["No coders dispatched in this slice"]
 						}
 					]
 				},
 				"windowing": {
 					"plan": "windowed",
-					"window_size": 2,
-					"wait_strategy": "wait_any"
+					"window_size": 1,
+					"wait_strategy": "functions.wait"
 				},
 				"slices": [
 					{
-						"leaf_subtask_id": "coder-1",
-						"leaf_agent_type": "coder",
-						"domain_id": "schemas",
-						"ownership_paths": ["/abs/repo/codex-multi-agent-protocol/schemas"],
+						"leaf_subtask_id": "op-brief-1",
+						"leaf_agent_type": "operator",
+						"domain_id": "brief",
+						"ownership_paths": ["/abs/repo"],
 						"task_contract": {
-							"goal": "Update the schema files to protocol_version=2.0 and keep examples valid.",
-							"scope": "Only schema JSON files and protocol testing docs for this task.",
-							"constraints": ["No unrelated refactors"],
+							"goal": "Produce a coder-ready execution brief for the requested change.",
+							"scope": "Read-only analysis; no repo writes.",
+							"constraints": ["Do not modify files"],
 							"expected_output": [
-								"All schema examples validate",
-								"Testing doc updated"
+								"A concise brief with file paths and acceptance criteria"
 							],
-							"non_goals": ["No new unrelated features"],
-							"writes_repo": true
+							"non_goals": ["No implementation"],
+							"writes_repo": false
 						}
 					}
 				]
@@ -486,34 +442,20 @@
 				{
 					"phase": "dispatch_safety",
 					"status": "pass",
-					"notes": "Ownership paths do not overlap across concurrent slices."
+					"notes": "No concurrent coders; no ownership conflicts."
 				},
 				{
-					"phase": "integration",
+					"phase": "finalization",
 					"status": "pass",
-					"notes": "Conflict check and full verification completed."
+					"notes": "Read-only orchestrator slice finalized."
 				}
 			],
-			"integration_report": {
-				"conflict_check": {
-					"command": "git status --porcelain",
-					"status": "pass",
-					"evidence": "Working tree clean after integration."
-				},
-				"full_test": {
-					"command": "python3 -c \"print('ok')\"",
-					"status": "pass",
-					"evidence": "ok"
-				},
-				"notes": "Integrated coder outputs and verified schema validity."
-			},
 			"status": "done",
 			"blocked": false,
-			"rationale": "Orchestrator coordinated windowed coder execution and ran integration checks.",
-			"review_only": false,
+			"rationale": "REVIEW_ONLY: Orchestrator prework completed.",
+			"review_only": true,
 			"blocking_reason": "not_applicable",
-			"validation_evidence": "All orchestrator invariants satisfied; integration report attached.",
-			"allowed_paths": ["/abs/runtime/.codex/AGENTS.md"],
+			"allowed_paths": ["/abs/runtime/.codex/dispatch-preflight.schema.json"],
 			"review_loop": {
 				"policy": "adaptive_min2_max3_second_pass_stable",
 				"self_passes": 2,

@@ -1,4 +1,4 @@
-# AGENTS.md — codex-multi-agent-protocol
+# AGENTS.md — multi-agent
 
 This directory packages the multi-agent protocol skill (schemas and operational workflow rules).
 

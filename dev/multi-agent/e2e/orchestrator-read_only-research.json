@@ -31,7 +31,7 @@
 		"windowing": {
 			"plan": "windowed",
 			"window_size": 2,
-			"wait_strategy": "wait_any"
+			"wait_strategy": "functions.wait"
 		},
 		"slices": [
 			{

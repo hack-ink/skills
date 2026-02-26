@@ -56,6 +56,14 @@ Use this as a fill-in template if you cannot reliably start from the schema `exa
 }
 ```
 
+#### Role-scoped spawn invariants (for this protocol)
+
+- Director (main): delegate only to `auditor` and `orchestrator`.
+- Orchestrator: delegate only to `operator`, `coder_spark`, and `coder_codex` (fallback only).
+- Auditor and leaf roles: delegate/dispatch none.
+- No same-level spawns: director never delegates to peers/leafs; orchestrator never delegates to director/auditor/orchestrator; auditors and leafs do not delegate.
+- Continuity gate: for one `ssot_id`, keep the same Auditor + Orchestrator pair. If blocked, dispatch only fresh leaf slices under that existing pair.
+
 ### Minimal Orchestrator output skeleton (read_only)
 
 ```json
@@ -73,7 +81,7 @@ Use this as a fill-in template if you cannot reliably start from the schema `exa
   "parallel_peak_inflight": 1,
   "dispatch_plan": {
     "independence_assessment": { "conflict_policy": "ownership_lock", "domains": [] },
-    "windowing": { "plan": "windowed", "window_size": 1, "wait_strategy": "wait_any" },
+    "windowing": { "plan": "windowed", "window_size": 1, "wait_strategy": "functions.wait" },
     "slices": []
   },
   "review_phases": [
@@ -230,10 +238,11 @@ Block if any answer is "no".
 ## Orchestrator integration checklist
 
 - Confirm slices are independent and ownership scopes do not overlap (for parallel runs).
-- Enforce the spawn allowlist: spawn ONLY `auditor`, `orchestrator`, `operator`, `coder_spark` (primary), `coder_codex` (fallback only); never spawn built-in/default agent types (for example `worker`, `default`, `explorer`).
+- Enforce role-scoped spawn allowlists: Director (main) may delegate only to `auditor` and `orchestrator`; Orchestrator may delegate only to `operator`, `coder_spark` (primary), and `coder_codex` (fallback only); Auditor and leaf roles delegate none.
+- Enforce no same-level/cross-level spawns: director never delegates to leaf roles; orchestrator never delegates to director/auditor/orchestrator; auditors and leaf roles do not delegate.
 - Enforce the repo-write gate: only Coders (spawned via `coder_spark` or fallback `coder_codex`) may implement repo changes (no `apply_patch` / file edits by Orchestrator/Operator/Auditor).
-- Orchestrator performs `wait_any` polling itself (no dedicated waiting agent).
-- Enforce windowed concurrency (spawn -> wait_any -> review -> replenish).
+- Orchestrator performs `functions.wait` polling itself (no dedicated waiting agent).
+- Enforce windowed concurrency (spawn -> functions.wait -> review -> replenish).
 - Leaf agents do not interact with the user; any user checkpoint is Director-only.
 - When uncertain, run a parallel Operator research fanout, synthesize options + assumptions, and return an Auditor-reviewable brief with a recommended safest default (avoid asking the user unless required).
 - Default to `high` reasoning effort; use provider fallback only:

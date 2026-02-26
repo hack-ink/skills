@@ -227,7 +227,7 @@
 			"blocked": false,
 			"self_check": {
 				"status": "pass",
-				"command": "rg -n \"protocol_version\" -S codex-multi-agent-protocol/schemas",
+				"command": "rg -n \"protocol_version\" -S multi-agent/schemas",
 				"evidence": "Found expected protocol_version const entries."
 			},
 			"task_contract": {
@@ -242,7 +242,7 @@
 			"actions": [
 				{
 					"name": "Locate relevant schemas",
-					"command": "ls codex-multi-agent-protocol/schemas",
+					"command": "ls multi-agent/schemas",
 					"status": "pass",
 					"evidence": "Found orchestrator/auditor/coder schemas."
 				}
