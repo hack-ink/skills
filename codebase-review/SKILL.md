@@ -148,8 +148,9 @@ This is review coverage, not test coverage.
 ## Commands
 
 ```bash
-SKILLS_HOME="${CODEX_HOME:-$HOME/.codex}/skills"
-CODEBASE_REVIEW_HOME="$SKILLS_HOME/codebase-review"
+# Set CODEBASE_REVIEW_HOME to this skill's directory (the folder containing this `SKILL.md`).
+# Derive it from the runtime's skills list entry for `codebase-review`.
+CODEBASE_REVIEW_HOME="<skill-root>"
 ```
 
 - Initialize a reusable campaign layout in the target repo:

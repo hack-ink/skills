@@ -50,12 +50,13 @@ Minimum type/shape constraints:
 
 Recommended message generator (prints a single-line JSON message):
 
-- Skill scripts live under the Codex skills home: `${CODEX_HOME:-$HOME/.codex}/skills/`
-- `python3 "${CODEX_HOME:-$HOME/.codex}/skills/pre-commit/scripts/cmsg.py" --type <type> --scope <scope> --summary <summary> --intent <intent> --impact <impact> --risk <low|medium|high>`
+- Skill scripts live under this skill's directory (the folder containing this `SKILL.md`).
+- Locate that directory via the runtime's skills list and set `PRE_COMMIT_HOME` to it before running these commands.
+- `python3 "$PRE_COMMIT_HOME/scripts/cmsg.py" --type <type> --scope <scope> --summary <summary> --intent <intent> --impact <impact> --risk <low|medium|high>`
 
 Local validation (required; record exit code in the report):
 
-- `python3 "${CODEX_HOME:-$HOME/.codex}/skills/pre-commit/scripts/validate_cmsg.py"`
+- `python3 "$PRE_COMMIT_HOME/scripts/validate_cmsg.py"`
 
 Fallback validation (use only if the script is unavailable; record exit code in the report):
 
@@ -104,7 +105,7 @@ Preflight
 Commit message
 - proposed: `<single-line cmsg/1 JSON>`
 - validation: ran | skipped: <reason>
-  - `python3 "${CODEX_HOME:-$HOME/.codex}/skills/pre-commit/scripts/validate_cmsg.py"` (exit: <code> | n/a)
+  - `python3 "$PRE_COMMIT_HOME/scripts/validate_cmsg.py"` (exit: <code> | n/a)
   - fallback: `python -c '...'` (exit: <code> | n/a)
 
 Repo gates
