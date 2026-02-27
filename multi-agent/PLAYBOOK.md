@@ -17,7 +17,11 @@ Example (estimate only; not a hardcoded constant): `t_max_s = 900` (15 minutes).
 
 ## 1) Roles (vNext)
 
-- **Director (main thread)**: plans slices, spawns workers, schedules wait-any, integrates *decisions*, decides done/blocked, and (optionally) requests Auditor review. In `multi`, Director does **not** write the repo (no `apply_patch` / file edits). Any repo writes (including “integration”) must be delegated to a Coder slice.
+- **Director (main thread)**: plans slices, spawns workers, schedules wait-any, integrates *decisions*, decides done/blocked, and (optionally) requests Auditor review. In `multi`, Director does **not** write the repo (no `apply_patch` / file edits). Any repo writes (including “integration”) must be delegated to a `coder_*` slice or the Supervisor Integrate slice.
+- **Supervisor (protocol role)**: subtask lead. Implemented using existing worker agent types:
+  - **Supervisor Plan**: `agent_type="operator"` returning `worker-result.supervisor/1` with `dispatch_plan`.
+  - **Supervisor Integrate**: `agent_type="coder_codex"` returning `worker-result.supervisor/1` with `changeset` + `verification`.
+  The Supervisor role never spawns (enforced by `max_depth=1`).
 - **Operator (worker)**: non-coding execution (repo reads, commands, triage, reproductions, measurements, log inspection).
 - **Coder (worker)**: repo writes (edits + tests). Use `coder_spark`; fall back to `coder_codex` only if needed.
 - **Auditor (optional worker)**: review gate for correctness, evidence quality, and risk.
@@ -26,7 +30,7 @@ There is no Orchestrator role.
 
 ## 2) Spawn topology (strict)
 
-The Director may spawn only these roles: `operator`, `coder_spark`, `coder_codex`, `auditor`.
+The Director may spawn only these agent types: `operator`, `coder_spark`, `coder_codex`, `auditor`.
 
 Workers never spawn (enforced by `max_depth=1`).
 
@@ -35,10 +39,14 @@ Workers never spawn (enforced by `max_depth=1`).
 Target smaller slices, but avoid “task confetti”.
 
 Recommended timeboxes:
+- **Plan** (Supervisor): 6–10 min (produce `dispatch_plan` with disjoint ownership and explicit dependencies).
 - **Probe** (Operator): 2–6 min (fast evidence to reduce uncertainty).
 - **Work** (Operator): 4–12 min (commands + analysis + concrete next steps).
-- **Work** (Coder): 6–18 min (small coherent change + verification).
-- **Integrate** (Coder): 8–25 min (resolve conflicts, run higher-scope checks).
+- **Work** (Coder): 4–12 min (small coherent change + verification).
+- **Integrate** (Supervisor): 15–25 min (resolve conflicts, run higher-scope checks).
+
+Hard cap (prevents 20+ minute stalls):
+- `coder_spark` + `slice_kind="work"` must have `timebox_minutes <= 12`. If you estimate more, split further or route the wrap-up into the Supervisor Integrate slice.
 
 When to split:
 - Independent paths (different dirs/modules) with **disjoint write ownership**.
@@ -90,7 +98,7 @@ Director scheduling loop (mandatory):
 Hard rule: if you have spawned at least one child and `inflight` is non-empty, you must keep polling `functions.wait` until `inflight` becomes empty (or you explicitly mark the run blocked). Never “spawn then stop”.
 
 Integration rule (prevents “Director writes code”):
-- If results require applying edits, resolving conflicts, or running final verification in the repo, dispatch a dedicated **Coder Integrate** slice (broad `ownership_paths` as needed). The Director remains broker-only.
+- If results require applying edits, resolving conflicts, or running final verification in the repo, dispatch a dedicated **Supervisor Integrate** slice (broad `ownership_paths` as needed). The Director remains broker-only.
 
 ## 6) Dispatch schema (Director → worker)
 
@@ -107,6 +115,7 @@ Minimum fields to set correctly:
 ## 7) Worker outputs (JSON-only)
 
 Workers must return JSON-only results:
+- Supervisor: `worker-result.supervisor/1`
 - Operator: `worker-result.operator/1`
 - Coder: `worker-result.coder/1`
 - Auditor: `review-result.auditor/1`

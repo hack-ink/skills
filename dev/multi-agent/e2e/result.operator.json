@@ -10,7 +10,7 @@
     "commands": [
       {
         "cmd": "python3 dev/multi-agent/e2e/run_smoke.py",
-        "cwd": "/Users/xavier/code/trusted/x/hack-ink/skills",
+        "cwd": "<repo_root>",
         "exit_code": 0,
         "stdout_excerpt": "OK: e2e fixtures + invariants"
       }
@@ -19,4 +19,3 @@
   },
   "next_actions": ["Proceed with write slices."]
 }
-

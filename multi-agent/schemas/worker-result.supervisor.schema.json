@@ -1,0 +1,243 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "worker-result.supervisor/1",
+  "title": "worker-result.supervisor/1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "ssot_id", "task_id", "slice_id", "role", "status", "summary"],
+  "properties": {
+    "schema": { "const": "worker-result.supervisor/1" },
+    "ssot_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*-[0-9a-f]{8,64}$"
+    },
+    "task_id": { "type": "string", "minLength": 1 },
+    "slice_id": { "type": "string", "minLength": 1 },
+    "role": { "const": "supervisor" },
+    "status": { "type": "string", "enum": ["done", "blocked", "partial"] },
+    "summary": { "type": "string", "minLength": 1 },
+    "dispatch_plan": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schema",
+          "ssot_id",
+          "task_id",
+          "slice_id",
+          "agent_type",
+          "timebox_minutes",
+          "allowed_paths",
+          "ownership_paths",
+          "task_contract"
+        ],
+        "properties": {
+          "schema": { "const": "task-dispatch/1" },
+          "ssot_id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*-[0-9a-f]{8,64}$"
+          },
+          "task_id": { "type": "string", "minLength": 1 },
+          "slice_id": { "type": "string", "minLength": 1 },
+          "agent_type": {
+            "type": "string",
+            "enum": ["operator", "coder_spark", "coder_codex", "auditor"]
+          },
+          "slice_kind": {
+            "type": "string",
+            "enum": ["probe", "work", "review", "merge"],
+            "default": "work"
+          },
+          "timebox_minutes": { "type": "integer", "minimum": 1, "maximum": 60 },
+          "allowed_paths": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 },
+            "default": []
+          },
+          "ownership_paths": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 },
+            "default": []
+          },
+          "dependencies": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 },
+            "default": []
+          },
+          "task_contract": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["goal", "acceptance", "constraints"],
+            "properties": {
+              "goal": { "type": "string", "minLength": 1 },
+              "acceptance": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 },
+                "minItems": 1
+              },
+              "constraints": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 },
+                "default": []
+              },
+              "no_touch": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 },
+                "default": []
+              }
+            }
+          },
+          "evidence_requirements": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 },
+            "default": []
+          }
+        }
+      },
+      "default": []
+    },
+    "changeset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["touched_paths"],
+      "properties": {
+        "touched_paths": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1
+        },
+        "notes": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "default": []
+        }
+      }
+    },
+    "verification": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["cmd", "exit_code"],
+        "properties": {
+          "cmd": { "type": "string", "minLength": 1 },
+          "cwd": { "type": "string", "minLength": 1 },
+          "exit_code": { "type": "integer" },
+          "stdout_excerpt": { "type": "string" },
+          "stderr_excerpt": { "type": "string" }
+        }
+      },
+      "minItems": 1
+    },
+    "notes": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "default": []
+    }
+  },
+  "oneOf": [
+    {
+      "title": "plan",
+      "required": ["dispatch_plan"],
+      "properties": {
+        "dispatch_plan": { "minItems": 1 }
+      }
+    },
+    {
+      "title": "integrate",
+      "required": ["changeset", "verification"]
+    }
+  ],
+  "examples": [
+    {
+      "schema": "worker-result.supervisor/1",
+      "ssot_id": "e2e-write-4aeb119f4748",
+      "task_id": "e2e",
+      "slice_id": "supervisor-plan",
+      "role": "supervisor",
+      "status": "done",
+      "summary": "Produced a slice plan with disjoint ownership and a final integrate step.",
+      "dispatch_plan": [
+        {
+          "schema": "task-dispatch/1",
+          "ssot_id": "e2e-write-4aeb119f4748",
+          "task_id": "e2e",
+          "slice_id": "op-01",
+          "agent_type": "operator",
+          "slice_kind": "probe",
+          "timebox_minutes": 4,
+          "allowed_paths": [],
+          "ownership_paths": [],
+          "dependencies": [],
+          "task_contract": {
+            "goal": "Inspect current schemas and list exact edits needed.",
+            "acceptance": ["Report file paths and concrete edit list."],
+            "constraints": ["Do not write repo content."],
+            "no_touch": []
+          },
+          "evidence_requirements": ["files_read"]
+        },
+        {
+          "schema": "task-dispatch/1",
+          "ssot_id": "e2e-write-4aeb119f4748",
+          "task_id": "e2e",
+          "slice_id": "coder-01",
+          "agent_type": "coder_spark",
+          "slice_kind": "work",
+          "timebox_minutes": 12,
+          "allowed_paths": ["multi-agent/"],
+          "ownership_paths": ["multi-agent/schemas/"],
+          "dependencies": ["op-01"],
+          "task_contract": {
+            "goal": "Implement the small schema edit.",
+            "acceptance": ["Smoke tests pass."],
+            "constraints": ["Do not touch unrelated directories."],
+            "no_touch": []
+          },
+          "evidence_requirements": ["verification"]
+        },
+        {
+          "schema": "task-dispatch/1",
+          "ssot_id": "e2e-write-4aeb119f4748",
+          "task_id": "e2e",
+          "slice_id": "supervisor-integrate",
+          "agent_type": "coder_codex",
+          "slice_kind": "merge",
+          "timebox_minutes": 20,
+          "allowed_paths": ["multi-agent/"],
+          "ownership_paths": ["multi-agent/"],
+          "dependencies": ["coder-01"],
+          "task_contract": {
+            "goal": "Resolve conflicts if any and run final verification.",
+            "acceptance": ["All required checks pass."],
+            "constraints": ["Act as Supervisor Integrate for this run.", "Keep changes minimal and scoped."],
+            "no_touch": []
+          },
+          "evidence_requirements": ["verification"]
+        }
+      ]
+    },
+    {
+      "schema": "worker-result.supervisor/1",
+      "ssot_id": "e2e-write-4aeb119f4748",
+      "task_id": "e2e",
+      "slice_id": "supervisor-integrate",
+      "role": "supervisor",
+      "status": "done",
+      "summary": "Integrated results and verified locally.",
+      "changeset": {
+        "touched_paths": ["multi-agent/PLAYBOOK.md"],
+        "notes": ["Resolved minor conflicts."]
+      },
+      "verification": [
+        {
+          "cmd": "python3 dev/multi-agent/e2e/run_smoke.py",
+          "cwd": "<repo_root>",
+          "exit_code": 0,
+          "stdout_excerpt": "OK: e2e fixtures + invariants"
+        }
+      ]
+    }
+  ]
+}

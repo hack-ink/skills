@@ -31,12 +31,12 @@ Provide a reliable, auditable workflow for multi-agent execution: explicit routi
 ## Hard gates (non-negotiable)
 
 - Short-circuit unless `route="multi"` (no spawns in `single`).
-- Director must not write repo content in `multi` (no `apply_patch`, no file edits). All repo writes — including “integration/merge/conflict resolution” — must be delegated to a Coder slice.
+- Director must not write repo content in `multi` (no `apply_patch`, no file edits). All repo writes — including “integration/merge/conflict resolution” — must be delegated to a `coder_*` slice or the Supervisor Integrate slice.
 - Enforce brokered spawning (requires runtime `max_depth=1`):
   - Director is the only role that uses collab tools (`spawn_agent`, `wait`, `send_input`, `close_agent`).
   - Director spawns depth=1 children only: `operator`, `coder_spark` (fallback `coder_codex`), optional `auditor`.
   - No same-level or cross-level spawn is possible under this topology.
-- Enforce the repo-write gate: only coders implement repo changes.
+- Enforce the repo-write gate: only `coder_*` and the Supervisor Integrate slice implement repo changes.
 - Enforce ownership locks for write slices (no overlapping `ownership_paths` in-flight).
 - Close completed children to avoid thread starvation.
 
@@ -60,6 +60,8 @@ Read `PLAYBOOK.md` and follow it literally.
 - Worker result schemas:
   - `schemas/worker-result.operator.schema.json` (`schema="worker-result.operator/1"`)
   - `schemas/worker-result.coder.schema.json` (`schema="worker-result.coder/1"`)
+- `supervisor` schema:
+  - `schemas/worker-result.supervisor.schema.json` (`schema="worker-result.supervisor/1"`)
 - Auditor schema: `schemas/review-result.auditor.schema.json` (`schema="review-result.auditor/1"`)
 - `ssot_id` generator: `tools/make_ssot_id.py`
 - Dev-only smoke (skills repo only): `python3 dev/multi-agent/e2e/run_smoke.py`

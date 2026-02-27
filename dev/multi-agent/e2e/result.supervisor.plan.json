@@ -1,0 +1,68 @@
+{
+  "schema": "worker-result.supervisor/1",
+  "ssot_id": "e2e-write-4aeb119f4748",
+  "task_id": "e2e",
+  "slice_id": "supervisor-plan",
+  "role": "supervisor",
+  "status": "done",
+  "summary": "Produced a small, spawn-ready dispatch plan with disjoint ownership and a final integrate step.",
+  "dispatch_plan": [
+    {
+      "schema": "task-dispatch/1",
+      "ssot_id": "e2e-write-4aeb119f4748",
+      "task_id": "e2e",
+      "slice_id": "op-01",
+      "agent_type": "operator",
+      "slice_kind": "probe",
+      "timebox_minutes": 4,
+      "allowed_paths": [],
+      "ownership_paths": [],
+      "dependencies": [],
+      "task_contract": {
+        "goal": "Inspect schemas and list exact edits needed.",
+        "acceptance": ["Report file paths and concrete edit list."],
+        "constraints": ["Do not write repo content."],
+        "no_touch": []
+      },
+      "evidence_requirements": ["files_read"]
+    },
+    {
+      "schema": "task-dispatch/1",
+      "ssot_id": "e2e-write-4aeb119f4748",
+      "task_id": "e2e",
+      "slice_id": "coder-01",
+      "agent_type": "coder_spark",
+      "slice_kind": "work",
+      "timebox_minutes": 12,
+      "allowed_paths": ["multi-agent/"],
+      "ownership_paths": ["multi-agent/schemas/"],
+      "dependencies": ["op-01"],
+      "task_contract": {
+        "goal": "Implement the small schema edit.",
+        "acceptance": ["Smoke tests pass."],
+        "constraints": ["Do not touch unrelated directories."],
+        "no_touch": []
+      },
+      "evidence_requirements": ["verification"]
+    },
+    {
+      "schema": "task-dispatch/1",
+      "ssot_id": "e2e-write-4aeb119f4748",
+      "task_id": "e2e",
+      "slice_id": "supervisor-integrate",
+      "agent_type": "coder_codex",
+      "slice_kind": "merge",
+      "timebox_minutes": 20,
+      "allowed_paths": ["multi-agent/"],
+      "ownership_paths": ["multi-agent/"],
+      "dependencies": ["coder-01"],
+      "task_contract": {
+        "goal": "Resolve conflicts if any and run final verification.",
+        "acceptance": ["All required checks pass."],
+        "constraints": ["Act as Supervisor Integrate for this run.", "Keep changes minimal and scoped."],
+        "no_touch": []
+      },
+      "evidence_requirements": ["verification"]
+    }
+  ]
+}

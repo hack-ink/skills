@@ -15,7 +15,6 @@ E2E_DIR = Path(__file__).resolve().parent
 def load_json(path: Path):
     return json.loads(path.read_text())
 
-
 def validate_one(schema_path: Path, payload: dict, label: str) -> None:
     schema = load_json(schema_path)
     Draft202012Validator.check_schema(schema)
@@ -94,6 +93,8 @@ def validate_results() -> None:
     operator_schema = SCHEMAS_DIR / "worker-result.operator.schema.json"
     coder_schema = SCHEMAS_DIR / "worker-result.coder.schema.json"
     auditor_schema = SCHEMAS_DIR / "review-result.auditor.schema.json"
+    supervisor_schema = SCHEMAS_DIR / "worker-result.supervisor.schema.json"
+    dispatch_schema = SCHEMAS_DIR / "task-dispatch.schema.json"
 
     results = [
         ("result.operator.json", operator_schema),
@@ -101,12 +102,20 @@ def validate_results() -> None:
         ("result.auditor.pass.json", auditor_schema),
         ("result.auditor.block.json", auditor_schema),
         ("result.auditor.needs_evidence.json", auditor_schema),
+        ("result.supervisor.plan.json", supervisor_schema),
+        ("result.supervisor.integrate.json", supervisor_schema),
     ]
     for fname, schema_path in results:
         payload = load_json(E2E_DIR / fname)
         assert_no_forbidden_roles(payload)
         validate_one(schema_path, payload, fname)
         assert_ssot_id_policy(payload["ssot_id"])
+
+        if fname == "result.supervisor.plan.json":
+            for i, d in enumerate(payload.get("dispatch_plan", []), 1):
+                assert_no_forbidden_roles(d)
+                validate_one(dispatch_schema, d, f"{fname}.dispatch_plan[{i}]")
+                assert_ssot_id_policy(d["ssot_id"])
 
     coder = load_json(E2E_DIR / "result.coder.json")
     for p in coder["changeset"]["touched_paths"]:

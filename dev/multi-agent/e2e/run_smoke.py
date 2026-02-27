@@ -14,7 +14,6 @@ E2E_DIR = Path(__file__).resolve().parent
 def load_json(path: Path) -> dict:
     return json.loads(path.read_text())
 
-
 def validate_schema_and_examples(schema_path: Path) -> None:
     schema = load_json(schema_path)
     Draft202012Validator.check_schema(schema)

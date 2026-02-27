@@ -1,0 +1,21 @@
+{
+  "schema": "worker-result.supervisor/1",
+  "ssot_id": "e2e-write-4aeb119f4748",
+  "task_id": "e2e",
+  "slice_id": "supervisor-integrate",
+  "role": "supervisor",
+  "status": "done",
+  "summary": "Integrated results and verified locally.",
+  "changeset": {
+    "touched_paths": ["multi-agent/PLAYBOOK.md"],
+    "notes": ["Resolved minor conflicts."]
+  },
+  "verification": [
+    {
+      "cmd": "python3 dev/multi-agent/e2e/run_smoke.py",
+      "cwd": "<repo_root>",
+      "exit_code": 0,
+      "stdout_excerpt": "OK: e2e fixtures + invariants"
+    }
+  ]
+}
