@@ -1,0 +1,2 @@
+file,line,signature,severity,confidence,severity_rationale,impact,likelihood,exposure,triage_state,due_date,accepted_risk_reason,accepted_risk_approver,verified_at,owner,notes,decision_ref
+src/example.rs,42,state_race,Critical,high,Data corruption due to race condition,5,4,4,new,2026-03-05,unauthorized bypass policy,alice,2026-02-27T00:00:00Z,bob,Notes...,decision-log.md#ADR-0000

@@ -1,0 +1,3 @@
+slice_id,focus,scope_glob,owner,reviewer,risk_score,depends_on,wip_state,wip,planned_start,planned_end,notes
+S-001,auth,src/auth/**,alice,alice,95,S-000,active,1,2026-02-27,2026-03-05,High risk identity path
+S-002,payments,src/payments/**,bob,bob,64,S-001,planned,0,2026-02-27,2026-03-07,Downstream of auth slice

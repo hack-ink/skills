@@ -10,6 +10,7 @@ This repository hosts reusable agent skills for Codex workflows.
 - `research` - research/investigation workflow that reads existing materials, clarifies unknowns with the user, and makes evidence-backed recommendations with websearch (`research/SKILL.md`).
 - `rust-style` - mandatory Rust conventions for scope, toolchain/workflow, safety, formatting, error handling, logging, and ownership (`rust-style/SKILL.md`).
 - `pre-commit` - repository commit/push gate with repo-specific Makefile.toml task checks and workflow validation (`pre-commit/SKILL.md`).
+- `codebase-review` - methodology and tooling for full codebase review with risk triage, slicing, findings, decision logs, and SHA-anchored coverage gates (`codebase-review/SKILL.md`).
 
 ## Contributing
 
