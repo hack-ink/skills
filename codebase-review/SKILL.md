@@ -148,7 +148,8 @@ This is review coverage, not test coverage.
 ## Commands
 
 ```bash
-CODEBASE_REVIEW_HOME="${CODEX_HOME:-$HOME/.codex}/skills/codebase-review"
+SKILLS_HOME="${CODEX_HOME:-$HOME/.codex}/skills"
+CODEBASE_REVIEW_HOME="$SKILLS_HOME/codebase-review"
 ```
 
 - Initialize a reusable campaign layout in the target repo:
