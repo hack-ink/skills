@@ -13,7 +13,13 @@ E2E_DIR = Path(__file__).resolve().parent
 
 
 def load_json(path: Path):
-    return json.loads(path.read_text())
+    text = path.read_text()
+    stripped = text.strip()
+    if stripped.startswith("```") or stripped.endswith("```"):
+        raise AssertionError(
+            f"{path.name}: worker output must be raw JSON only; code fences are not allowed"
+        )
+    return json.loads(stripped)
 
 def validate_one(schema_path: Path, payload: dict, label: str) -> None:
     schema = load_json(schema_path)
@@ -46,6 +52,11 @@ def assert_ssot_id_policy(ssot_id: str) -> None:
         )
 
 
+def assert_json_only_output(payload: dict, path: Path) -> None:
+    if not isinstance(payload, (dict, list)):
+        raise AssertionError(f"{path.name}: output must be a JSON object or array")
+
+
 def is_within(touched: str, allowed_paths: list[str]) -> bool:
     touched = touched.rstrip("/")
     for allowed in allowed_paths:
@@ -73,6 +84,17 @@ def assert_no_forbidden_roles(payload: dict) -> None:
         )
 
 
+def assert_coder_spark_timebox(payload: dict) -> None:
+    if (
+        payload.get("agent_type") == "coder_spark"
+        and payload.get("slice_kind") == "work"
+        and payload.get("timebox_minutes", 0) > 12
+    ):
+        raise AssertionError(
+            f"{payload['slice_id']}: coder_spark+work must have timebox_minutes <= 12"
+        )
+
+
 def validate_dispatches(path: Path, expected_count: int) -> list[dict]:
     dispatches = load_json(path)
     if not isinstance(dispatches, list):
@@ -86,6 +108,7 @@ def validate_dispatches(path: Path, expected_count: int) -> list[dict]:
         assert_no_forbidden_roles(d)
         validate_one(schema_path, d, f"{path.name}[{i}]")
         assert_ssot_id_policy(d["ssot_id"])
+        assert_coder_spark_timebox(d)
     return dispatches
 
 
@@ -108,6 +131,7 @@ def validate_results() -> None:
     for fname, schema_path in results:
         payload = load_json(E2E_DIR / fname)
         assert_no_forbidden_roles(payload)
+        assert_json_only_output(payload, E2E_DIR / fname)
         validate_one(schema_path, payload, fname)
         assert_ssot_id_policy(payload["ssot_id"])
 
@@ -115,6 +139,7 @@ def validate_results() -> None:
             for i, d in enumerate(payload.get("dispatch_plan", []), 1):
                 assert_no_forbidden_roles(d)
                 validate_one(dispatch_schema, d, f"{fname}.dispatch_plan[{i}]")
+                assert_coder_spark_timebox(d)
                 assert_ssot_id_policy(d["ssot_id"])
 
     coder = load_json(E2E_DIR / "result.coder.json")

@@ -1,6 +1,6 @@
 ---
 name: multi-agent
-description: Use when a task benefits from parallel workers (Operator/Coder) with Director-only spawning (max_depth=1) and schema-validated inputs/outputs, plus optional Auditor review.
+description: Use when a task benefits from parallel workers (Operator/Coder/Supervisor) with Director-only spawning (max_depth=1) and schema-validated inputs/outputs, plus optional Auditor review.
 ---
 
 # Multi-Agent (vNext)
@@ -34,9 +34,9 @@ Provide a reliable, auditable workflow for multi-agent execution: explicit routi
 - Director must not write repo content in `multi` (no `apply_patch`, no file edits). All repo writes — including “integration/merge/conflict resolution” — must be delegated to a `coder_*` slice or the Supervisor Integrate slice.
 - Enforce brokered spawning (requires runtime `max_depth=1`):
   - Director is the only role that uses collab tools (`spawn_agent`, `wait`, `send_input`, `close_agent`).
-  - Director spawns depth=1 children only: `operator`, `coder_spark` (fallback `coder_codex`), optional `auditor`, and `supervisor`.
+  - Director spawns depth=1 children only: `operator`, `coder_spark` (fallback `coder_codex`), optional `auditor`, and `agent_type="supervisor"`.
   - No same-level or cross-level spawn is possible under this topology.
-- Enforce the repo-write gate: only `coder_*` and Supervisor Integrate (a `supervisor` slice) implement repo changes.
+- Enforce the repo-write gate: only `coder_*` and Supervisor Integrate (`agent_type="supervisor"`) implement repo changes.
 - Enforce ownership locks for write slices (no overlapping `ownership_paths` in-flight).
 - Close completed children to avoid thread starvation.
 
@@ -46,7 +46,7 @@ Read `PLAYBOOK.md` and follow it literally.
 
 ## Outputs
 
-- Schema-valid worker results (Operator/Coder) and optional Auditor review.
+- Schema-valid worker results (`operator`, `coder`, `supervisor`) and optional Auditor review.
 
 ## Notes
 
@@ -70,6 +70,7 @@ Read `PLAYBOOK.md` and follow it literally.
 
 - Non-Director spawning (impossible under `max_depth=1`, but still a common prompt mistake).
 - Dispatch message not being JSON-only `task-dispatch/1`.
+- Worker outputs in markdown/code fences are invalid; all worker results and dispatches must be raw JSON-only (no surrounding ``` fences).
 - “Wait-all” behavior: spawn a wave then idle-wait instead of wait-any replenishment.
 - “Spawn-then-stop” behavior: returning/exiting while any child is still in-flight (must keep polling `functions.wait` until children are finished + closed, or explicitly mark blocked).
 - Forgetting to `close_agent` for completed children.

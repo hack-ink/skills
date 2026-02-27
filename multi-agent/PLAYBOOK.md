@@ -114,6 +114,11 @@ Minimum fields to set correctly:
 
 ## 7) Worker outputs (JSON-only)
 
+`JSON-only` is exact, strict:
+- The output must be one full JSON value (typically an object), and nothing else.
+- No surrounding prose, no markdown wrappers, no code fences (` ``` `), and no trailing text.
+- No partial payload fragments.
+
 Workers must return JSON-only results:
 - Supervisor: `worker-result.supervisor/1`
 - Operator: `worker-result.operator/1`
@@ -121,6 +126,10 @@ Workers must return JSON-only results:
 - Auditor: `review-result.auditor/1`
 
 If a worker cannot comply, it must return `status="blocked"` and explain why.
+If a worker returns non-JSON or markdown-wrapped output, the Director must:
+1. `send_input(interrupt=true)` asking for a raw JSON-only retry of the exact required schema.
+2. If still non-compliant, `close_agent`, then re-dispatch the same slice with the same contract (or narrower scope).
+3. Escalate to `blocked` only if repeated attempts still violate JSON-only.
 
 ## 8) Supervision (slow / stuck / crash)
 

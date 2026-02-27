@@ -47,7 +47,7 @@ Goal: confirm uncertain or >90s work escalates to multi-agent and follows the pr
    - `route="multi"`
 3. Run the protocol:
    - Director plans a slice queue.
-   - Director spawns depth=1 workers (`operator`, `coder_spark`/`coder_codex`) using JSON-only `task-dispatch/1`.
+   - Director spawns depth=1 workers (`operator`, `coder_spark`/`coder_codex`, `supervisor`) using JSON-only `task-dispatch/1`.
    - Director schedules with windowed wait-any (`functions.wait`) and replenishes as slots free up.
    - (Recommended for write/mixed) Director spawns an `auditor` to review evidence before finalizing.
 
@@ -60,6 +60,8 @@ Pass criteria:
 - If the task is large/uncertain, the Director uses a `supervisor` planning slice to produce a spawn-ready plan before dispatching coder work.
 - The run stays within depth=1.
 - Leaf slices are dispatched using JSON-only `task-dispatch/1` (`multi-agent/schemas/task-dispatch.schema.json`).
+- Every leaf worker result is parseable as raw JSON (no markdown/code fences or prose around payload) and matches the expected worker-result schema.
+- If any leaf returns non-JSON output, the Director must run the JSON-only remediation flow: `send_input(interrupt=true)` then `close_agent` and re-dispatch.
 
 ## Test C — Supervision (stall / crash handling)
 
