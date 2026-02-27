@@ -147,16 +147,20 @@ This is review coverage, not test coverage.
 
 ## Commands
 
+```bash
+CODEBASE_REVIEW_HOME="${CODEX_HOME:-$HOME/.codex}/skills/codebase-review"
+```
+
 - Initialize a reusable campaign layout in the target repo:
 
 ```bash
 mkdir -p review
-cp <CODEBASE_REVIEW_PATH>/ledger-template.csv review/ledger.csv
-cp <CODEBASE_REVIEW_PATH>/risk-register-template.md review/risk-register.md
-cp <CODEBASE_REVIEW_PATH>/slice-plan-template.csv review/slice-plan.csv
-cp <CODEBASE_REVIEW_PATH>/findings-backlog-template.csv review/findings-backlog.csv
-cp <CODEBASE_REVIEW_PATH>/decision-log-template.md review/decision-log.md
-cp <CODEBASE_REVIEW_PATH>/forward-gates-template.md review/forward-gates.md
+cp "$CODEBASE_REVIEW_HOME"/ledger-template.csv review/ledger.csv
+cp "$CODEBASE_REVIEW_HOME"/risk-register-template.md review/risk-register.md
+cp "$CODEBASE_REVIEW_HOME"/slice-plan-template.csv review/slice-plan.csv
+cp "$CODEBASE_REVIEW_HOME"/findings-backlog-template.csv review/findings-backlog.csv
+cp "$CODEBASE_REVIEW_HOME"/decision-log-template.md review/decision-log.md
+cp "$CODEBASE_REVIEW_HOME"/forward-gates-template.md review/forward-gates.md
 ``` 
 
 - Create initial Rust scope and run one-time scope snapshot:
@@ -184,7 +188,7 @@ repo-root/
 - Check coverage with explicit scope file (ledger in target repo):
 
 ```bash
-python3 <CODEBASE_REVIEW_PATH>/check-review-coverage.py \
+python3 "$CODEBASE_REVIEW_HOME"/check-review-coverage.py \
   --repo-root . \
   --scope-file review/scope-files.txt \
   --ledger review/ledger.csv \
@@ -194,7 +198,7 @@ python3 <CODEBASE_REVIEW_PATH>/check-review-coverage.py \
 - Check a Rust slice without frozen scope:
 
 ```bash
-python3 <CODEBASE_REVIEW_PATH>/check-review-coverage.py \
+python3 "$CODEBASE_REVIEW_HOME"/check-review-coverage.py \
   --repo-root . \
   --pathspec '*.rs' \
   --ledger review/ledger.csv \
@@ -205,10 +209,10 @@ python3 <CODEBASE_REVIEW_PATH>/check-review-coverage.py \
 
 ```bash
 # 1) Reviewer workers run independently on slice windows and produce review notes:
-python3 <CODEBASE_REVIEW_PATH>/check-review-coverage.py --help
+python3 "$CODEBASE_REVIEW_HOME"/check-review-coverage.py --help
 
 # 2) Integrator runs once after merge decisions are ready:
-python3 <CODEBASE_REVIEW_PATH>/check-review-coverage.py \
+python3 "$CODEBASE_REVIEW_HOME"/check-review-coverage.py \
   --repo-root . \
   --scope-file review/scope-files.txt \
   --ledger review/ledger.csv \
