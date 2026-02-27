@@ -12,15 +12,30 @@ This makes the Director a **broker/scheduler**. Depth=1 children do not have col
 - Route:
   - `single` if tiny, clear, low-risk and `t_max_s <= 90`
   - `multi` if uncertain or `t_max_s > 90`
+- For `multi`, dispatch is **Supervisor-first per workstream**:
+  - First slice for each workstream must be `agent_type="supervisor"` with `slice_kind="work"`.
+  - The Supervisor Planning slice must return a full `dispatch_plan` that names workstreams and expected `timebox_minutes`.
+  - For a given workstream, the Director MUST NOT dispatch any non-supervisor work slice (`operator`, `coder_*`, `auditor`) until that plan is received and accepted.
+- Example (estimate only; not a hardcoded constant): `t_max_s = 900` (15 minutes).
 
-Example (estimate only; not a hardcoded constant): `t_max_s = 900` (15 minutes).
+## 1) Multi-agent supervisor workstream model
 
-## 1) Roles (vNext)
+- Route `multi` into **N workstreams**, where N is based on disjoint ownership and dependency analysis.
+- Director spawns one `supervisor` per workstream (1..N), ideally in parallel when dependencies allow.
+- Each Supervisor must return a `worker-result.supervisor/1` sub-plan, including:
+  - `ownership_paths` / `allowed_paths`
+  - child `operator` and `coder_*` slices
+  - direct dependencies and ordering notes
+- Dispatch worker slices for a workstream as soon as its Supervisor plan is accepted, while other supervisor plans can continue to be evaluated independently.
+- `max_depth=1` remains hard: supervisors cannot spawn sub-workers; they only return plans.
+- If any workstream has blocking or high coupling, Director may collapse it to read-only investigation before continuing dispatch.
 
-- **Director (main thread)**: plans slices, spawns workers, schedules wait-any, integrates *decisions*, decides done/blocked, and (optionally) requests Auditor review. In `multi`, Director does **not** write the repo (no `apply_patch` / file edits). Any repo writes (including “integration”) must be delegated to a `coder_*` slice or the Supervisor Integrate slice.
+## 2) Roles (vNext)
+
+- **Director (main thread)**: plans slices, spawns workers, schedules wait-any, integrates *decisions*, decides done/blocked, and (optionally) requests Auditor review. In `multi`, Director does **not** write the repo (no `apply_patch` / file edits). Any repo writes (including “integration”) must be delegated to a `coder_*` slice or the Supervisor Merge slice (`slice_kind="merge"`).
 - **Supervisor (worker)**: subtask lead. Uses `agent_type="supervisor"` and returns `worker-result.supervisor/1`:
-  - **Supervisor Plan**: produce a spawn-ready `dispatch_plan` (no repo writes).
-  - **Supervisor Integrate**: perform integration + verification (repo writes allowed).
+  - **Supervisor Planning**: produce a spawn-ready `dispatch_plan` (no repo writes, typically `slice_kind="work"`).
+  - **Supervisor Merge**: perform integration + verification (repo writes allowed).
   The Supervisor worker never spawns (enforced by `max_depth=1`).
 - **Operator (worker)**: non-coding execution (repo reads, commands, triage, reproductions, measurements, log inspection).
 - **Coder (worker)**: repo writes (edits + tests). Use `coder_spark`; fall back to `coder_codex` only if needed.
@@ -28,25 +43,41 @@ Example (estimate only; not a hardcoded constant): `t_max_s = 900` (15 minutes).
 
 There is no Orchestrator role.
 
-## 2) Spawn topology (strict)
+## 3) Spawn topology (strict)
 
 The Director may spawn only these agent types: `operator`, `coder_spark`, `coder_codex`, `auditor`, `supervisor`.
 
 Workers never spawn (enforced by `max_depth=1`).
 
-## 3) Slice design (how to split)
+## 4) Slice design (how to split)
 
 Target smaller slices, but avoid “task confetti”.
 
+Efficiency gate (split vs sequential):
+
+- Split only when at least one testable condition holds:
+  - >1 disjoint ownership path is required.
+  - Shared dependency graph has >=2 independent branches.
+  - Estimated implementation effort for a single coder path > 12 minutes.
+  - At least one operation needs blocking I/O (build/test/package/fetch) while independent edits can proceed.
+- Keep sequential when none of the above applies, especially for:
+  - Single-file edits.
+  - Clear one-pass transformations.
+  - Any slice whose expected value-add is mostly exploratory.
+- Hard anti-oversplit rule:
+  - Do not split purely to create micro-slices < 2 minutes except command-only Operator probes.
+  - Do not create duplicate workstreams for overlapping `ownership_paths`.
+
 Recommended timeboxes:
-- **Plan** (Supervisor): 6–10 min (produce `dispatch_plan` with disjoint ownership and explicit dependencies).
+- **Planning** (Supervisor): 6–10 min (produce `dispatch_plan` with disjoint ownership and explicit dependencies).
 - **Probe** (Operator): 2–6 min (fast evidence to reduce uncertainty).
 - **Work** (Operator): 4–12 min (commands + analysis + concrete next steps).
 - **Work** (Coder): 4–12 min (small coherent change + verification).
-- **Integrate** (Supervisor): 15–25 min (resolve conflicts, run higher-scope checks).
+- **Merge** (Supervisor): 15–25 min (resolve conflicts, run higher-scope checks).
 
 Hard cap (prevents 20+ minute stalls):
-- `coder_spark` + `slice_kind="work"` must have `timebox_minutes <= 12`. If you estimate more, split further or route the wrap-up into the Supervisor Integrate slice.
+- `coder_spark` + `slice_kind="work"` must have `timebox_minutes <= 12`. If you estimate more, split further or route the wrap-up into the Supervisor Merge slice.
+- For route=`multi`, `timebox_minutes` for every scheduled workstream and work slice should remain in the 4–12 minute band unless explicitly marked **Merge**.
 
 When to split:
 - Independent paths (different dirs/modules) with **disjoint write ownership**.
@@ -62,7 +93,7 @@ Write ownership rule:
 - Every coder slice declares `ownership_paths` (directories/files).
 - The Director never runs two in-flight coder slices with overlapping `ownership_paths`.
 
-## 4) Windowing (concurrency caps)
+## 5) Windowing (concurrency caps)
 
 Definitions:
 - `max_threads`: global runtime agent budget (set in Codex config).
@@ -77,7 +108,7 @@ For `max_threads = 48`:
 
 This keeps parallelism high without degrading throughput via merge conflicts and coordination thrash.
 
-## 5) Scheduling (wait-any, replenishing)
+## 6) Scheduling (wait-any, replenishing)
 
 Do not “spawn-wave then wait-all”.
 
@@ -97,13 +128,14 @@ Director scheduling loop (mandatory):
 
 Hard rule: if you have spawned at least one child and `inflight` is non-empty, you must keep polling `functions.wait` until `inflight` becomes empty (or you explicitly mark the run blocked). Never “spawn then stop”.
 
-Integration rule (prevents “Director writes code”):
-- If results require applying edits, resolving conflicts, or running final verification in the repo, dispatch a dedicated **Supervisor Integrate** slice (broad `ownership_paths` as needed). The Director remains broker-only.
+Supervisor-Merge rule (prevents “Director writes code”):
+  - If results require applying edits, resolving conflicts, or running final verification in the repo, dispatch a dedicated **Supervisor Merge** slice (`slice_kind="merge"`, broad `ownership_paths` as needed). The Director remains broker-only.
 
-## 6) Dispatch schema (Director → worker)
+## 7) Dispatch schema (Director → worker)
 
 Every `spawn_agent` message must be **JSON-only** and validate against:
 - `schemas/task-dispatch.schema.json` (`schema="task-dispatch/1"`)
+- Allowed `slice_kind` values are exactly `probe`, `work`, `review`, and `merge` in this protocol.
 
 Minimum fields to set correctly:
 - `ssot_id`: `scenario-<hex>` (stable, not date-based)
@@ -112,7 +144,7 @@ Minimum fields to set correctly:
 - `ownership_paths` + `allowed_paths` (especially for coders)
 - `task_contract.goal` + `task_contract.acceptance`
 
-## 7) Worker outputs (JSON-only)
+## 8) Worker outputs (JSON-only)
 
 `JSON-only` is exact, strict:
 - The output must be one full JSON value (typically an object), and nothing else.
@@ -131,7 +163,7 @@ If a worker returns non-JSON or markdown-wrapped output, the Director must:
 2. If still non-compliant, `close_agent`, then re-dispatch the same slice with the same contract (or narrower scope).
 3. Escalate to `blocked` only if repeated attempts still violate JSON-only.
 
-## 8) Supervision (slow / stuck / crash)
+## 9) Supervision (slow / stuck / crash)
 
 If a worker exceeds its `timebox_minutes`:
 1. `send_input(interrupt=true)` asking for a checkpoint: current state, last action, next 3 steps, and whether it is blocked.
@@ -141,7 +173,7 @@ If a worker exceeds its `timebox_minutes`:
 If a worker errors/exits:
 - The Director treats it as `blocked` for that slice, captures error evidence, and either retries with a smaller slice or escalates.
 
-## 9) Auditor policy (default)
+## 10) Auditor policy (default)
 
 - **write/mixed runs**: request Auditor review before finalizing.
 - **read_only runs**: skip Auditor unless the outcome is high-impact.
@@ -150,7 +182,7 @@ Audit loop cap:
 - `audit_max_rounds = 5` (hard stop to avoid infinite loops).
   - Typical is 1 pass; 2 passes only if the first is `BLOCK` or `NEEDS_EVIDENCE`.
 
-## 10) `ssot_id` policy
+## 11) `ssot_id` policy
 
 Use `scenario-hash` (no dates, no secrets).
 

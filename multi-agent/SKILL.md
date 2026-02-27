@@ -31,18 +31,21 @@ Provide a reliable, auditable workflow for multi-agent execution: explicit routi
 ## Hard gates (non-negotiable)
 
 - Short-circuit unless `route="multi"` (no spawns in `single`).
-- Director must not write repo content in `multi` (no `apply_patch`, no file edits). All repo writes — including “integration/merge/conflict resolution” — must be delegated to a `coder_*` slice or the Supervisor Integrate slice.
+- `route="multi"` is Supervisor-first and must include at least one Supervisor Planning slice (`slice_kind="work"`) before any non-director worker slice (`operator`, `coder_*`, `auditor`, `supervisor`) in the same workstream is scheduled.
+- Director must not write repo content in `multi` (no `apply_patch`, no file edits). All repo writes — including “integration/merge/conflict resolution” — must be delegated to a `coder_*` slice or the Supervisor Merge slice (`slice_kind="merge"`).
+- Supervisor workstreams are explicit: launch `1..N` supervisors (N ≥ 1). Use additional supervisors to reduce coordinator overhead and keep coder count bounded; avoid confetti.
+- Enforce coder work efficiency: keep active `coder_*` slices to 12 or fewer in `multi`; prefer Supervisor Merge (`slice_kind="merge"`) for long integration instead of adding additional coder slices.
 - Enforce brokered spawning (requires runtime `max_depth=1`):
   - Director is the only role that uses collab tools (`spawn_agent`, `wait`, `send_input`, `close_agent`).
   - Director spawns depth=1 children only: `operator`, `coder_spark` (fallback `coder_codex`), optional `auditor`, and `agent_type="supervisor"`.
   - No same-level or cross-level spawn is possible under this topology.
-- Enforce the repo-write gate: only `coder_*` and Supervisor Integrate (`agent_type="supervisor"`) implement repo changes.
+- Enforce the repo-write gate: only `coder_*` and Supervisor Merge (`agent_type="supervisor"`, `slice_kind="merge"`) implement repo changes.
 - Enforce ownership locks for write slices (no overlapping `ownership_paths` in-flight).
 - Close completed children to avoid thread starvation.
 
 ## How to use
 
-Read `PLAYBOOK.md` and follow it literally.
+Read `PLAYBOOK.md` and follow it literally for the mandatory Supervisor Planning and supervisor workstream details.
 
 ## Outputs
 

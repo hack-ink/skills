@@ -1,0 +1,270 @@
+[
+  {
+    "schema": "task-dispatch/1",
+    "ssot_id": "ws2-dev-workstreams-03c2909a",
+    "task_id": "supervisor-first-workstreams",
+    "slice_id": "ws2-dev--supervisor-plan",
+    "agent_type": "supervisor",
+    "slice_kind": "probe",
+    "timebox_minutes": 4,
+    "allowed_paths": [],
+    "ownership_paths": [],
+    "dependencies": [],
+    "task_contract": {
+      "goal": "Plan workstreams for a supervisor-first implementation effort.",
+      "acceptance": [
+        "Emit an ordered set of slices aligned to the supervisor-first model.",
+        "Avoid forbidden roles and ensure all downstream slices depend on the supervisor plan slice."
+      ],
+      "constraints": [
+        "Return only dispatch metadata, no execution commands.",
+        "No absolute paths in any contract fields."
+      ],
+      "no_touch": []
+    },
+    "evidence_requirements": [
+      "dispatch_plan"
+    ]
+  },
+  {
+    "schema": "task-dispatch/1",
+    "ssot_id": "ws2-dev-workstreams-03c2909a",
+    "task_id": "supervisor-first-workstreams",
+    "slice_id": "ws2-dev--coder-setup",
+    "agent_type": "coder_spark",
+    "slice_kind": "work",
+    "timebox_minutes": 12,
+    "allowed_paths": [
+      "dev/multi-agent/e2e/"
+    ],
+    "ownership_paths": [
+      "dev/multi-agent/e2e/dispatches.workstreams.json"
+    ],
+    "dependencies": [
+      "ws2-dev--supervisor-plan"
+    ],
+    "task_contract": {
+      "goal": "Create and stage initial fixture skeleton for workstream dispatches.",
+      "acceptance": [
+        "Fixture file exists and is formatted as a JSON array.",
+        "Slice includes initial path and ownership constraints."
+      ],
+      "constraints": [
+        "Only touch the owned fixture path."
+      ],
+      "no_touch": []
+    },
+    "evidence_requirements": [
+      "diff"
+    ]
+  },
+  {
+    "schema": "task-dispatch/1",
+    "ssot_id": "ws2-dev-workstreams-03c2909a",
+    "task_id": "supervisor-first-workstreams",
+    "slice_id": "ws2-dev--coder-validate",
+    "agent_type": "coder_spark",
+    "slice_kind": "work",
+    "timebox_minutes": 12,
+    "allowed_paths": [
+      "multi-agent/schemas/"
+    ],
+    "ownership_paths": [
+      "multi-agent/schemas/task-dispatch.schema.json"
+    ],
+    "dependencies": [
+      "ws2-dev--supervisor-plan"
+    ],
+    "task_contract": {
+      "goal": "Verify workstream fixture payloads validate against task-dispatch schema.",
+      "acceptance": [
+        "All dispatch items pass jsonschema validation.",
+        "No schema-required fields are missing."
+      ],
+      "constraints": [
+        "No edits beyond fixtures and schema checks."
+      ],
+      "no_touch": []
+    },
+    "evidence_requirements": [
+      "jq_validate"
+    ]
+  },
+  {
+    "schema": "task-dispatch/1",
+    "ssot_id": "ws2-dev-workstreams-03c2909a",
+    "task_id": "supervisor-first-workstreams",
+    "slice_id": "ws2-dev--coder-fix",
+    "agent_type": "coder_codex",
+    "slice_kind": "work",
+    "timebox_minutes": 12,
+    "allowed_paths": [
+      "dev/multi-agent/e2e/"
+    ],
+    "ownership_paths": [
+      "dev/multi-agent/e2e/result.auditor.pass.json"
+    ],
+    "dependencies": [
+      "ws2-dev--supervisor-plan"
+    ],
+    "task_contract": {
+      "goal": "Adjust related e2e expectations for a new workstream fixture scenario.",
+      "acceptance": [
+        "Result fixtures describe the same slice set and dependency shape."
+      ],
+      "constraints": [
+        "Keep edits limited to the e2e fixture set."
+      ],
+      "no_touch": []
+    },
+    "evidence_requirements": [
+      "files_read"
+    ]
+  },
+  {
+    "schema": "task-dispatch/1",
+    "ssot_id": "ws2-dev-workstreams-03c2909a",
+    "task_id": "supervisor-first-workstreams",
+    "slice_id": "ws2-dev--operator-probe",
+    "agent_type": "operator",
+    "slice_kind": "probe",
+    "timebox_minutes": 4,
+    "allowed_paths": [],
+    "ownership_paths": [],
+    "dependencies": [
+      "ws2-dev--supervisor-plan"
+    ],
+    "task_contract": {
+      "goal": "Check that no forbidden roles are introduced in the fixture.",
+      "acceptance": [
+        "Return whether director/orchestrator are absent."
+      ],
+      "constraints": [
+        "Read-only.",
+        "Do not modify repository content."
+      ],
+      "no_touch": []
+    },
+    "evidence_requirements": [
+      "commands"
+    ]
+  },
+  {
+    "schema": "task-dispatch/1",
+    "ssot_id": "ws2-dev-workstreams-03c2909a",
+    "task_id": "supervisor-first-workstreams",
+    "slice_id": "ws2-dev--operator-check",
+    "agent_type": "operator",
+    "slice_kind": "work",
+    "timebox_minutes": 6,
+    "allowed_paths": [],
+    "ownership_paths": [],
+    "dependencies": [
+      "ws2-dev--supervisor-plan"
+    ],
+    "task_contract": {
+      "goal": "Inspect all slice_ids and confirm global uniqueness and prefix invariants.",
+      "acceptance": [
+        "Report duplicate-free slice_id list.",
+        "All non-supervisor slices depend on the plan slice."
+      ],
+      "constraints": [
+        "Read-only."
+      ],
+      "no_touch": []
+    },
+    "evidence_requirements": [
+      "commands"
+    ]
+  },
+  {
+    "schema": "task-dispatch/1",
+    "ssot_id": "ws2-dev-workstreams-03c2909a",
+    "task_id": "supervisor-first-workstreams",
+    "slice_id": "ws2-dev--auditor-quick",
+    "agent_type": "auditor",
+    "slice_kind": "review",
+    "timebox_minutes": 8,
+    "allowed_paths": [],
+    "ownership_paths": [],
+    "dependencies": [
+      "ws2-dev--supervisor-plan"
+    ],
+    "task_contract": {
+      "goal": "Perform a targeted policy review of the new workstream plan.",
+      "acceptance": [
+        "Confirm scope, ownership, and evidence requirements are coherent."
+      ],
+      "constraints": [
+        "Only report findings.",
+        "No changes to fixture payloads."
+      ],
+      "no_touch": []
+    },
+    "evidence_requirements": [
+      "review_notes"
+    ]
+  },
+  {
+    "schema": "task-dispatch/1",
+    "ssot_id": "ws2-dev-workstreams-03c2909a",
+    "task_id": "supervisor-first-workstreams",
+    "slice_id": "ws2-dev--coder-final",
+    "agent_type": "coder_codex",
+    "slice_kind": "work",
+    "timebox_minutes": 12,
+    "allowed_paths": [
+      "dev/multi-agent/e2e/"
+    ],
+    "ownership_paths": [
+      "dev/multi-agent/e2e/dispatches.workstreams.json"
+    ],
+    "dependencies": [
+      "ws2-dev--supervisor-plan"
+    ],
+    "task_contract": {
+      "goal": "Finalize payload shape so every item validates under task-dispatch/1.",
+      "acceptance": [
+        "All required fields are present.",
+        "JSON payload validates via `jq` and schema checks."
+      ],
+      "constraints": [
+        "No schema edits.",
+        "No edits outside e2e fixtures."
+      ],
+      "no_touch": []
+    },
+    "evidence_requirements": [
+      "diff",
+      "jq_validate"
+    ]
+  },
+  {
+    "schema": "task-dispatch/1",
+    "ssot_id": "ws2-dev-workstreams-03c2909a",
+    "task_id": "supervisor-first-workstreams",
+    "slice_id": "ws2-dev--operator-final",
+    "agent_type": "operator",
+    "slice_kind": "merge",
+    "timebox_minutes": 6,
+    "allowed_paths": [],
+    "ownership_paths": [],
+    "dependencies": [
+      "ws2-dev--supervisor-plan"
+    ],
+    "task_contract": {
+      "goal": "Assemble evidence index and final integration status.",
+      "acceptance": [
+        "Summarize validation artifacts and report pass/fail.",
+        "State if any constraints were violated."
+      ],
+      "constraints": [
+        "Read-only and reporting only."
+      ],
+      "no_touch": []
+    },
+    "evidence_requirements": [
+      "commands"
+    ]
+  }
+]

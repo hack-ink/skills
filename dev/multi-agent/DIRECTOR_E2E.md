@@ -34,34 +34,56 @@ Pass criteria:
 - The Director does not spawn any agents.
 - The task completes with `route="single"`.
 
-## Test B — Routing gate (should escalate to multi)
+## Test B — Routing gate (must use `multi`, supervisor-first)
 
-Goal: confirm uncertain or >90s work escalates to multi-agent and follows the protocol.
+Goal: confirm `route="multi"` always uses supervisor-first planning and respects efficiency gate expectations.
 
-1. Pick a task that is either:
-   - uncertain (requires research / evidence), **or**
-   - estimated > 90 seconds, **or**
-   - multi-file / risky coordination.
-2. As Director, record:
-   - `t_max_s` (> 90) and `t_why`, **or** explicitly note uncertainty.
-   - `route="multi"`
-3. Run the protocol:
+1. Pick a task estimated > 90 seconds (or equivalent work risk) and intentionally route it as `multi`.
+2. Force a simple 2-workstream shape so you can observe parallel supervision:
+   - one Supervisor slice should cover area A (for example: docs/rules updates),
+   - one Supervisor slice should cover area B (for example: runtime/protocol updates).
+3. As Director, record:
+   - `t_max_s` (> 90) and `t_why`,
+   - `route="multi"`.
+4. Run the protocol:
    - Director plans a slice queue.
+   - Director dispatches at least two `supervisor` planning slices first (one per workstream intent).
    - Director spawns depth=1 workers (`operator`, `coder_spark`/`coder_codex`, `supervisor`) using JSON-only `task-dispatch/1`.
    - Director schedules with windowed wait-any (`functions.wait`) and replenishes as slots free up.
    - (Recommended for write/mixed) Director spawns an `auditor` to review evidence before finalizing.
+   - Optional `operator` support slices should originate only after supervisor plans are available.
+
+Simple log-check for multiple workstreams (TUI):
+- Open `~/.codex/log/codex-tui.log` and confirm:
+  - two supervisor plans are started before any coder slice for the same task,
+  - each supervisor log entry has a distinct stream/workstream identifier,
+  - each coder slice references one stream identifier from the plan it should execute.
 
 Pass criteria:
 
 - No non-Director spawns occur (brokered collab).
 - The Director calls `functions.wait` at least once during the run.
+- For `route="multi"`, supervisor planning is mandatory:
+  - no coder slice is dispatched before at least one supervisor plan result exists for the same task,
+  - no coder dispatch without a parsed supervisor plan in hand.
 - The Director does not stop/exit while any child is still in-flight (keeps polling wait-any until all children are finished + closed, or the run is explicitly blocked).
-- In `multi`, the Director does not perform repo writes (no `apply_patch`); any repo changes (including integration/merge/conflict resolution) come from `coder_*` slices and/or the Supervisor Integrate slice.
-- If the task is large/uncertain, the Director uses a `supervisor` planning slice to produce a spawn-ready plan before dispatching coder work.
+- In `multi`, the Director does not perform repo writes (no `apply_patch`); any repo changes (including integration/merge/conflict resolution) come from `coder_*` slices and/or the Supervisor Merge slice.
+- Supervisor-first is required for this test:
+  - the run includes a supervisor planning slice before coder dispatch,
+  - at least two supervisor planning slices are present for the 2-workstream scenario.
 - The run stays within depth=1.
 - Leaf slices are dispatched using JSON-only `task-dispatch/1` (`multi-agent/schemas/task-dispatch.schema.json`).
 - Every leaf worker result is parseable as raw JSON (no markdown/code fences or prose around payload) and matches the expected worker-result schema.
 - If any leaf returns non-JSON output, the Director must run the JSON-only remediation flow: `send_input(interrupt=true)` then `close_agent` and re-dispatch.
+- Efficiency gate checks (for this test):
+  - Oversized coder slices are rejected:
+    - no single coder slice should claim both workstream A and B,
+    - coder slice scope should stay narrowly scoped to one stream intent.
+  - No confetti oversplitting:
+    - task does not produce a flood of tiny coder slices when two supervisors suffice,
+    - no more than two parallel coder slices per supervisor stream in the first dispatch wave.
+  - Wait-any replenishment is visible:
+    - log shows `functions.wait` cycles followed by new dispatches as prior slices finish.
 
 ## Test C — Supervision (stall / crash handling)
 

@@ -95,6 +95,36 @@ def assert_coder_spark_timebox(payload: dict) -> None:
         )
 
 
+def assert_supervisor_first_invariants(
+    dispatches: list[dict], *, supervisor_slice_id: str, prefix: str
+) -> None:
+    slice_ids = [d["slice_id"] for d in dispatches]
+    if len(slice_ids) != len(set(slice_ids)):
+        duplicates = sorted(
+            {sid for sid in slice_ids if slice_ids.count(sid) > 1}
+        )
+        raise AssertionError(
+            "dispatches.workstreams.json has duplicate slice_id(s): "
+            + ", ".join(duplicates)
+        )
+
+    non_prefix = [d["slice_id"] for d in dispatches if not d["slice_id"].startswith(prefix)]
+    if non_prefix:
+        raise AssertionError(
+            "dispatches.workstreams.json slice_id prefix invariant failed for: "
+            + ", ".join(non_prefix)
+        )
+
+    for d in dispatches:
+        if d["slice_id"] == supervisor_slice_id:
+            continue
+        deps = d.get("dependencies", [])
+        if supervisor_slice_id not in deps:
+            raise AssertionError(
+                f"{d['slice_id']}: non-plan dispatch must depend on {supervisor_slice_id}"
+            )
+
+
 def validate_dispatches(path: Path, expected_count: int) -> list[dict]:
     dispatches = load_json(path)
     if not isinstance(dispatches, list):
@@ -183,6 +213,15 @@ def assert_dispatch_invariants() -> None:
                         raise AssertionError(
                             f"Ownership overlap between coder slices {a_id} and {b_id}: {ap!r} vs {bp!r}"
                         )
+
+    workstreams = validate_dispatches(
+        E2E_DIR / "dispatches.workstreams.json", expected_count=9
+    )
+    assert_supervisor_first_invariants(
+        workstreams,
+        supervisor_slice_id="ws2-dev--supervisor-plan",
+        prefix="ws2-dev--",
+    )
 
 
 def main() -> None:
