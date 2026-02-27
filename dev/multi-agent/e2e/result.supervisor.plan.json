@@ -50,7 +50,7 @@
       "ssot_id": "e2e-write-4aeb119f4748",
       "task_id": "e2e",
       "slice_id": "supervisor-integrate",
-      "agent_type": "coder_codex",
+      "agent_type": "supervisor",
       "slice_kind": "merge",
       "timebox_minutes": 20,
       "allowed_paths": ["multi-agent/"],

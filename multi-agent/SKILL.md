@@ -34,9 +34,9 @@ Provide a reliable, auditable workflow for multi-agent execution: explicit routi
 - Director must not write repo content in `multi` (no `apply_patch`, no file edits). All repo writes — including “integration/merge/conflict resolution” — must be delegated to a `coder_*` slice or the Supervisor Integrate slice.
 - Enforce brokered spawning (requires runtime `max_depth=1`):
   - Director is the only role that uses collab tools (`spawn_agent`, `wait`, `send_input`, `close_agent`).
-  - Director spawns depth=1 children only: `operator`, `coder_spark` (fallback `coder_codex`), optional `auditor`.
+  - Director spawns depth=1 children only: `operator`, `coder_spark` (fallback `coder_codex`), optional `auditor`, and `supervisor`.
   - No same-level or cross-level spawn is possible under this topology.
-- Enforce the repo-write gate: only `coder_*` and the Supervisor Integrate slice implement repo changes.
+- Enforce the repo-write gate: only `coder_*` and Supervisor Integrate (a `supervisor` slice) implement repo changes.
 - Enforce ownership locks for write slices (no overlapping `ownership_paths` in-flight).
 - Close completed children to avoid thread starvation.
 

@@ -18,10 +18,10 @@ Example (estimate only; not a hardcoded constant): `t_max_s = 900` (15 minutes).
 ## 1) Roles (vNext)
 
 - **Director (main thread)**: plans slices, spawns workers, schedules wait-any, integrates *decisions*, decides done/blocked, and (optionally) requests Auditor review. In `multi`, Director does **not** write the repo (no `apply_patch` / file edits). Any repo writes (including “integration”) must be delegated to a `coder_*` slice or the Supervisor Integrate slice.
-- **Supervisor (protocol role)**: subtask lead. Implemented using existing worker agent types:
-  - **Supervisor Plan**: `agent_type="operator"` returning `worker-result.supervisor/1` with `dispatch_plan`.
-  - **Supervisor Integrate**: `agent_type="coder_codex"` returning `worker-result.supervisor/1` with `changeset` + `verification`.
-  The Supervisor role never spawns (enforced by `max_depth=1`).
+- **Supervisor (worker)**: subtask lead. Uses `agent_type="supervisor"` and returns `worker-result.supervisor/1`:
+  - **Supervisor Plan**: produce a spawn-ready `dispatch_plan` (no repo writes).
+  - **Supervisor Integrate**: perform integration + verification (repo writes allowed).
+  The Supervisor worker never spawns (enforced by `max_depth=1`).
 - **Operator (worker)**: non-coding execution (repo reads, commands, triage, reproductions, measurements, log inspection).
 - **Coder (worker)**: repo writes (edits + tests). Use `coder_spark`; fall back to `coder_codex` only if needed.
 - **Auditor (optional worker)**: review gate for correctness, evidence quality, and risk.
@@ -30,7 +30,7 @@ There is no Orchestrator role.
 
 ## 2) Spawn topology (strict)
 
-The Director may spawn only these agent types: `operator`, `coder_spark`, `coder_codex`, `auditor`.
+The Director may spawn only these agent types: `operator`, `coder_spark`, `coder_codex`, `auditor`, `supervisor`.
 
 Workers never spawn (enforced by `max_depth=1`).
 
@@ -107,7 +107,7 @@ Every `spawn_agent` message must be **JSON-only** and validate against:
 
 Minimum fields to set correctly:
 - `ssot_id`: `scenario-<hex>` (stable, not date-based)
-- `agent_type`: `operator` | `coder_spark` | `coder_codex` | `auditor`
+- `agent_type`: `operator` | `coder_spark` | `coder_codex` | `auditor` | `supervisor`
 - `timebox_minutes`
 - `ownership_paths` + `allowed_paths` (especially for coders)
 - `task_contract.goal` + `task_contract.acceptance`
