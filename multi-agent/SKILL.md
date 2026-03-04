@@ -54,11 +54,13 @@ Read `PLAYBOOK.md` and follow it literally for the mandatory Supervisor Planning
 ## Notes
 
 - This skill intentionally removes the Orchestrator role. The Director plans + schedules directly.
+- Council defaults are documented in [`COUNCIL.md`](COUNCIL.md) (bootstrap wave + dual-window templates).
 - Schemas are structural; invariants live in the playbook.
 
 ## Quick reference
 
 - Playbook: `PLAYBOOK.md`
+- Council protocol: `COUNCIL.md`
 - Dispatch schema: `schemas/task-dispatch.schema.json` (`schema="task-dispatch/1"`, JSON-only `spawn_agent.message`)
 - Worker result schemas:
   - `schemas/worker-result.operator.schema.json` (`schema="worker-result.operator/1"`)
@@ -67,6 +69,7 @@ Read `PLAYBOOK.md` and follow it literally for the mandatory Supervisor Planning
   - `schemas/worker-result.supervisor.schema.json` (`schema="worker-result.supervisor/1"`)
 - Auditor schema: `schemas/review-result.auditor.schema.json` (`schema="review-result.auditor/1"`)
 - `ssot_id` generator: `tools/make_ssot_id.py`
+- Council bootstrap helper: `tools/make_council_bootstrap.py`
 - Dev-only smoke (skills repo only): `python3 dev/multi-agent/e2e/run_smoke.py`
 
 ## Common mistakes

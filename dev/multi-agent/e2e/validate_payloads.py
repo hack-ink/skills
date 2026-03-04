@@ -125,6 +125,74 @@ def assert_supervisor_first_invariants(
             )
 
 
+def assert_council_bootstrap_invariants(dispatches: list[dict]) -> None:
+    if not dispatches:
+        raise AssertionError("dispatches.council_bootstrap.json must not be empty")
+
+    ssot_id = dispatches[0]["ssot_id"]
+    prefix = "council--"
+    supervisor_ids = []
+    for d in dispatches:
+        if not d["slice_id"].startswith(prefix):
+            raise AssertionError(
+                "dispatches.council_bootstrap.json slice_id must start with `council--`"
+            )
+        if d["ssot_id"] != ssot_id:
+            raise AssertionError("dispatches.council_bootstrap.json must use one ssot_id")
+        if d["agent_type"] == "supervisor":
+            supervisor_ids.append(d["slice_id"])
+
+    if len(supervisor_ids) != 2:
+        raise AssertionError(
+            "dispatches.council_bootstrap.json must have exactly 2 supervisor slices"
+        )
+
+    for sid in supervisor_ids:
+        match = next(
+            d for d in dispatches if d["slice_id"] == sid and d["agent_type"] == "supervisor"
+        )
+        if match["slice_kind"] != "work":
+            raise AssertionError(
+                f"{sid}: council bootstrap supervisor slice must be slice_kind=work"
+            )
+        if match.get("dependencies"):
+            raise AssertionError(
+                f"{sid}: council bootstrap supervisor slices should not depend on others by default"
+            )
+
+    for d in dispatches:
+        if d["agent_type"] == "operator":
+            if d["slice_kind"] != "work":
+                raise AssertionError(
+                    f"{d['slice_id']}: council bootstrap operator slice must be slice_kind=work"
+                )
+            if d.get("dependencies"):
+                raise AssertionError(
+                    f"{d['slice_id']}: bootstrap operator slice must be dependency-free by default"
+                )
+        if d["agent_type"] == "auditor":
+            if d["slice_kind"] != "review":
+                raise AssertionError(
+                    f"{d['slice_id']}: council bootstrap auditor slice must be slice_kind=review"
+                )
+            if d.get("dependencies"):
+                raise AssertionError(
+                    f"{d['slice_id']}: bootstrap auditor slice must be dependency-free by default"
+                )
+
+    operators = [d for d in dispatches if d["agent_type"] == "operator"]
+    auditors = [d for d in dispatches if d["agent_type"] == "auditor"]
+    if len(operators) != 1:
+        raise AssertionError(
+            "dispatches.council_bootstrap.json must have 1 operator and 1 auditor"
+        )
+
+    if len(auditors) != 1:
+        raise AssertionError(
+            "dispatches.council_bootstrap.json must have 1 operator and 1 auditor"
+        )
+
+
 def validate_dispatches(path: Path, expected_count: int) -> list[dict]:
     dispatches = load_json(path)
     if not isinstance(dispatches, list):
@@ -222,6 +290,10 @@ def assert_dispatch_invariants() -> None:
         supervisor_slice_id="ws2-dev--supervisor-plan",
         prefix="ws2-dev--",
     )
+    council_bootstrap = validate_dispatches(
+        E2E_DIR / "dispatches.council_bootstrap.json", expected_count=4
+    )
+    assert_council_bootstrap_invariants(council_bootstrap)
 
 
 def main() -> None:

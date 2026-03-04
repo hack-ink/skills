@@ -5,7 +5,7 @@
     "task_id": "supervisor-first-workstreams",
     "slice_id": "ws2-dev--supervisor-plan",
     "agent_type": "supervisor",
-    "slice_kind": "probe",
+    "slice_kind": "work",
     "timebox_minutes": 4,
     "allowed_paths": [],
     "ownership_paths": [],

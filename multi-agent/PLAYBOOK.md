@@ -13,6 +13,7 @@ This makes the Director a **broker/scheduler**. Depth=1 children do not have col
   - `single` if tiny, clear, low-risk and `t_max_s <= 90`
   - `multi` if uncertain or `t_max_s > 90`
 - For `multi`, dispatch is **Supervisor-first per workstream**:
+  - Apply **Council-by-default** planning first for all new non-trivial multi runs (see [`COUNCIL.md`](COUNCIL.md)).
   - First slice for each workstream must be `agent_type="supervisor"` with `slice_kind="work"`.
   - The Supervisor Planning slice must return a full `dispatch_plan` that names workstreams and expected `timebox_minutes`.
   - For a given workstream, the Director MUST NOT dispatch any non-supervisor work slice (`operator`, `coder_*`, `auditor`) until that plan is received and accepted.
@@ -29,6 +30,8 @@ This makes the Director a **broker/scheduler**. Depth=1 children do not have col
 - Dispatch worker slices for a workstream as soon as its Supervisor plan is accepted, while other supervisor plans can continue to be evaluated independently.
 - `max_depth=1` remains hard: supervisors cannot spawn sub-workers; they only return plans.
 - If any workstream has blocking or high coupling, Director may collapse it to read-only investigation before continuing dispatch.
+
+For concrete council wave patterns, bootstrap contracts, and a reusable JSON template, read [`COUNCIL.md`](COUNCIL.md).
 
 ## 2) Roles (vNext)
 
@@ -93,20 +96,25 @@ Write ownership rule:
 - Every coder slice declares `ownership_paths` (directories/files).
 - The Director never runs two in-flight coder slices with overlapping `ownership_paths`.
 
-## 5) Windowing (concurrency caps)
+## 5) Dual-window protocol (read/write lanes)
 
-Definitions:
-- `max_threads`: global runtime agent budget (set in Codex config).
-- `window_size`: in-flight workers the Director will maintain for this run.
-- `reserve_threads`: threads the Director intentionally leaves unused (headroom).
+Director scheduling uses two independent caps.
+
+- `window_read`: max in-flight read-only workers (`operator`, auditors that produce no edits).
+- `window_write`: max in-flight write-capable workers (`coder_*`, and `supervisor` with `slice_kind="merge"`).
+- `reserve_threads`: headroom reserved for Director+coordination.
 
 For `max_threads = 48`:
-- `reserve_threads = 4` (Director + optional Auditor + headroom).
-- Hard caps for this protocol (per run):
-  - **write/mixed**: `window_size <= 12`
-  - **read_only**: `window_size <= 16`
+- `reserve_threads = 4`
+- `window_read <= 16`
+- `window_write <= 8`
 
-This keeps parallelism high without degrading throughput via merge conflicts and coordination thrash.
+General constraints:
+- Never let `window_read + window_write` exceed `max_threads - reserve_threads`.
+- Enforce write ownership locks independently of read slots: read workers do not consume `window_write`.
+- Keep write-capable classification explicit:
+  - write-capable: `agent_type` in (`coder_spark`, `coder_codex`) or (`agent_type` == `supervisor` and `slice_kind` == `merge`)
+  - read-only: `operator`, `auditor`
 
 ## 6) Scheduling (wait-any, replenishing)
 
@@ -116,10 +124,12 @@ Director scheduling loop (mandatory):
 1. Maintain:
    - `pending`: slices not yet dispatched
    - `inflight`: spawned slices not yet finished + closed
+   - `inflight_read`: `operator` + `auditor` slices in `inflight`
+   - `inflight_write`: `coder_*` and `supervisor`(`merge`) slices in `inflight`
    - `done`: completed slices
 2. While `pending` is not empty OR `inflight` is not empty:
    - Spawn from `pending` into `inflight` until either:
-     - `len(inflight) == window_size`, or
+     - both `len(inflight_read) == window_read` and `len(inflight_write) == window_write`, or
      - no slice is runnable due to dependencies/ownership locks.
    - If `inflight` is non-empty: call `functions.wait` (wait-any) with a bounded timeout and handle whichever child finishes.
      - On timeout: do **not** exit; loop and poll again.

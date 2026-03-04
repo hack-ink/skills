@@ -1,0 +1,106 @@
+[
+  {
+    "schema": "task-dispatch/1",
+    "ssot_id": "e2e-council-bootstrap-ad022109e5ae",
+    "task_id": "council-bootstrap",
+    "slice_id": "council--supervisor-parallel",
+    "agent_type": "supervisor",
+    "slice_kind": "work",
+    "timebox_minutes": 6,
+    "allowed_paths": [],
+    "ownership_paths": [],
+    "dependencies": [],
+    "task_contract": {
+      "goal": "Build an initial council bootstrap plan focused on fast parallelization.",
+      "acceptance": [
+        "Produce a valid dispatch_plan with clearly disjoint coder ownership candidates."
+      ],
+      "constraints": [
+        "No repo writes in this slice.",
+        "No absolute paths in any contract fields."
+      ],
+      "no_touch": []
+    },
+    "evidence_requirements": [
+      "dispatch_plan"
+    ]
+  },
+  {
+    "schema": "task-dispatch/1",
+    "ssot_id": "e2e-council-bootstrap-ad022109e5ae",
+    "task_id": "council-bootstrap",
+    "slice_id": "council--supervisor-risk",
+    "agent_type": "supervisor",
+    "slice_kind": "work",
+    "timebox_minutes": 6,
+    "allowed_paths": [],
+    "ownership_paths": [],
+    "dependencies": [],
+    "task_contract": {
+      "goal": "Build a conservative council bootstrap plan with risk controls.",
+      "acceptance": [
+        "Produce a valid dispatch_plan with explicit fallback and blocking handling."
+      ],
+      "constraints": [
+        "No repo writes in this slice.",
+        "No absolute paths in any contract fields."
+      ],
+      "no_touch": []
+    },
+    "evidence_requirements": [
+      "dispatch_plan"
+    ]
+  },
+  {
+    "schema": "task-dispatch/1",
+    "ssot_id": "e2e-council-bootstrap-ad022109e5ae",
+    "task_id": "council-bootstrap",
+    "slice_id": "council--operator-mapper",
+    "agent_type": "operator",
+    "slice_kind": "work",
+    "timebox_minutes": 5,
+    "allowed_paths": [],
+    "ownership_paths": [],
+    "dependencies": [],
+    "task_contract": {
+      "goal": "Compare multiple council plans and normalize a unified bootstrap dispatch list.",
+      "acceptance": [
+        "Return a merged proposal with one canonical ownership strategy and conflict notes."
+      ],
+      "constraints": [
+        "Read-only.",
+        "No repo modifications."
+      ],
+      "no_touch": []
+    },
+    "evidence_requirements": [
+      "commands"
+    ]
+  },
+  {
+    "schema": "task-dispatch/1",
+    "ssot_id": "e2e-council-bootstrap-ad022109e5ae",
+    "task_id": "council-bootstrap",
+    "slice_id": "council--auditor-premortem",
+    "agent_type": "auditor",
+    "slice_kind": "review",
+    "timebox_minutes": 8,
+    "allowed_paths": [],
+    "ownership_paths": [],
+    "dependencies": [],
+    "task_contract": {
+      "goal": "Pre-mortem review of the proposed bootstrap strategy.",
+      "acceptance": [
+        "Identify 3+ concrete failure modes and mitigation actions."
+      ],
+      "constraints": [
+        "Review-only.",
+        "No repo modifications."
+      ],
+      "no_touch": []
+    },
+    "evidence_requirements": [
+      "review_notes"
+    ]
+  }
+]
