@@ -21,6 +21,11 @@ If a gate is not applicable, record it as `skipped` with a reason and do not inv
 
 This repository also requires commit messages to follow the `cmsg/1` schema (single-line JSON). Do not use free-form commit messages.
 
+Note: Some checks are **manual reviews** and may not have an exit code. For these, record:
+
+- What you scanned/read (files/paths)
+- Your conclusion (impact/no-impact/unclear + risk)
+
 ## Always-run preflight (evidence)
 
 Run these commands and record their exit codes in the report:
@@ -72,23 +77,20 @@ Fallback validation (use only if the script is unavailable; record exit code in 
     - If not present, record that the Makefile.toml gate is not applicable and skip this section.
 
 2. `docs/` directory exists at repo-root?
-    - If present, run docs checks only when the repository explicitly documents one exact command for docs validation.
-        - If an exact command is documented, run that exact command.
-        - If no exact command is documented, skip docs checks and record that docs validation is not defined.
-    - Do not infer or auto-detect docs commands.
+    - If present, perform a **documentation impact review**:
+        - Check whether this change requires docs updates (user-facing behavior, config/env vars, CLI, APIs, runbooks).
+        - If docs were edited, sanity-check that the edits match the change.
+        - If docs were not edited, record why (no docs impact vs. missed update) and the resulting risk.
+    - If the repository documents an exact docs-validation command, you may run it, but it is not required. Default to reading/scanning relevant docs content.
 
 3. `.github/workflows/` directory exists at repo-root?
-    - If present, run workflow checks only when the repository explicitly documents one exact command.
-        - If an exact command is documented, run that exact command.
-        - If no exact command is documented, skip workflow checks and record that workflow verification is not defined.
-    - Do not auto-detect workflow runs or use `gh` CLI watchers.
+    - If present, perform a **workflow impact review**:
+        - Scan workflow definitions to understand what checks CI will run.
+        - Use the local commands you already ran (and their results) to infer whether this change is likely to impact CI.
+        - If the change plausibly affects CI but your local runs do not cover it, record the gap and risk (and optionally run additional local checks if they are clearly justified).
+    - Do not auto-run workflows or use `gh` watchers as a substitute for CI.
 
 `lint-fix` may change files, so keep `fmt` and `test` tied to the same local state.
-
-## Push hygiene (do not bypass policies by accident)
-
-- Prefer pushing a feature branch and opening a PR.
-- Do not force-push unless the user explicitly asked for it and you have confirmed the target ref.
 
 ## Outputs
 
@@ -113,6 +115,10 @@ Repo gates
   - `cargo make lint-fix` (exit: <code> | n/a)
   - `cargo make fmt` (exit: <code> | n/a)
   - `cargo make test` (exit: <code> | n/a)
-- docs gate: ran | skipped: <reason>
-- workflows gate: ran | skipped: <reason>
+- docs review: done | skipped: <reason>
+  - scanned/read: <paths/files>
+  - conclusion: <no-impact|impact|unclear> (risk: <low|medium|high>)
+- workflows review: done | skipped: <reason>
+  - scanned: <paths/files>
+  - conclusion: <no-impact|impact|unclear> (risk: <low|medium|high>)
 ```
