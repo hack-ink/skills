@@ -24,6 +24,9 @@ Get decision-grade research and architecture recommendations from ChatGPT Pro, t
 1. Default to running the Pro consultation in the current thread.
    - Subagents can be terminated by the runtime before a long Pro run completes, which can look like a hang to the parent.
    - Use a Runner subagent only for short, bounded steps (navigation + prompt submission) and return early; do not wait for Pro completion inside the subagent.
+   - Single-flight: do not start a second Pro run until the current one is completed or explicitly aborted.
+   - If a Runner subagent is used, the parent must wait patiently for it to return (long Pro runs can be minutes to hours). Do not create a new Pro chat “because it seems stuck”.
+   - If a Runner subagent is used, have it return `conversation_url` as soon as it exists (after prompt submission) so the parent can take over polling.
 2. Treat secrets and private data as sensitive: do not paste tokens, credentials, internal-only identifiers, customer data, or private URLs.
 3. No leaks in web research: do not include sensitive details in any “search log” or “sources” requests to Pro.
 
@@ -109,12 +112,16 @@ Ask Pro to follow this workflow and to be explicit about evidence:
 ### E) Submit + poll
 
 1. Submit the prompt.
-2. Poll every 180 seconds until completion:
+2. Immediately capture and persist `conversation_url` (single-flight lock):
+   - Run `agent-browser get url` and treat that as the canonical `conversation_url`.
+   - If navigation breaks or UI drifts, reopen `conversation_url` instead of starting a new chat.
+3. Poll every 180 seconds until completion:
    - If generation is still running (`Stop streaming`, "still generating", or equivalent), keep waiting.
    - If a `Pro thinking` panel appears with `Update`/`Stop`, just wait; do not spam `Update`.
    - If `Continue generating` appears, click it and continue polling.
    - After final content is present and `Done` is shown, take a snapshot to capture the final answer state.
    - Avoid spamming output; only report when content changes or completes.
+   - Do not start a new chat just because the current one is slow; waiting is expected.
 
 ### F) Return a decision-ready handoff to Codex
 
