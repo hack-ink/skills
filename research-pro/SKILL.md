@@ -25,8 +25,12 @@ Get decision-grade research and architecture recommendations from ChatGPT Pro, t
    - Subagents can be terminated by the runtime before a long Pro run completes, which can look like a hang to the parent.
    - Use a Runner subagent only for short, bounded steps (navigation + prompt submission) and return early; do not wait for Pro completion inside the subagent.
    - Single-flight: do not start a second Pro run until the current one is completed or explicitly aborted.
-   - If a Runner subagent is used, the parent must wait patiently for it to return (long Pro runs can be minutes to hours). Do not create a new Pro chat “because it seems stuck”.
+   - If a Runner subagent is used, do not close/replace it just because it is quiet; wait patiently and avoid starting a new Pro chat “because it seems stuck”.
    - If a Runner subagent is used, have it return `conversation_url` as soon as it exists (after prompt submission) so the parent can take over polling.
+   - If the Runner subagent is interrupted/terminated, assume ChatGPT may still be generating in the background:
+     - First, attach to the existing browser session and recover the URL via `agent-browser --session-name research-pro get url`.
+     - If the URL already contains `/c/`, treat it as the canonical `conversation_url` and resume polling; do not start a new chat.
+     - Only start a new chat after you have evidence the existing conversation cannot be recovered or is explicitly aborted.
 2. Treat secrets and private data as sensitive: do not paste tokens, credentials, internal-only identifiers, customer data, or private URLs.
 3. No leaks in web research: do not include sensitive details in any “search log” or “sources” requests to Pro.
 
