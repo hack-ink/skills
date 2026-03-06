@@ -31,6 +31,8 @@ Get decision-grade research and architecture recommendations from ChatGPT Pro, t
      - First, attach to the existing browser session and recover the URL via `agent-browser --session-name research-pro get url`.
      - If the URL already contains `/c/`, treat it as the canonical `conversation_url` and resume polling; do not start a new chat.
      - Only start a new chat after you have evidence the existing conversation cannot be recovered or is explicitly aborted.
+   - Active-generation controls are authoritative. Do not treat partial output, a visible `Copy` button, or the absence of progress text as completion while `Stop streaming`, `Continue generating`, `Update`, or equivalent active-generation controls remain.
+   - Exact reattach rule: if the canonical `conversation_url` still resolves to a live `/c/` thread and `snapshot -i -C` shows `Model selector, current model is 5.4 Pro`, `Extended Pro`, and a live `Stop streaming` control, the consultation is definitively `in_progress`, not complete, even if a `Copy` button and partial assistant text are visible.
 2. Treat secrets and private data as sensitive: do not paste tokens, credentials, internal-only identifiers, customer data, or private URLs.
 3. No leaks in web research: do not include sensitive details in any “search log” or “sources” requests to Pro.
 
@@ -55,6 +57,7 @@ Get decision-grade research and architecture recommendations from ChatGPT Pro, t
 10. Ensure model is Pro (do not pin a specific Pro version string), then set Pro thinking to `Extended` by default.
    - Switch to `Standard` only if the user explicitly asks for `Standard`/`default`.
 11. Poll every 180 seconds while waiting for completion because Pro Standard can still take minutes to hours.
+   - There is no fixed polling budget or max cycle count. Keep polling the same conversation until the completion gate passes, the run is explicitly aborted, or a real `needs-user-action` blocker is reached.
 
 ## Procedure
 
@@ -81,6 +84,7 @@ Ask Pro to follow this workflow and to be explicit about evidence:
    - Recommended invocation: `agent-browser --headed --args "--disable-blink-features=AutomationControlled" --session-name research-pro --profile ~/.agent-browser/profiles/research-pro open https://chatgpt.com`
    - Use a dedicated absolute profile directory and a session name aligned to the skill name (`research-pro`); relative profile paths vary by `cwd` and can reuse the wrong browser state.
    - If the CLI reports `--args ignored: daemon already running`, the existing browser daemon is being reused; run `agent-browser close` first when you need a fresh launch with new args.
+   - During reattach/polling, do not treat a busy-daemon or similar transient CLI warning as completion. Reuse the existing session, recover `conversation_url`, and continue polling the same thread.
 2. If login is required, pause for manual login/MFA and continue after success.
 
 ### C) Open or create the target Project (with correct memory at creation)
@@ -120,10 +124,18 @@ Ask Pro to follow this workflow and to be explicit about evidence:
    - Run `agent-browser get url` and treat that as the canonical `conversation_url`.
    - If navigation breaks or UI drifts, reopen `conversation_url` instead of starting a new chat.
 3. Poll every 180 seconds until completion:
+   - There is no fixed polling budget or max cycle count. The same turn keeps polling until the completion gate passes, the run is explicitly aborted, or a real `needs-user-action` blocker is reached.
+   - Completion gate: do not treat partial visible assistant text, a visible `Copy` button, or missing progress text as completion while `Stop streaming`, `Continue generating`, `Update`, or equivalent active-generation controls are still present.
+   - Reattach gate: if `agent-browser --session-name research-pro get url` still returns the same `/c/` thread and `snapshot -i -C` shows `Model selector, current model is 5.4 Pro`, `Extended Pro`, and `Stop streaming`, the consultation is still active. Keep polling in the same turn. Use `status=in_progress` only when an explicit interruption, checkpoint, or continuity handoff is required.
+   - If polling hits a transient `agent-browser` failure (busy daemon, snapshot failure, temporary transport error, or session hiccup), recover the existing session first:
+     - Run `agent-browser --session-name research-pro get url`.
+     - If it still returns a `/c/` conversation, reopen or resume that URL in the same session and continue polling.
+     - Do not conclude completion and do not start a new chat unless recovery fails repeatedly or the run is explicitly aborted.
    - If generation is still running (`Stop streaming`, "still generating", or equivalent), keep waiting.
    - If a `Pro thinking` panel appears with `Update`/`Stop`, just wait; do not spam `Update`.
    - If `Continue generating` appears, click it and continue polling.
-   - After final content is present and `Done` is shown, take a snapshot to capture the final answer state.
+   - After active-generation controls are gone and the page shows a stable idle state (`Done` or equivalent), take a snapshot to capture the final answer state.
+   - Safe extraction only after completion: do not use `agent-browser get text body` on ChatGPT pages. Prefer the assistant-message `Copy` button after the completion gate passes; if that is unavailable, use DOM-scoped extraction that targets only the completed final assistant message.
    - Avoid spamming output; only report when content changes or completes.
    - Do not start a new chat just because the current one is slow; waiting is expected.
 
@@ -131,12 +143,30 @@ Ask Pro to follow this workflow and to be explicit about evidence:
 
 Return:
 - conversation URL
-- final answer (full text)
+- status:
+  - `completed`: normal terminal success state; the completion gate passed and the final answer was extracted
+  - `needs-user-action`: normal terminal blocked state; login/MFA/UI recovery/manual intervention prevents continued polling
+  - `in_progress`: non-terminal continuity/checkpoint state only when polling is explicitly interrupted or handed off; if you can still reattach and wait in the same turn, do not stop here
+- final answer (full text only when `status=completed`)
+- partial answer text (optional and clearly labeled only when `status=in_progress`)
 - a short summary
 - the evidence map + source links
 - explicit assumptions and open questions
 
-### G) UI drift resilience (when navigation fails)
+### G) Cleanup the temporary browser
+
+Use the dedicated `research-pro` browser session as a temporary worker, not a persistent background browser.
+
+1. On `status=completed`:
+   - After the final answer has been extracted and the handoff payload is ready, close the dedicated browser session: `agent-browser --session-name research-pro close`
+   - If close fails because the session is already gone, record that and continue; do not treat cleanup failure as a failed research run.
+2. On `status=in_progress`:
+   - Do **not** close the browser; continuity depends on being able to reattach to the same session and `conversation_url`.
+3. On `status=needs-user-action`:
+   - Keep the browser open if the user still needs the live page for login/MFA/manual recovery.
+   - Close it only after the user-action path is abandoned, explicitly aborted, or converted into a completed handoff.
+
+### H) UI drift resilience (when navigation fails)
 
 ChatGPT UI can change. Do not hardcode brittle selectors as the only path. When any step fails (missing sidebar, `More` menu not opening, clicks blocked by overlays), switch strategies and capture an evidence pack so the **next LLM iteration** can self-heal the automation and/or update this skill.
 
@@ -191,7 +221,8 @@ Return a compact handoff:
 
 - `project_name`
 - `conversation_url`
-- `status` (`completed` or `needs-user-action`)
+- `status` (`completed`, `needs-user-action`, or `in_progress`; use `in_progress` only for explicit interruption/checkpoint/continuity handoff)
 - `answer_summary`
-- `full_answer_text`
+- `full_answer_text` (only when `status=completed`)
+- `partial_answer_text` (optional, only when `status=in_progress`, clearly labeled partial)
 - `evidence_links`
