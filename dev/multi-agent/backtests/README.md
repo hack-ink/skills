@@ -1,9 +1,10 @@
 # Swarm Backtests (Deterministic)
 
-This directory contains deterministic broker scheduling backtests for the Swarm-first protocol.
+This directory contains deterministic routing and broker scheduling backtests for the single-first protocol.
 
 The simulator covers scheduler behaviors that fixture/schema checks cannot prove:
 
+- route selection for `single`, `single-deep`, and `multi`
 - wait-any replenishment vs wait-all wave scheduling
 - write-lock enforcement for overlapping builder ownership
 - handoff dedup merge behavior
@@ -28,7 +29,7 @@ python3 dev/multi-agent/e2e/run_smoke.py
 
 Each scenario folder contains:
 
-- `scenario.json`: scheduler config, deterministic durations/failures, expectations
-- `dispatches.initial.json`: initial ticket board
-- `handoff.*.json`: deterministic handoff payload fixtures
-- `MANUAL.md`: manual replay/inspection notes
+- `scenario.json`: scenario kind, deterministic inputs, and expectations
+- `dispatches.initial.json`: initial ticket board for scheduler scenarios
+- `handoff.*.json`: deterministic handoff payload fixtures for scheduler scenarios
+- `MANUAL.md`: manual replay/inspection notes when a scenario needs them

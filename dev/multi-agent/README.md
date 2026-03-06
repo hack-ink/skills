@@ -10,6 +10,8 @@ From the repo root:
 python3 dev/multi-agent/e2e/run_smoke.py
 ```
 
+This smoke entrypoint validates the installable JSON templates, the dev Broker routing doc, route fixtures, and the deterministic backtests.
+
 ## Backtests
 
 Deterministic scheduler simulations live under `dev/multi-agent/backtests/`.

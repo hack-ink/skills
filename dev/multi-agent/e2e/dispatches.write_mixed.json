@@ -6,6 +6,8 @@
     "slice_id": "builder-01",
     "agent_type": "builder",
     "slice_kind": "work",
+    "work_package_id": "pkg-write-builder-01",
+    "expected_work_s": 600,
     "timebox_minutes": 12,
     "allowed_paths": [
       "multi-agent/schemas/"
@@ -35,6 +37,8 @@
     "slice_id": "builder-02",
     "agent_type": "builder",
     "slice_kind": "work",
+    "work_package_id": "pkg-write-builder-02",
+    "expected_work_s": 600,
     "timebox_minutes": 12,
     "allowed_paths": [
       "multi-agent/tools/"
@@ -64,6 +68,8 @@
     "slice_id": "builder-03",
     "agent_type": "builder",
     "slice_kind": "work",
+    "work_package_id": "pkg-write-builder-03",
+    "expected_work_s": 540,
     "timebox_minutes": 12,
     "allowed_paths": [
       "dev/multi-agent/"
@@ -91,6 +97,8 @@
     "slice_id": "builder-04",
     "agent_type": "builder",
     "slice_kind": "work",
+    "work_package_id": "pkg-write-builder-04",
+    "expected_work_s": 720,
     "timebox_minutes": 12,
     "allowed_paths": [
       "dev/multi-agent/e2e/"
@@ -120,6 +128,8 @@
     "slice_id": "builder-05",
     "agent_type": "builder",
     "slice_kind": "work",
+    "work_package_id": "pkg-write-builder-05",
+    "expected_work_s": 480,
     "timebox_minutes": 12,
     "allowed_paths": [
       "rust-style/"
@@ -147,6 +157,8 @@
     "slice_id": "builder-06",
     "agent_type": "builder",
     "slice_kind": "work",
+    "work_package_id": "pkg-write-builder-06",
+    "expected_work_s": 480,
     "timebox_minutes": 12,
     "allowed_paths": [
       "python-style/"

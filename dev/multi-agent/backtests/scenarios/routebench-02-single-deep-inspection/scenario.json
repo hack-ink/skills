@@ -1,0 +1,15 @@
+{
+  "id": "routebench-02-single-deep-inspection",
+  "kind": "routing",
+  "description": "A non-decomposable task may stay single-deep under 90 seconds when dev fixtures mark deeper inspection explicitly.",
+  "route_input": {
+    "t_max_s": 75,
+    "t_why": "The task needs deeper local inspection before a split decision would be justified.",
+    "decomposable": false,
+    "dev_requires_deeper_inspection": true
+  },
+  "expectations": {
+    "expected_route": "single-deep",
+    "expected_spawn_count": 0
+  }
+}

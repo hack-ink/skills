@@ -67,10 +67,8 @@ def build_council_bootstrap(
     depend_on_runner: bool,
     include_inspector: bool,
     include_runner_mapper: bool,
-    include_builder_planner: bool,
     runner_timebox: int,
     inspector_timebox: int,
-    builder_timebox: int,
     hex_len: int,
 ) -> list[dict]:
     ssot_id = make_ssot_id(scenario, hex_len=hex_len)
@@ -128,35 +126,12 @@ def build_council_bootstrap(
             )
         )
 
-    if include_builder_planner:
-        dispatches.append(
-            make_dispatch(
-                ssot_id=ssot_id,
-                task_id=task_id,
-                slice_id=f"{prefix}-builder-planner",
-                agent_type="builder",
-                slice_kind="work",
-                timebox_minutes=builder_timebox,
-                dependencies=followup_dependencies,
-                goal="Draft concrete follow-up coding ticket candidates for the broker queue.",
-                acceptance=[
-                    "Return proposed task-dispatch tickets via handoff_requests or structured notes.",
-                    "Keep ownership paths disjoint and dependency-aware.",
-                ],
-                constraints=[
-                    "Planning-only output.",
-                    "No repository writes.",
-                ],
-                evidence_requirements=["analysis", "handoff_requests"],
-            )
-        )
-
     return dispatches
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Generate Swarm council-bootstrap task-dispatch fixtures."
+        description="Generate council-bootstrap task-dispatch fixtures."
     )
     parser.add_argument("scenario", help="Scenario slug, e.g. pack-configs-pubfi-cli")
     parser.add_argument("--task-id", default="council-route", help="Task identifier.")
@@ -187,21 +162,10 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         help="timebox for inspector pre-mortem slice.",
     )
     parser.add_argument(
-        "--include-builder-planner",
-        action="store_true",
-        help="Include an optional builder planning slice (planning-only, no writes).",
-    )
-    parser.add_argument(
-        "--builder-timebox-minutes",
-        type=int,
-        default=8,
-        help="timebox for optional builder planner slice.",
-    )
-    parser.add_argument(
         "--depend-on-runner",
         action="store_true",
         help=(
-            "If set, inspector/builder planner slices depend on runner mapper. "
+            "If set, inspector depends on runner mapper. "
             "Default keeps the bootstrap wave parallel."
         ),
     )
@@ -233,9 +197,9 @@ def main(argv: list[str]) -> int:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 2
 
-    if not (args.runner_mapper or args.inspector or args.include_builder_planner):
+    if not (args.runner_mapper or args.inspector):
         print(
-            "ERROR: at least one slice must be enabled (runner, inspector, or builder planner)",
+            "ERROR: at least one slice must be enabled (runner mapper or inspector)",
             file=sys.stderr,
         )
         return 2
@@ -246,10 +210,8 @@ def main(argv: list[str]) -> int:
         depend_on_runner=args.depend_on_runner,
         include_inspector=args.inspector,
         include_runner_mapper=args.runner_mapper,
-        include_builder_planner=args.include_builder_planner,
         runner_timebox=args.runner_timebox_minutes,
         inspector_timebox=args.inspector_timebox_minutes,
-        builder_timebox=args.builder_timebox_minutes,
         hex_len=args.hex_len,
     )
 

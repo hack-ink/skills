@@ -6,7 +6,7 @@
   "role": "builder",
   "agent_type": "builder",
   "status": "done",
-  "summary": "Implemented Swarm-first schema and fixture updates, then validated locally.",
+  "summary": "Implemented single-first schema and fixture updates, then validated locally.",
   "allowed_paths": [
     "multi-agent/",
     "dev/multi-agent/"

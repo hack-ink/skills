@@ -1,6 +1,6 @@
-# Broker Split Protocol (Swarm-First)
+# Broker Split Protocol (Single-First)
 
-Use this when `route="multi"` and the task is uncertain, mixed read/write, or likely to exceed a single coherent Builder timebox.
+Use this when `route="multi"` and the task already has evidence-backed package boundaries: disjoint ownership, independent branches, or useful lane overlap. Uncertainty alone should route to `single-deep`, not `multi`.
 
 Goal: produce a **runnable ticket board** (not a linear plan) with parallelism that is safe under ownership locks.
 
@@ -18,6 +18,7 @@ Prefer sequential when none apply:
 - tiny single-file edits
 - one-pass mechanical transformations
 - tightly coupled edits requiring continuous shared context
+- uncertainty that still needs direct inspection before safe package boundaries exist
 
 ## Work packages (default)
 
@@ -85,7 +86,9 @@ Write wave (Builder):
   "timebox_minutes": 12,
   "work_package_id": "pkg-ownership-A",
   "expected_work_s": 540,
-  "allowed_paths": [],
+  "allowed_paths": [
+    "<SET_ME_repo_scope>"
+  ],
   "ownership_paths": [
     "<SET_ME_disjoint_ownership_paths>"
   ],

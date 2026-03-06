@@ -186,41 +186,128 @@ def assert_swarm_ticket_invariants(dispatches: list[dict]) -> None:
     assert_no_builder_ownership_overlap(builders, label="dispatches.workstreams.json")
 
 
-def assert_council_bootstrap_invariants(dispatches: list[dict]) -> None:
-    if len(dispatches) != 2:
+def assert_route_cases() -> None:
+    route_cases = load_json(E2E_DIR / "route_cases.json")
+    if not isinstance(route_cases, list):
+        raise AssertionError("route_cases.json must be a JSON array")
+    if len(route_cases) < 3:
+        raise AssertionError("route_cases.json must include `single`, `single-deep`, and `multi`")
+
+    seen_ids: set[str] = set()
+    seen_routes: set[str] = set()
+    valid_routes = {"single", "single-deep", "multi"}
+
+    for index, payload in enumerate(route_cases, 1):
+        label = f"route_cases.json[{index}]"
+        if not isinstance(payload, dict):
+            raise AssertionError(f"{label}: route case must be a JSON object")
+
+        scenario_id = payload.get("scenario_id")
+        if not isinstance(scenario_id, str) or not scenario_id:
+            raise AssertionError(f"{label}: scenario_id must be a non-empty string")
+        if scenario_id in seen_ids:
+            raise AssertionError(f"{label}: duplicate scenario_id {scenario_id!r}")
+        seen_ids.add(scenario_id)
+
+        route = payload.get("route")
+        if route not in valid_routes:
+            raise AssertionError(f"{label}: route must be one of {sorted(valid_routes)}")
+        seen_routes.add(route)
+
+        t_max_s = payload.get("t_max_s")
+        if not isinstance(t_max_s, int) or t_max_s <= 0:
+            raise AssertionError(f"{label}: t_max_s must be a positive integer")
+
+        t_why = payload.get("t_why")
+        if not isinstance(t_why, str) or not t_why.strip():
+            raise AssertionError(f"{label}: t_why must be a non-empty string")
+
+        decomposable = payload.get("decomposable")
+        if not isinstance(decomposable, bool):
+            raise AssertionError(f"{label}: decomposable must be a boolean")
+
+        dev_requires_deeper_inspection = payload.get("dev_requires_deeper_inspection", False)
+        if not isinstance(dev_requires_deeper_inspection, bool):
+            raise AssertionError(
+                f"{label}: dev_requires_deeper_inspection must be a boolean when present"
+            )
+
+        spawn_count = payload.get("spawn_count")
+        if not isinstance(spawn_count, int) or spawn_count < 0:
+            raise AssertionError(f"{label}: spawn_count must be a non-negative integer")
+
+        dispatch_fixture = payload.get("dispatch_fixture")
+        if dispatch_fixture is not None and not isinstance(dispatch_fixture, str):
+            raise AssertionError(f"{label}: dispatch_fixture must be a string or null")
+
+        expected_agent_types = payload.get("expected_agent_types")
+        if not isinstance(expected_agent_types, list) or any(
+            not isinstance(agent_type, str) for agent_type in expected_agent_types
+        ):
+            raise AssertionError(f"{label}: expected_agent_types must be a list of strings")
+
+        if route == "single":
+            if t_max_s > 90:
+                raise AssertionError(f"{label}: `single` must keep t_max_s <= 90")
+            if dev_requires_deeper_inspection:
+                raise AssertionError(
+                    f"{label}: `single` cannot set dev_requires_deeper_inspection=true"
+                )
+            if spawn_count != 0 or dispatch_fixture is not None or expected_agent_types:
+                raise AssertionError(
+                    f"{label}: `single` must not spawn or reference dispatch fixtures"
+                )
+            continue
+
+        if route == "single-deep":
+            if decomposable:
+                raise AssertionError(
+                    f"{label}: `single-deep` must stay non-decomposable and local"
+                )
+            if t_max_s <= 90 and not dev_requires_deeper_inspection:
+                raise AssertionError(
+                    f"{label}: `single-deep` with t_max_s <= 90 requires "
+                    "dev_requires_deeper_inspection=true"
+                )
+            if spawn_count != 0 or dispatch_fixture is not None or expected_agent_types:
+                raise AssertionError(
+                    f"{label}: `single-deep` must not spawn or reference dispatch fixtures"
+                )
+            continue
+
+        if t_max_s <= 90:
+            raise AssertionError(f"{label}: `multi` must exceed the 90-second gate")
+        if not decomposable:
+            raise AssertionError(f"{label}: `multi` requires decomposable=true")
+        if dev_requires_deeper_inspection:
+            raise AssertionError(
+                f"{label}: `multi` cannot set dev_requires_deeper_inspection=true"
+            )
+        if spawn_count <= 0:
+            raise AssertionError(f"{label}: `multi` must plan at least one spawned slice")
+        if not dispatch_fixture:
+            raise AssertionError(f"{label}: `multi` must reference a dispatch fixture")
+
+        dispatches = load_json(E2E_DIR / dispatch_fixture)
+        if not isinstance(dispatches, list):
+            raise AssertionError(f"{label}: {dispatch_fixture} must be a JSON array")
+        if len(dispatches) != spawn_count:
+            raise AssertionError(
+                f"{label}: spawn_count={spawn_count} does not match {dispatch_fixture} "
+                f"item count {len(dispatches)}"
+            )
+
+        actual_agent_types = sorted({dispatch["agent_type"] for dispatch in dispatches})
+        if sorted(expected_agent_types) != actual_agent_types:
+            raise AssertionError(
+                f"{label}: expected agent types {sorted(expected_agent_types)} != "
+                f"{actual_agent_types} from {dispatch_fixture}"
+            )
+
+    if seen_routes != valid_routes:
         raise AssertionError(
-            "dispatches.council_bootstrap.json must contain exactly 2 default bootstrap slices"
+            "route_cases.json must cover exactly `single`, `single-deep`, and `multi`"
         )
-
-    ssot_id = dispatches[0]["ssot_id"]
-    runners = [d for d in dispatches if d["agent_type"] == "runner"]
-    inspectors = [d for d in dispatches if d["agent_type"] == "inspector"]
-
-    if len(runners) != 1 or len(inspectors) != 1:
-        raise AssertionError(
-            "dispatches.council_bootstrap.json must have 1 runner and 1 inspector"
-        )
-
-    for payload in dispatches:
-        if payload["ssot_id"] != ssot_id:
-            raise AssertionError(
-                "dispatches.council_bootstrap.json must use one shared ssot_id"
-            )
-        if "-council-" not in payload["slice_id"]:
-            raise AssertionError(
-                "dispatches.council_bootstrap.json slice_id must include `-council-`"
-            )
-        if payload.get("dependencies"):
-            raise AssertionError(
-                f"{payload['slice_id']}: default council bootstrap slices must be dependency-free"
-            )
-
-    runner = runners[0]
-    inspector = inspectors[0]
-    if runner["slice_kind"] != "work":
-        raise AssertionError("council bootstrap runner slice must be slice_kind=work")
-    if inspector["slice_kind"] != "review":
-        raise AssertionError("council bootstrap inspector slice must be slice_kind=review")
 
 
 def validate_results() -> None:
@@ -282,20 +369,16 @@ def assert_dispatch_invariants() -> None:
     assert_no_builder_ownership_overlap(builders, label="dispatches.write_mixed.json")
 
     workstreams = validate_dispatches(
-        E2E_DIR / "dispatches.workstreams.json", expected_count=9
+        E2E_DIR / "dispatches.workstreams.json", expected_count=7
     )
     assert_swarm_ticket_invariants(workstreams)
-
-    council_bootstrap = validate_dispatches(
-        E2E_DIR / "dispatches.council_bootstrap.json", expected_count=2
-    )
-    assert_council_bootstrap_invariants(council_bootstrap)
+    assert_route_cases()
 
 
 def main() -> None:
     assert_dispatch_invariants()
     validate_results()
-    print("OK: fixtures + invariants (swarm-first)")
+    print("OK: fixtures + route cases + invariants (single-first)")
 
 
 if __name__ == "__main__":

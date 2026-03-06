@@ -4,7 +4,7 @@
   "title": "review-result.inspector/1",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema", "ssot_id", "task_id", "role", "verdict", "findings"],
+  "required": ["schema", "ssot_id", "task_id", "slice_id", "role", "verdict", "findings"],
   "properties": {
     "schema": { "const": "review-result.inspector/1" },
     "ssot_id": {
@@ -12,6 +12,7 @@
       "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*-[0-9a-f]{8,64}$"
     },
     "task_id": { "type": "string", "minLength": 1 },
+    "slice_id": { "type": "string", "minLength": 1 },
     "role": { "const": "inspector" },
     "verdict": { "type": "string", "enum": ["PASS", "BLOCK", "NEEDS_EVIDENCE"] },
     "summary": { "type": "string" },
@@ -54,6 +55,7 @@
       "schema": "review-result.inspector/1",
       "ssot_id": "e2e-write-4aeb119f4748",
       "task_id": "e2e",
+      "slice_id": "inspector-1",
       "role": "inspector",
       "verdict": "PASS",
       "summary": "Protocol rules are followed and evidence is sufficient.",

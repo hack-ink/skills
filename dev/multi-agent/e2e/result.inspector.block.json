@@ -2,6 +2,7 @@
   "schema": "review-result.inspector/1",
   "ssot_id": "e2e-write-4aeb119f4748",
   "task_id": "e2e-write_mixed",
+  "slice_id": "inspector-block",
   "role": "inspector",
   "verdict": "BLOCK",
   "summary": "Missing verification evidence for builder slice.",

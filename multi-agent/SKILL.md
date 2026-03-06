@@ -1,9 +1,9 @@
 ---
 name: multi-agent
-description: Use when a task benefits from Swarm-first parallel workers with Broker-only spawning (`max_depth=1`), schema-validated messages, and explicit ownership locks.
+description: Use when a task benefits from single-first escalation into Broker-only multi-agent execution (`max_depth=1`), schema-validated messages, and explicit ownership locks.
 ---
 
-# Multi-Agent (Swarm-First)
+# Multi-Agent (Single-First)
 
 ## Path conventions
 
@@ -13,7 +13,7 @@ In Codex, locate the skill root using the runtime skills list (it provides the a
 
 ## Objective
 
-Provide a reliable, auditable Swarm-first workflow for multi-agent execution: ticket-board scheduling, explicit ownership, evidence-backed verification, and optional quality review.
+Provide a reliable, auditable single-first workflow: stay in one thread by default, escalate to brokered multi-agent execution only when the work is actually decomposable, and keep ownership plus verification explicit.
 
 ## Role terminology
 
@@ -26,20 +26,21 @@ Concept roles are used for protocol clarity:
 
 ## When to use
 
-- The task is non-trivial and benefits from parallel slices (especially mixed read/write work).
-- You need strict spawn topology guarantees and schema-validated messages.
+- The task has evidence-backed parallelism: disjoint ownership, independent branches, or read/review work that can overlap with separate write packages.
+- You need strict spawn topology guarantees and schema-validated messages once escalation to `multi` is justified.
 - The Broker needs wait-any replenishment instead of a fixed linear pipeline.
 
 ## Inputs
 
 - Task goal, scope, and constraints (including no-go areas).
-- Routing decision: `single` or `multi` (90s rule).
+- Routing decision: `single`, `single-deep`, or `multi` (single-first escalation).
 - Ownership scopes for write slices (must be disjoint in-flight).
 - Minimum verification evidence expected before closeout.
 
 ## Hard gates (non-negotiable)
 
-- Short-circuit unless `route="multi"` (no spawns in `single`).
+- Short-circuit unless `route="multi"` (no spawns in `single` or `single-deep`).
+- Escalate to `multi` only when the task can be split into coherent, runnable packages; uncertainty alone is not enough.
 - There is no mandatory planning gate or workstream-first ordering.
 - Enforce brokered spawning (`max_depth=1`): only the Broker uses collab tools (`spawn_agent`, `wait`, `send_input`, `close_agent`).
 - In `multi`, Broker never writes repo content (`apply_patch` or direct edits are prohibited).
@@ -52,7 +53,9 @@ Concept roles are used for protocol clarity:
 
 Read `PLAYBOOK.md` and follow it literally for ticket-board lifecycle, lane caps, and handoff handling.
 
-If `route="multi"` and the task is uncertain, mixed read/write, or likely to exceed a single coherent Builder timebox:
+If `route="single"` or `route="single-deep"`, stay in the main thread and do not spawn.
+
+If `route="multi"` and the task can be decomposed into disjoint ownership packages, independent branches, or concurrent read/review plus write work:
 
 - Open `BROKER_SPLIT.md` before scheduling the first write wave.
 - Apply `WORKER_PROTOCOL.md` when drafting dispatch contracts and evaluating handoff requests.
@@ -64,7 +67,7 @@ If `route="multi"` and the task is uncertain, mixed read/write, or likely to exc
 
 ## Notes
 
-- This skill uses a Swarm-first protocol: dynamic ticket generation plus brokered handoffs.
+- This skill uses a single-first protocol: dynamic ticket generation plus brokered handoffs only after decomposition is established.
 - Council defaults are documented in [`COUNCIL.md`](COUNCIL.md) as optional bootstrap templates.
 - Schemas are structural; invariants live in the playbook and e2e validator.
 
@@ -84,6 +87,7 @@ If `route="multi"` and the task is uncertain, mixed read/write, or likely to exc
 ## Common mistakes
 
 - Non-Broker spawning (impossible under `max_depth=1`, but still a common prompt mistake).
+- Escalating to `multi` just because the task is uncertain, even though the work is still one tightly coupled lane.
 - Dispatch payload not being JSON-only `task-dispatch/1`.
 - Worker outputs in markdown/code fences; all worker outputs and dispatches must be raw JSON-only.
 - Wait-all behavior instead of wait-any replenishment.

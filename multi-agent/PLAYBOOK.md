@@ -1,18 +1,23 @@
-# Multi-Agent Playbook (Swarm-First)
+# Multi-Agent Playbook (Single-First)
 
 Hard constraint: runtime `max_depth = 1`.
 
 `max_depth=1` makes the Broker a **scheduler**. Depth-1 children do not have collab tools, so they cannot spawn. This is the topology guardrail that prevents same-level spawning.
 
-## 0) Routing gate (90s rule)
+## 0) Routing gate (single-first)
 
 - Always record:
   - `t_max_s` (max seconds expected to finish)
-  - `t_why` (why that estimate / uncertainty)
+  - `t_why` (why that estimate / what evidence supports the route)
 - Route:
-  - `single` if tiny, clear, low-risk and `t_max_s <= 90`
-  - `multi` if uncertain or `t_max_s > 90`
-- For `multi`, use Swarm-first ticket scheduling. There is no required planning phase.
+  - `single` if the task is tiny, clear, low-risk, and likely to finish inside `t_max_s <= 90`
+  - `single-deep` if the task is still one coherent lane but needs deeper inspection, longer focused execution, or uncertainty reduction before splitting
+  - `multi` only if the task is actually decomposable into coherent packages with disjoint ownership, independent branches, or useful lane parallelism
+- Escalation rule:
+  - start at the smallest route that can plausibly finish
+  - move from `single` to `single-deep` when the work grows but remains tightly coupled
+  - move from `single` or `single-deep` to `multi` only after the split is justified by evidence, not by uncertainty alone
+- For `multi`, use ticket scheduling with wait-any replenishment. There is no required planning phase.
 
 ## 1) Role model
 
@@ -38,6 +43,7 @@ Mandatory ticket fields:
 - `agent_type`, `slice_kind`, `timebox_minutes`
 - `allowed_paths`, `ownership_paths`, `dependencies`
 - `task_contract.goal`, `task_contract.acceptance`, `task_contract.constraints`
+- Builder tickets additionally require `work_package_id`, `expected_work_s`, and non-empty `allowed_paths` plus `ownership_paths`
 
 Board state tracked by Broker:
 
@@ -62,12 +68,12 @@ Use separate caps by lane:
 - `window_inspector`: in-flight inspector tickets (`inspector`)
 - `reserve_threads`: headroom for Broker/control operations
 
-Default policy for `max_threads=48`:
+Recommended default lane windows for `max_threads=48`:
 
-- `window_runner <= 20`
-- `window_builder <= 12`
-- `window_inspector <= 8`
-- `reserve_threads = 8`
+- `window_runner <= 8`
+- `window_builder <= 3`
+- `window_inspector <= 3`
+- `reserve_threads = 2`
 
 Constraint:
 
@@ -120,7 +126,7 @@ Reuse-first is mandatory. Do not spawn a new worker for tiny follow-up slices wh
 
 ## 6) Handoff protocol
 
-Swarm-first scheduling is dynamic.
+Multi-mode scheduling is dynamic.
 
 - Workers may return optional `handoff_requests` containing additional `task-dispatch/1` tickets.
 - Broker validates each requested ticket before enqueueing:
@@ -151,6 +157,7 @@ Keep sequential when none apply:
 - tiny single-file edits
 - one-pass mechanical transformations
 - tightly coupled edits requiring continuous shared context
+- exploratory or uncertain work that has not yet produced a safe package boundary (`single-deep` first)
 
 Recommended timeboxes:
 
@@ -163,7 +170,7 @@ Protocol modules (use as needed; do not turn them into mandatory linear phases):
 
 - `COUNCIL.md`: optional bootstrap wave (read/review only)
 - `BROKER_SPLIT.md`: split ladder + dispatch templates for safe parallel scheduling
-- `WORKER_PROTOCOL.md`: swarm-first worker behavior and handoff request quality bar
+- `WORKER_PROTOCOL.md`: worker behavior and handoff request quality bar once `route="multi"` is active
 - `FAILURE_MODES.md`: recovery playbook for stalls, schema failures, deadlocks, and over-splitting
 
 ## 8) Dispatch topology (strict)

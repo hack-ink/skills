@@ -1,0 +1,50 @@
+[
+  {
+    "scenario_id": "route-single-fast-fix",
+    "route": "single",
+    "t_max_s": 45,
+    "t_why": "One doc-line correction with a clear desired outcome.",
+    "decomposable": false,
+    "dev_requires_deeper_inspection": false,
+    "spawn_count": 0,
+    "dispatch_fixture": null,
+    "expected_agent_types": []
+  },
+  {
+    "scenario_id": "route-single-deep-uncertain-local-probe",
+    "route": "single-deep",
+    "t_max_s": 75,
+    "t_why": "The task is still non-decomposable, but it needs deeper local inspection before any split decision would be credible.",
+    "decomposable": false,
+    "dev_requires_deeper_inspection": true,
+    "spawn_count": 0,
+    "dispatch_fixture": null,
+    "expected_agent_types": []
+  },
+  {
+    "scenario_id": "route-single-deep-coupled-refactor",
+    "route": "single-deep",
+    "t_max_s": 210,
+    "t_why": "A long but tightly coupled refactor stays in one coherent lane; splitting would add coordination overhead.",
+    "decomposable": false,
+    "dev_requires_deeper_inspection": false,
+    "spawn_count": 0,
+    "dispatch_fixture": null,
+    "expected_agent_types": []
+  },
+  {
+    "scenario_id": "route-multi-dev-fixtures-batch1",
+    "route": "multi",
+    "t_max_s": 240,
+    "t_why": "Broker docs, e2e fixtures, and backtests can advance in separate owned lanes with final verification.",
+    "decomposable": true,
+    "dev_requires_deeper_inspection": false,
+    "spawn_count": 7,
+    "dispatch_fixture": "dispatches.workstreams.json",
+    "expected_agent_types": [
+      "builder",
+      "inspector",
+      "runner"
+    ]
+  }
+]

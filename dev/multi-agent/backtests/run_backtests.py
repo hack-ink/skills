@@ -75,8 +75,22 @@ def assert_expectations(
             )
 
 
-def run_scenario(scenario_dir: Path) -> tuple[str, dict, dict]:
-    scenario = load_json(scenario_dir / "scenario.json")
+def derive_route(
+    *,
+    t_max_s: int,
+    decomposable: bool,
+    dev_requires_deeper_inspection: bool,
+) -> str:
+    if not decomposable and (t_max_s > 90 or dev_requires_deeper_inspection):
+        return "single-deep"
+    if t_max_s <= 90:
+        return "single"
+    return "multi"
+
+
+def run_scheduler_scenario(
+    scenario_dir: Path, scenario: dict
+) -> tuple[str, dict, dict]:
     scenario_id = scenario["id"]
     expectations = scenario.get("expectations", {})
 
@@ -101,6 +115,65 @@ def run_scenario(scenario_dir: Path) -> tuple[str, dict, dict]:
     return scenario_id, wait_any, wait_all
 
 
+def run_routing_scenario(scenario_dir: Path, scenario: dict) -> str:
+    del scenario_dir
+
+    scenario_id = scenario["id"]
+    route_input = scenario.get("route_input", {})
+    expectations = scenario.get("expectations", {})
+
+    t_max_s = route_input.get("t_max_s")
+    if not isinstance(t_max_s, int) or t_max_s <= 0:
+        raise AssertionError(f"{scenario_id}: route_input.t_max_s must be a positive integer")
+
+    t_why = route_input.get("t_why")
+    if not isinstance(t_why, str) or not t_why.strip():
+        raise AssertionError(f"{scenario_id}: route_input.t_why must be a non-empty string")
+
+    decomposable = route_input.get("decomposable")
+    if not isinstance(decomposable, bool):
+        raise AssertionError(f"{scenario_id}: route_input.decomposable must be a boolean")
+
+    dev_requires_deeper_inspection = route_input.get("dev_requires_deeper_inspection", False)
+    if not isinstance(dev_requires_deeper_inspection, bool):
+        raise AssertionError(
+            f"{scenario_id}: route_input.dev_requires_deeper_inspection must be a boolean"
+        )
+
+    actual_route = derive_route(
+        t_max_s=t_max_s,
+        decomposable=decomposable,
+        dev_requires_deeper_inspection=dev_requires_deeper_inspection,
+    )
+    expected_route = expectations.get("expected_route")
+    if actual_route != expected_route:
+        raise AssertionError(
+            f"{scenario_id}: expected route {expected_route!r}, got {actual_route!r}"
+        )
+
+    actual_spawn_count = 0 if actual_route != "multi" else 1
+    expected_spawn_count = expectations.get("expected_spawn_count")
+    if not isinstance(expected_spawn_count, int) or expected_spawn_count < 0:
+        raise AssertionError(
+            f"{scenario_id}: expectations.expected_spawn_count must be a non-negative integer"
+        )
+    if actual_spawn_count != expected_spawn_count:
+        raise AssertionError(
+            f"{scenario_id}: expected spawn_count={expected_spawn_count}, got {actual_spawn_count}"
+        )
+
+    print(
+        "PASS: "
+        f"{scenario_id} "
+        f"route={actual_route} "
+        f"spawn_count={actual_spawn_count} "
+        f"t_max_s={t_max_s} "
+        f"decomposable={str(decomposable).lower()} "
+        f"dev_requires_deeper_inspection={str(dev_requires_deeper_inspection).lower()}"
+    )
+    return scenario_id
+
+
 def main() -> None:
     scenario_dirs = sorted(
         path for path in SCENARIOS_DIR.iterdir() if (path / "scenario.json").exists()
@@ -108,14 +181,22 @@ def main() -> None:
     if not scenario_dirs:
         raise AssertionError(f"No scenario.json files found under {SCENARIOS_DIR}")
 
-    results: dict[str, tuple[dict, dict]] = {}
+    scheduler_results: dict[str, tuple[dict, dict]] = {}
     for scenario_dir in scenario_dirs:
-        scenario_id, wait_any, wait_all = run_scenario(scenario_dir)
-        results[scenario_id] = (wait_any, wait_all)
+        scenario = load_json(scenario_dir / "scenario.json")
+        scenario_kind = scenario.get("kind", "scheduler")
+        if scenario_kind == "routing":
+            run_routing_scenario(scenario_dir, scenario)
+            continue
+        if scenario_kind != "scheduler":
+            raise AssertionError(f"{scenario['id']}: unsupported scenario kind {scenario_kind!r}")
 
-    if "swarmbench-02-micro" in results and "swarmbench-02-pack" in results:
-        micro_wait_any = results["swarmbench-02-micro"][0]["makespan_s"]
-        pack_wait_any = results["swarmbench-02-pack"][0]["makespan_s"]
+        scenario_id, wait_any, wait_all = run_scheduler_scenario(scenario_dir, scenario)
+        scheduler_results[scenario_id] = (wait_any, wait_all)
+
+    if "swarmbench-02-micro" in scheduler_results and "swarmbench-02-pack" in scheduler_results:
+        micro_wait_any = scheduler_results["swarmbench-02-micro"][0]["makespan_s"]
+        pack_wait_any = scheduler_results["swarmbench-02-pack"][0]["makespan_s"]
         if (micro_wait_any - pack_wait_any) < 10:
             raise AssertionError(
                 "cross-scenario regression failed: "

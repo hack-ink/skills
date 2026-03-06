@@ -36,6 +36,8 @@
           "enum": ["probe", "work", "review", "merge"],
           "default": "work"
         },
+        "work_package_id": { "type": "string", "minLength": 1 },
+        "expected_work_s": { "type": "integer", "minimum": 0 },
         "timebox_minutes": { "type": "integer", "minimum": 1, "maximum": 60 },
         "allowed_paths": {
           "type": "array",
@@ -80,7 +82,19 @@
           "items": { "type": "string", "minLength": 1 },
           "default": []
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "agent_type": { "const": "builder" } } },
+          "then": {
+            "required": ["work_package_id", "expected_work_s"],
+            "properties": {
+              "allowed_paths": { "minItems": 1 },
+              "ownership_paths": { "minItems": 1 }
+            }
+          }
+        }
+      ]
     }
   },
   "required": [

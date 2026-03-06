@@ -1,6 +1,6 @@
-# Worker Protocol (Swarm-First)
+# Worker Protocol (Single-First Multi)
 
-This document defines how depth-1 workers should behave under the Swarm-first contract.
+This document defines how depth-1 workers should behave once the Broker has already escalated into `route="multi"`.
 
 Hard constraints:
 
@@ -8,7 +8,7 @@ Hard constraints:
 - `runner` and `inspector` never write repo content.
 - Worker outputs must be **JSON-only** and schema-valid.
 
-## Swarm-first defaults (all workers)
+## Multi-mode defaults (all workers)
 
 - Prefer returning **handoff requests** (new tickets) over expanding scope.
 - Prefer package-sized handoffs over micro-slice follow-ups.
@@ -24,7 +24,8 @@ Hard constraints:
   - disjoint write ownership partitions for Builder work packages
   - targeted Inspector reviews when risk is high
 - Avoid handoffing micro follow-ups when ownership is unchanged and effective work is under ~3 minutes.
-- Include `work_package_id` and `expected_work_s` for Builder handoffs when estimates are available.
+- Builder handoffs must include `work_package_id` and `expected_work_s`.
+- Builder handoffs must keep `allowed_paths` and `ownership_paths` non-empty.
 
 Runner example (including a handoff request):
 
@@ -65,8 +66,12 @@ Runner example (including a handoff request):
       "slice_id": "wave1--builder-ownership-A",
       "agent_type": "builder",
       "slice_kind": "work",
+      "work_package_id": "pkg-ownership-A",
+      "expected_work_s": 540,
       "timebox_minutes": 12,
-      "allowed_paths": [],
+      "allowed_paths": [
+        "src/app/"
+      ],
       "ownership_paths": [
         "src/app/"
       ],
@@ -94,6 +99,7 @@ Runner example (including a handoff request):
 ## Builder checklist
 
 - Stay strictly within `ownership_paths`.
+- Treat each Builder ticket as one named work package; keep `work_package_id` stable across related reports and retries.
 - Prefer completing micro follow-ups inside the current package when ownership and constraints are unchanged.
 - If you discover cross-cutting work:
   - stop expanding scope

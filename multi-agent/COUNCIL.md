@@ -1,4 +1,4 @@
-# Multi-Agent Council (Swarm Bootstrap)
+# Multi-Agent Council (Optional Multi Bootstrap)
 
 When `route="multi"`, Council is an optional bootstrap pattern that improves split quality before the main write wave. It is not a mandatory gate.
 

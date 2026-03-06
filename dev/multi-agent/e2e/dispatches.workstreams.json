@@ -11,10 +11,10 @@
     "ownership_paths": [],
     "dependencies": [],
     "task_contract": {
-      "goal": "Inventory current protocol files and identify split boundaries.",
+      "goal": "Inventory current dev routing fixtures and identify split boundaries.",
       "acceptance": [
-        "List candidate write lanes with ownership boundaries.",
-        "List initial dependency edges for safe scheduling."
+        "List candidate write lanes inside dev/multi-agent.",
+        "List dependency edges that can stay disjoint in-flight."
       ],
       "constraints": [
         "Read-only.",
@@ -31,7 +31,7 @@
     "schema": "task-dispatch/1",
     "ssot_id": "ws2-dev-swarm-0d26dfd05c80",
     "task_id": "swarm-ticket-flow",
-    "slice_id": "swarm--runner-dependency-map",
+    "slice_id": "swarm--runner-routing-gate",
     "agent_type": "runner",
     "slice_kind": "work",
     "timebox_minutes": 6,
@@ -39,10 +39,10 @@
     "ownership_paths": [],
     "dependencies": [],
     "task_contract": {
-      "goal": "Map runnable ticket order and lock collision risks.",
+      "goal": "Record t_max_s/t_why and determine whether the task should stay `single`, `single-deep`, or `multi`.",
       "acceptance": [
-        "Return dependency graph for the first write wave.",
-        "Call out any ownership collisions that must be avoided."
+        "State whether decomposability justifies `multi`.",
+        "Call out the no-spawn requirement when the route stays single-lane."
       ],
       "constraints": [
         "Read-only.",
@@ -58,31 +58,29 @@
     "schema": "task-dispatch/1",
     "ssot_id": "ws2-dev-swarm-0d26dfd05c80",
     "task_id": "swarm-ticket-flow",
-    "slice_id": "swarm--builder-protocol-docs",
+    "slice_id": "swarm--builder-broker-e2e",
     "agent_type": "builder",
     "slice_kind": "work",
+    "work_package_id": "pkg-broker-e2e",
+    "expected_work_s": 660,
     "timebox_minutes": 12,
     "allowed_paths": [
-      "multi-agent/SKILL.md",
-      "multi-agent/PLAYBOOK.md",
-      "multi-agent/COUNCIL.md"
+      "dev/multi-agent/BROKER_E2E.md"
     ],
     "ownership_paths": [
-      "multi-agent/SKILL.md",
-      "multi-agent/PLAYBOOK.md",
-      "multi-agent/COUNCIL.md"
+      "dev/multi-agent/BROKER_E2E.md"
     ],
     "dependencies": [
-      "swarm--runner-inventory"
+      "swarm--runner-routing-gate"
     ],
     "task_contract": {
-      "goal": "Update protocol docs to Swarm-first guidance.",
+      "goal": "Update the dev Broker E2E doc for the three-tier single-first routing model.",
       "acceptance": [
-        "Docs remove linear plan-first gating.",
-        "Docs describe wait-any replenishment and ownership locks."
+        "Doc covers `single`, `single-deep`, and `multi`.",
+        "Doc makes no-spawn and decomposability gates explicit."
       ],
       "constraints": [
-        "Only edit owned paths."
+        "Only edit the owned file."
       ],
       "no_touch": []
     },
@@ -94,29 +92,30 @@
     "schema": "task-dispatch/1",
     "ssot_id": "ws2-dev-swarm-0d26dfd05c80",
     "task_id": "swarm-ticket-flow",
-    "slice_id": "swarm--builder-schemas",
+    "slice_id": "swarm--builder-e2e-fixtures",
     "agent_type": "builder",
     "slice_kind": "work",
+    "work_package_id": "pkg-e2e-fixtures",
+    "expected_work_s": 720,
     "timebox_minutes": 12,
     "allowed_paths": [
-      "multi-agent/schemas/",
-      "multi-agent/tools/make_council_bootstrap.py"
+      "dev/multi-agent/e2e/"
     ],
     "ownership_paths": [
-      "multi-agent/schemas/",
-      "multi-agent/tools/make_council_bootstrap.py"
+      "dev/multi-agent/e2e/"
     ],
     "dependencies": [
-      "swarm--runner-dependency-map"
+      "swarm--runner-inventory",
+      "swarm--builder-broker-e2e"
     ],
     "task_contract": {
-      "goal": "Update schemas and bootstrap tooling for Swarm-first contracts.",
+      "goal": "Update e2e fixtures and validators to cover the new route tiers.",
       "acceptance": [
-        "Dispatch and worker-result schemas validate.",
-        "No legacy agent types remain."
+        "Fixtures cover `single`, `single-deep`, and `multi`.",
+        "Smoke validators no longer require a bootstrap planning fixture."
       ],
       "constraints": [
-        "Only edit owned paths."
+        "Only edit the owned directory."
       ],
       "no_touch": []
     },
@@ -129,68 +128,35 @@
     "schema": "task-dispatch/1",
     "ssot_id": "ws2-dev-swarm-0d26dfd05c80",
     "task_id": "swarm-ticket-flow",
-    "slice_id": "swarm--builder-e2e",
+    "slice_id": "swarm--builder-backtests",
     "agent_type": "builder",
     "slice_kind": "work",
+    "work_package_id": "pkg-backtests",
+    "expected_work_s": 720,
     "timebox_minutes": 12,
     "allowed_paths": [
-      "dev/multi-agent/"
+      "dev/multi-agent/backtests/"
     ],
     "ownership_paths": [
-      "dev/multi-agent/"
+      "dev/multi-agent/backtests/"
     ],
     "dependencies": [
-      "swarm--builder-protocol-docs",
-      "swarm--builder-schemas"
+      "swarm--runner-routing-gate"
     ],
     "task_contract": {
-      "goal": "Update e2e fixtures and validator for Swarm-first behavior.",
+      "goal": "Add or update deterministic backtests for the three-tier routing model.",
       "acceptance": [
-        "Fixtures validate against updated schemas.",
-        "No legacy linear gating invariants remain."
+        "At least one `single-deep` scenario stays local with no spawned workers.",
+        "Backtests remain runnable from the smoke entrypoint."
       ],
       "constraints": [
-        "Only edit owned paths."
+        "Only edit the owned directory."
       ],
       "no_touch": []
     },
     "evidence_requirements": [
       "diff",
       "verification"
-    ]
-  },
-  {
-    "schema": "task-dispatch/1",
-    "ssot_id": "ws2-dev-swarm-0d26dfd05c80",
-    "task_id": "swarm-ticket-flow",
-    "slice_id": "swarm--builder-nix",
-    "agent_type": "builder",
-    "slice_kind": "work",
-    "timebox_minutes": 10,
-    "allowed_paths": [
-      "home/codex/config.toml",
-      "home/codex.nix"
-    ],
-    "ownership_paths": [
-      "home/codex/config.toml",
-      "home/codex.nix"
-    ],
-    "dependencies": [
-      "swarm--runner-inventory"
-    ],
-    "task_contract": {
-      "goal": "Remove legacy coding agent wiring from nix-managed codex config.",
-      "acceptance": [
-        "No legacy coding agent references remain.",
-        "max_depth stays unchanged."
-      ],
-      "constraints": [
-        "Only edit owned paths."
-      ],
-      "no_touch": []
-    },
-    "evidence_requirements": [
-      "diff"
     ]
   },
   {
@@ -204,14 +170,15 @@
     "allowed_paths": [],
     "ownership_paths": [],
     "dependencies": [
-      "swarm--builder-e2e",
-      "swarm--builder-nix"
+      "swarm--builder-broker-e2e",
+      "swarm--builder-e2e-fixtures",
+      "swarm--builder-backtests"
     ],
     "task_contract": {
-      "goal": "Run smoke checks and grep gates for protocol completion.",
+      "goal": "Run smoke validation and capture route-tier evidence.",
       "acceptance": [
         "Smoke script passes.",
-        "Legacy coding agent references are absent in target paths."
+        "Verification output references the new routing cases."
       ],
       "constraints": [
         "Read-only verification only."
@@ -227,34 +194,6 @@
     "schema": "task-dispatch/1",
     "ssot_id": "ws2-dev-swarm-0d26dfd05c80",
     "task_id": "swarm-ticket-flow",
-    "slice_id": "swarm--inspector-premortem",
-    "agent_type": "inspector",
-    "slice_kind": "review",
-    "timebox_minutes": 8,
-    "allowed_paths": [],
-    "ownership_paths": [],
-    "dependencies": [
-      "swarm--runner-dependency-map"
-    ],
-    "task_contract": {
-      "goal": "Review split safety and evidence requirements before final verification.",
-      "acceptance": [
-        "High-risk collisions are called out.",
-        "Required evidence gates are explicit."
-      ],
-      "constraints": [
-        "Review-only output."
-      ],
-      "no_touch": []
-    },
-    "evidence_requirements": [
-      "review_notes"
-    ]
-  },
-  {
-    "schema": "task-dispatch/1",
-    "ssot_id": "ws2-dev-swarm-0d26dfd05c80",
-    "task_id": "swarm-ticket-flow",
     "slice_id": "swarm--inspector-final",
     "agent_type": "inspector",
     "slice_kind": "review",
@@ -262,13 +201,12 @@
     "allowed_paths": [],
     "ownership_paths": [],
     "dependencies": [
-      "swarm--runner-verify",
-      "swarm--inspector-premortem"
+      "swarm--runner-verify"
     ],
     "task_contract": {
-      "goal": "Review final evidence and issue PASS/BLOCK/NEEDS_EVIDENCE verdict.",
+      "goal": "Review final evidence and issue PASS/BLOCK/NEEDS_EVIDENCE for the route-tier update.",
       "acceptance": [
-        "Findings map to concrete evidence.",
+        "Findings map to concrete smoke or backtest evidence.",
         "Final verdict is explicit and actionable."
       ],
       "constraints": [
