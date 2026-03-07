@@ -4,7 +4,7 @@
   "title": "review-result.inspector/1",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema", "ssot_id", "task_id", "slice_id", "role", "verdict", "findings"],
+  "required": ["schema", "ssot_id", "task_id", "slice_id", "verdict", "findings"],
   "properties": {
     "schema": { "const": "review-result.inspector/1" },
     "ssot_id": {
@@ -13,7 +13,14 @@
     },
     "task_id": { "type": "string", "minLength": 1 },
     "slice_id": { "type": "string", "minLength": 1 },
-    "role": { "const": "inspector" },
+    "agent_type": {
+      "const": "inspector",
+      "description": "Canonical agent identity field for /1 results. New outputs should emit agent_type."
+    },
+    "role": {
+      "const": "inspector",
+      "description": "Legacy /1 compatibility-only field accepted for older payloads; do not emit on new outputs."
+    },
     "verdict": { "type": "string", "enum": ["PASS", "BLOCK", "NEEDS_EVIDENCE"] },
     "summary": { "type": "string" },
     "findings": {
@@ -24,10 +31,25 @@
         "required": ["severity", "message"],
         "properties": {
           "severity": { "type": "string", "enum": ["info", "minor", "major", "critical"] },
+          "category": { "type": "string", "minLength": 1 },
+          "confidence": {
+            "type": "string",
+            "enum": ["low", "medium", "high"]
+          },
           "message": { "type": "string", "minLength": 1 },
-          "evidence": { "type": "string" }
+          "evidence": { "type": "string" },
+          "paths": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 },
+            "default": []
+          }
         }
       }
+    },
+    "review_notes": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "default": []
     },
     "required_fixes": {
       "type": "array",
@@ -41,6 +63,7 @@
     }
   },
   "allOf": [
+    { "anyOf": [{ "required": ["agent_type"] }, { "required": ["role"] }] },
     {
       "if": { "properties": { "verdict": { "const": "BLOCK" } } },
       "then": { "properties": { "required_fixes": { "minItems": 1 } } }
@@ -56,11 +79,20 @@
       "ssot_id": "e2e-write-4aeb119f4748",
       "task_id": "e2e",
       "slice_id": "inspector-1",
-      "role": "inspector",
+      "agent_type": "inspector",
       "verdict": "PASS",
       "summary": "Protocol rules are followed and evidence is sufficient.",
+      "review_notes": [
+        "Checked schema-valid worker outputs and aligned them with playbook constraints."
+      ],
       "findings": [
-        { "severity": "info", "message": "max_depth=1 broker model prevents same-level spawns." }
+        {
+          "severity": "info",
+          "category": "topology",
+          "confidence": "high",
+          "message": "max_depth=1 broker model prevents same-level spawns.",
+          "paths": ["multi-agent/PLAYBOOK.md"]
+        }
       ]
     }
   ]

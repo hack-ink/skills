@@ -5,11 +5,8 @@
     "task_id": "swarmbench-01-backtest",
     "slice_id": "sb01--builder-lock-a",
     "agent_type": "builder",
+    "work_package_id": "pkg-builder-lock-a",
     "timebox_minutes": 8,
-    "allowed_paths": [
-      "/tmp/swarmbench-01/shared",
-      "/tmp/swarmbench-01/shared/logs"
-    ],
     "ownership_paths": [
       "/tmp/swarmbench-01/shared"
     ],
@@ -35,11 +32,8 @@
     "task_id": "swarmbench-01-backtest",
     "slice_id": "sb01--builder-lock-a-copy",
     "agent_type": "builder",
+    "work_package_id": "pkg-builder-lock-a",
     "timebox_minutes": 8,
-    "allowed_paths": [
-      "/tmp/swarmbench-01/shared/logs/",
-      "/tmp/swarmbench-01/shared/"
-    ],
     "ownership_paths": [
       "/tmp/swarmbench-01/shared/"
     ],

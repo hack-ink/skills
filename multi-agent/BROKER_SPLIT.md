@@ -57,8 +57,6 @@ Boundary map (Runner):
   "agent_type": "runner",
   "slice_kind": "work",
   "timebox_minutes": 6,
-  "allowed_paths": [],
-  "ownership_paths": [],
   "dependencies": [],
   "task_contract": {
     "goal": "Map repo boundaries and dependencies to enable parallel scheduling under disjoint ownership locks.",
@@ -72,8 +70,7 @@ Boundary map (Runner):
       "Read-only investigation only.",
       "Do not write repo content.",
       "Prefer concrete file and command evidence."
-    ],
-    "no_touch": []
+    ]
   },
   "evidence_requirements": [
     "commands",
@@ -94,10 +91,6 @@ Write wave (Builder):
   "slice_kind": "work",
   "timebox_minutes": 12,
   "work_package_id": "pkg-ownership-A",
-  "expected_work_s": 540,
-  "allowed_paths": [
-    "<SET_ME_repo_scope>"
-  ],
   "ownership_paths": [
     "<SET_ME_disjoint_ownership_paths>"
   ],
@@ -114,8 +107,7 @@ Write wave (Builder):
       "Write only within ownership paths.",
       "If new work is discovered, return schema-valid handoff requests instead of expanding scope.",
       "Do not emit micro follow-up handoffs when ownership remains the same; merge into this package."
-    ],
-    "no_touch": []
+    ]
   },
   "evidence_requirements": [
     "git_diff",
@@ -135,8 +127,6 @@ Pre-mortem (Inspector):
   "agent_type": "inspector",
   "slice_kind": "review",
   "timebox_minutes": 8,
-  "allowed_paths": [],
-  "ownership_paths": [],
   "dependencies": [],
   "task_contract": {
     "goal": "Identify safety, sequencing, and evidence risks before parallel Builder tickets are scheduled.",
@@ -147,8 +137,7 @@ Pre-mortem (Inspector):
     "constraints": [
       "Review-only output.",
       "No repo writes."
-    ],
-    "no_touch": []
+    ]
   },
   "evidence_requirements": [
     "review_notes"

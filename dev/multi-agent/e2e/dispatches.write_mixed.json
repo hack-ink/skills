@@ -7,11 +7,7 @@
     "agent_type": "builder",
     "slice_kind": "work",
     "work_package_id": "pkg-write-builder-01",
-    "expected_work_s": 600,
     "timebox_minutes": 12,
-    "allowed_paths": [
-      "multi-agent/schemas/"
-    ],
     "ownership_paths": [
       "multi-agent/schemas/"
     ],
@@ -23,8 +19,7 @@
       ],
       "constraints": [
         "Only edit the owned directory."
-      ],
-      "no_touch": []
+      ]
     },
     "evidence_requirements": [
       "verification"
@@ -38,11 +33,7 @@
     "agent_type": "builder",
     "slice_kind": "work",
     "work_package_id": "pkg-write-builder-02",
-    "expected_work_s": 600,
     "timebox_minutes": 12,
-    "allowed_paths": [
-      "multi-agent/tools/"
-    ],
     "ownership_paths": [
       "multi-agent/tools/"
     ],
@@ -54,8 +45,7 @@
       ],
       "constraints": [
         "Only edit the owned directory."
-      ],
-      "no_touch": []
+      ]
     },
     "evidence_requirements": [
       "verification"
@@ -69,11 +59,7 @@
     "agent_type": "builder",
     "slice_kind": "work",
     "work_package_id": "pkg-write-builder-03",
-    "expected_work_s": 540,
     "timebox_minutes": 12,
-    "allowed_paths": [
-      "dev/multi-agent/"
-    ],
     "ownership_paths": [
       "dev/multi-agent/BROKER_E2E.md"
     ],
@@ -85,8 +71,7 @@
       ],
       "constraints": [
         "Only edit the owned file."
-      ],
-      "no_touch": []
+      ]
     },
     "evidence_requirements": []
   },
@@ -98,11 +83,7 @@
     "agent_type": "builder",
     "slice_kind": "work",
     "work_package_id": "pkg-write-builder-04",
-    "expected_work_s": 720,
     "timebox_minutes": 12,
-    "allowed_paths": [
-      "dev/multi-agent/e2e/"
-    ],
     "ownership_paths": [
       "dev/multi-agent/e2e/"
     ],
@@ -114,8 +95,7 @@
       ],
       "constraints": [
         "Only edit the owned directory."
-      ],
-      "no_touch": []
+      ]
     },
     "evidence_requirements": [
       "verification"
@@ -129,11 +109,7 @@
     "agent_type": "builder",
     "slice_kind": "work",
     "work_package_id": "pkg-write-builder-05",
-    "expected_work_s": 480,
     "timebox_minutes": 12,
-    "allowed_paths": [
-      "rust-style/"
-    ],
     "ownership_paths": [
       "rust-style/"
     ],
@@ -145,8 +121,7 @@
       ],
       "constraints": [
         "Only edit the owned directory."
-      ],
-      "no_touch": []
+      ]
     },
     "evidence_requirements": []
   },
@@ -158,11 +133,7 @@
     "agent_type": "builder",
     "slice_kind": "work",
     "work_package_id": "pkg-write-builder-06",
-    "expected_work_s": 480,
     "timebox_minutes": 12,
-    "allowed_paths": [
-      "python-style/"
-    ],
     "ownership_paths": [
       "python-style/"
     ],
@@ -174,8 +145,7 @@
       ],
       "constraints": [
         "Only edit the owned directory."
-      ],
-      "no_touch": []
+      ]
     },
     "evidence_requirements": []
   },
@@ -187,8 +157,6 @@
     "agent_type": "runner",
     "slice_kind": "probe",
     "timebox_minutes": 4,
-    "allowed_paths": [],
-    "ownership_paths": [],
     "dependencies": [],
     "task_contract": {
       "goal": "Run smoke checks and collect evidence.",
@@ -197,8 +165,7 @@
       ],
       "constraints": [
         "Read-only."
-      ],
-      "no_touch": []
+      ]
     },
     "evidence_requirements": [
       "commands"
@@ -212,8 +179,6 @@
     "agent_type": "runner",
     "slice_kind": "probe",
     "timebox_minutes": 4,
-    "allowed_paths": [],
-    "ownership_paths": [],
     "dependencies": [],
     "task_contract": {
       "goal": "Check for ownership overlaps among builder slices.",
@@ -222,8 +187,7 @@
       ],
       "constraints": [
         "Read-only."
-      ],
-      "no_touch": []
+      ]
     },
     "evidence_requirements": []
   },
@@ -235,18 +199,15 @@
     "agent_type": "runner",
     "slice_kind": "probe",
     "timebox_minutes": 4,
-    "allowed_paths": [],
-    "ownership_paths": [],
     "dependencies": [],
     "task_contract": {
-      "goal": "Scan for forbidden role references in docs.",
+      "goal": "Scan for stale result-field references in docs.",
       "acceptance": [
         "Return list of matches or explicit none."
       ],
       "constraints": [
         "Read-only."
-      ],
-      "no_touch": []
+      ]
     },
     "evidence_requirements": [
       "commands"
@@ -260,8 +221,6 @@
     "agent_type": "runner",
     "slice_kind": "work",
     "timebox_minutes": 6,
-    "allowed_paths": [],
-    "ownership_paths": [],
     "dependencies": [],
     "task_contract": {
       "goal": "Confirm ssot_id stability policy (scenario-hash).",
@@ -270,8 +229,7 @@
       ],
       "constraints": [
         "Read-only."
-      ],
-      "no_touch": []
+      ]
     },
     "evidence_requirements": []
   },
@@ -283,8 +241,6 @@
     "agent_type": "runner",
     "slice_kind": "work",
     "timebox_minutes": 6,
-    "allowed_paths": [],
-    "ownership_paths": [],
     "dependencies": [],
     "task_contract": {
       "goal": "Draft the final integration checklist for Broker.",
@@ -293,8 +249,7 @@
       ],
       "constraints": [
         "Read-only."
-      ],
-      "no_touch": []
+      ]
     },
     "evidence_requirements": []
   },
@@ -306,8 +261,6 @@
     "agent_type": "runner",
     "slice_kind": "work",
     "timebox_minutes": 6,
-    "allowed_paths": [],
-    "ownership_paths": [],
     "dependencies": [],
     "task_contract": {
       "goal": "Identify the highest-risk failure mode in this protocol and mitigation.",
@@ -316,8 +269,7 @@
       ],
       "constraints": [
         "Read-only."
-      ],
-      "no_touch": []
+      ]
     },
     "evidence_requirements": []
   }

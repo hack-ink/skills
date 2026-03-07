@@ -20,11 +20,11 @@ It is intentionally separate from `dev/multi-agent/e2e/run_smoke.py`, which vali
 
 ## Test A - Routing gate (`single`)
 
-Goal: confirm tiny, clear tasks do not enter multi-agent mode.
+Goal: confirm only tiny, clear fast-path work stays in `single`.
 
 1. Pick a tiny local-only task (example: rename one variable or adjust one doc line).
 2. As Broker, record:
-   - `t_max_s`
+   - `t_max_s` (`<= 60`)
    - `t_why`
    - `route="single"`
 3. Execute the change in `single`.
@@ -41,7 +41,7 @@ Goal: confirm tasks outside the `single` fast path enter `multi` and begin with 
 1. Pick a task that is not tiny, clear, and low-risk enough to stay in `single`.
 2. As Broker, record:
    - `t_max_s` and `t_why`,
-   - why the task is not tiny, clear, and low-risk,
+   - why the task is not tiny, clear, and low-risk, or why it exceeds the `single` fast-path cap (`t_max_s > 60`),
    - `route="multi"`.
 3. Begin with a scout-first wave:
    - one runner probe,
@@ -141,8 +141,10 @@ mkdir -p /tmp/swarmbench-live-<id>/wait_any/gamma \
 Pass criteria:
 
 - `after_short.start < long.done` (dependency refill overlaps with `long`)
+- The same builder `agent_id` handles both `short` and `after_short`.
 - TUI log shows `send_input` between `short` completion and `after_short` dispatch
 - TUI log shows no `spawn_agent` for that handoff transition
+- Runtime/backtest evidence should show the refill as reuse rather than spawn (`dispatch_mode="reuse"` for `after_short` and at least one builder reuse event overall).
 
 ## Notes
 

@@ -7,8 +7,6 @@
     "agent_type": "runner",
     "slice_kind": "probe",
     "timebox_minutes": 4,
-    "allowed_paths": [],
-    "ownership_paths": [],
     "dependencies": [],
     "task_contract": {
       "goal": "Quickly inventory relevant files and risks.",
@@ -17,8 +15,7 @@
       ],
       "constraints": [
         "Read-only; do not propose edits."
-      ],
-      "no_touch": []
+      ]
     },
     "evidence_requirements": [
       "files_read"
@@ -32,8 +29,6 @@
     "agent_type": "runner",
     "slice_kind": "probe",
     "timebox_minutes": 4,
-    "allowed_paths": [],
-    "ownership_paths": [],
     "dependencies": [],
     "task_contract": {
       "goal": "Check for existing invariants and identify ambiguity.",
@@ -42,8 +37,7 @@
       ],
       "constraints": [
         "Read-only."
-      ],
-      "no_touch": []
+      ]
     },
     "evidence_requirements": [
       "files_read"
@@ -57,8 +51,6 @@
     "agent_type": "runner",
     "slice_kind": "probe",
     "timebox_minutes": 4,
-    "allowed_paths": [],
-    "ownership_paths": [],
     "dependencies": [],
     "task_contract": {
       "goal": "Locate any relevant configs and summarize current values.",
@@ -67,8 +59,7 @@
       ],
       "constraints": [
         "Read-only."
-      ],
-      "no_touch": []
+      ]
     },
     "evidence_requirements": [
       "commands",
@@ -83,8 +74,6 @@
     "agent_type": "runner",
     "slice_kind": "probe",
     "timebox_minutes": 4,
-    "allowed_paths": [],
-    "ownership_paths": [],
     "dependencies": [],
     "task_contract": {
       "goal": "Scan for leftover references to removed roles and report them.",
@@ -93,8 +82,7 @@
       ],
       "constraints": [
         "Read-only."
-      ],
-      "no_touch": []
+      ]
     },
     "evidence_requirements": [
       "commands"
@@ -108,8 +96,6 @@
     "agent_type": "runner",
     "slice_kind": "work",
     "timebox_minutes": 6,
-    "allowed_paths": [],
-    "ownership_paths": [],
     "dependencies": [],
     "task_contract": {
       "goal": "Draft a minimal director runbook for wait-any scheduling.",
@@ -118,8 +104,7 @@
       ],
       "constraints": [
         "Read-only; propose text only."
-      ],
-      "no_touch": []
+      ]
     },
     "evidence_requirements": []
   },
@@ -131,8 +116,6 @@
     "agent_type": "runner",
     "slice_kind": "work",
     "timebox_minutes": 6,
-    "allowed_paths": [],
-    "ownership_paths": [],
     "dependencies": [],
     "task_contract": {
       "goal": "Summarize failure modes (stall, crash, schema mismatch) and recommended handling.",
@@ -141,8 +124,7 @@
       ],
       "constraints": [
         "Read-only."
-      ],
-      "no_touch": []
+      ]
     },
     "evidence_requirements": []
   },
@@ -154,18 +136,15 @@
     "agent_type": "runner",
     "slice_kind": "work",
     "timebox_minutes": 6,
-    "allowed_paths": [],
-    "ownership_paths": [],
     "dependencies": [],
     "task_contract": {
       "goal": "Suggest an initial slice breakdown for a hypothetical mixed task.",
       "acceptance": [
-        "Return 6–12 slices with ownership scopes and timeboxes."
+        "Return 6\u201312 slices with ownership scopes and timeboxes."
       ],
       "constraints": [
         "Read-only."
-      ],
-      "no_touch": []
+      ]
     },
     "evidence_requirements": []
   },
@@ -177,8 +156,6 @@
     "agent_type": "runner",
     "slice_kind": "work",
     "timebox_minutes": 6,
-    "allowed_paths": [],
-    "ownership_paths": [],
     "dependencies": [],
     "task_contract": {
       "goal": "Confirm ssot_id generation policy and sample output.",
@@ -187,8 +164,7 @@
       ],
       "constraints": [
         "Read-only."
-      ],
-      "no_touch": []
+      ]
     },
     "evidence_requirements": []
   },
@@ -200,8 +176,6 @@
     "agent_type": "runner",
     "slice_kind": "work",
     "timebox_minutes": 6,
-    "allowed_paths": [],
-    "ownership_paths": [],
     "dependencies": [],
     "task_contract": {
       "goal": "Enumerate protocol defaults and ensure they are stated as defaults (no hidden magic numbers).",
@@ -210,8 +184,7 @@
       ],
       "constraints": [
         "Read-only."
-      ],
-      "no_touch": []
+      ]
     },
     "evidence_requirements": []
   },
@@ -223,8 +196,6 @@
     "agent_type": "runner",
     "slice_kind": "work",
     "timebox_minutes": 6,
-    "allowed_paths": [],
-    "ownership_paths": [],
     "dependencies": [],
     "task_contract": {
       "goal": "Review the schema contracts for executability and ambiguity.",
@@ -233,8 +204,7 @@
       ],
       "constraints": [
         "Read-only."
-      ],
-      "no_touch": []
+      ]
     },
     "evidence_requirements": [
       "files_read"
@@ -248,8 +218,6 @@
     "agent_type": "runner",
     "slice_kind": "work",
     "timebox_minutes": 6,
-    "allowed_paths": [],
-    "ownership_paths": [],
     "dependencies": [],
     "task_contract": {
       "goal": "Check for any config changes required to enforce max_depth=1.",
@@ -258,8 +226,7 @@
       ],
       "constraints": [
         "Read-only."
-      ],
-      "no_touch": []
+      ]
     },
     "evidence_requirements": [
       "files_read"
@@ -273,8 +240,6 @@
     "agent_type": "runner",
     "slice_kind": "work",
     "timebox_minutes": 6,
-    "allowed_paths": [],
-    "ownership_paths": [],
     "dependencies": [],
     "task_contract": {
       "goal": "Propose an owner-safe way to cap write concurrency.",
@@ -283,8 +248,7 @@
       ],
       "constraints": [
         "Read-only."
-      ],
-      "no_touch": []
+      ]
     },
     "evidence_requirements": []
   },
@@ -296,8 +260,6 @@
     "agent_type": "runner",
     "slice_kind": "work",
     "timebox_minutes": 6,
-    "allowed_paths": [],
-    "ownership_paths": [],
     "dependencies": [],
     "task_contract": {
       "goal": "Summarize how to handle worker schema mismatches.",
@@ -306,8 +268,7 @@
       ],
       "constraints": [
         "Read-only."
-      ],
-      "no_touch": []
+      ]
     },
     "evidence_requirements": []
   },
@@ -319,8 +280,6 @@
     "agent_type": "runner",
     "slice_kind": "work",
     "timebox_minutes": 6,
-    "allowed_paths": [],
-    "ownership_paths": [],
     "dependencies": [],
     "task_contract": {
       "goal": "Evaluate whether Inspector is necessary for read-only runs.",
@@ -329,8 +288,7 @@
       ],
       "constraints": [
         "Read-only."
-      ],
-      "no_touch": []
+      ]
     },
     "evidence_requirements": []
   },
@@ -342,8 +300,6 @@
     "agent_type": "runner",
     "slice_kind": "work",
     "timebox_minutes": 6,
-    "allowed_paths": [],
-    "ownership_paths": [],
     "dependencies": [],
     "task_contract": {
       "goal": "Check that no docs suggest same-level spawn or cross-level spawn.",
@@ -352,8 +308,7 @@
       ],
       "constraints": [
         "Read-only."
-      ],
-      "no_touch": []
+      ]
     },
     "evidence_requirements": [
       "commands"
@@ -367,8 +322,6 @@
     "agent_type": "runner",
     "slice_kind": "work",
     "timebox_minutes": 6,
-    "allowed_paths": [],
-    "ownership_paths": [],
     "dependencies": [],
     "task_contract": {
       "goal": "Propose improvements to slice granularity and parallel efficiency.",
@@ -377,8 +330,7 @@
       ],
       "constraints": [
         "Read-only."
-      ],
-      "no_touch": []
+      ]
     },
     "evidence_requirements": []
   }

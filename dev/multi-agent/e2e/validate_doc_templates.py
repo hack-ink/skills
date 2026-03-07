@@ -3,29 +3,9 @@ import re
 import hashlib
 from pathlib import Path
 
-from jsonschema import Draft202012Validator
-
-REPO_ROOT = Path(__file__).resolve().parents[3]
-SKILL_ROOT = REPO_ROOT / "multi-agent"
-SCHEMAS_DIR = SKILL_ROOT / "schemas"
+from schema_support import SKILL_ROOT, validators_by_id
 
 JSON_FENCE_RE = re.compile(r"```\s*json\s*(.*?)\s*```", re.DOTALL | re.IGNORECASE)
-
-
-def load_json(path: Path) -> dict:
-    return json.loads(path.read_text())
-
-
-def load_validators() -> dict[str, Draft202012Validator]:
-    validators: dict[str, Draft202012Validator] = {}
-    for schema_path in sorted(SCHEMAS_DIR.glob("*.json")):
-        schema = load_json(schema_path)
-        Draft202012Validator.check_schema(schema)
-        schema_id = schema.get("$id")
-        if not schema_id:
-            raise AssertionError(f"{schema_path} is missing $id")
-        validators[str(schema_id)] = Draft202012Validator(schema)
-    return validators
 
 
 def iter_json_blocks(text: str) -> list[str]:
@@ -36,7 +16,7 @@ def iter_markdown_docs(root: Path) -> list[Path]:
     return sorted(path for path in root.rglob("*.md") if path.is_file())
 
 
-def validate_payload(payload: object, validators: dict[str, Draft202012Validator], ctx: str) -> None:
+def validate_payload(payload: object, validators: dict[str, object], ctx: str) -> None:
     if isinstance(payload, list):
         for i, item in enumerate(payload, 1):
             validate_payload(item, validators, f"{ctx}[{i}]")
@@ -76,7 +56,7 @@ def validate_payload(payload: object, validators: dict[str, Draft202012Validator
 
 
 def main() -> None:
-    validators = load_validators()
+    validators = validators_by_id()
 
     doc_files = iter_markdown_docs(SKILL_ROOT)
     if not doc_files:

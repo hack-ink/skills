@@ -3,22 +3,21 @@ import subprocess
 import sys
 from pathlib import Path
 
-from jsonschema import Draft202012Validator
+from schema_support import (
+    SCHEMAS_DIR,
+    SKILL_ROOT,
+    iter_schema_paths,
+    load_json,
+    validator_for_schema,
+)
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-SKILL_ROOT = REPO_ROOT / "multi-agent"
-SCHEMAS_DIR = SKILL_ROOT / "schemas"
 E2E_DIR = Path(__file__).resolve().parent
 BACKTESTS_DIR = E2E_DIR.parent / "backtests"
 
-
-def load_json(path: Path) -> dict:
-    return json.loads(path.read_text())
-
 def validate_schema_and_examples(schema_path: Path) -> None:
     schema = load_json(schema_path)
-    Draft202012Validator.check_schema(schema)
-    v = Draft202012Validator(schema)
+    v = validator_for_schema(schema)
     for i, ex in enumerate(schema.get("examples", []), 1):
         errs = list(v.iter_errors(ex))
         if errs:
@@ -29,7 +28,7 @@ def validate_schema_and_examples(schema_path: Path) -> None:
 
 
 def main() -> None:
-    schema_files = sorted(SCHEMAS_DIR.glob("*.json"))
+    schema_files = iter_schema_paths()
     if not schema_files:
         raise AssertionError(f"No schema files found under {SCHEMAS_DIR}")
 

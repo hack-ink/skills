@@ -19,5 +19,5 @@ python3 dev/multi-agent/e2e/validate_payloads.py
 
 ## What this proves / doesn’t prove
 
-- Proves: schema validity, ssot_id format (scenario-hash), two-state route fixtures, and fixture invariants (no forbidden roles, no write ownership overlap).
+- Proves: schema validity, ssot_id format (scenario-hash), two-state route fixtures, legacy `/1` worker-result compatibility (`agent_type` is canonical, `role` remains accepted only for older payloads), builder work-package binding, handoff dependency/identity validation, evidence-requirement satisfiability, blocked/partial recovery regressions, and fixture invariants (no write ownership overlap).
 - Does not prove: runtime behavior (actual spawning, `functions.wait`, `close_agent` hygiene).

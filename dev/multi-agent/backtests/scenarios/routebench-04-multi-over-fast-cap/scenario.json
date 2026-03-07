@@ -1,0 +1,15 @@
+{
+  "id": "routebench-04-multi-over-fast-cap",
+  "kind": "routing",
+  "description": "Clear work that exceeds the 60s fast-path cap must still route to multi.",
+  "route_input": {
+    "t_max_s": 61,
+    "t_why": "The task shape is clear, but the estimated duration exceeds the single fast-path cap.",
+    "tiny_clear_low_risk": true,
+    "dispatch_fixture": "dispatches.serial_multi.json"
+  },
+  "expectations": {
+    "expected_route": "multi",
+    "expected_initial_runnable_count": 1
+  }
+}

@@ -40,6 +40,7 @@
     "min_lock_conflicts": 1,
     "min_dedup_merged": 1,
     "min_retry_count": 1,
+    "min_reuse_count": 2,
     "expected_wait_any_makespan_s": 12,
     "expected_wait_all_makespan_s": 19,
     "min_wait_any_speedup_s": 4,

@@ -11,8 +11,6 @@
     "slice_id",
     "agent_type",
     "timebox_minutes",
-    "allowed_paths",
-    "ownership_paths",
     "task_contract"
   ],
   "properties": {
@@ -29,17 +27,11 @@
     },
     "slice_kind": {
       "type": "string",
-      "enum": ["probe", "work", "review", "merge"],
+      "enum": ["probe", "work", "review"],
       "default": "work"
     },
     "work_package_id": { "type": "string", "minLength": 1 },
-    "expected_work_s": { "type": "integer", "minimum": 0 },
     "timebox_minutes": { "type": "integer", "minimum": 1, "maximum": 60 },
-    "allowed_paths": {
-      "type": "array",
-      "items": { "type": "string", "minLength": 1 },
-      "default": []
-    },
     "ownership_paths": {
       "type": "array",
       "items": { "type": "string", "minLength": 1 },
@@ -65,17 +57,24 @@
           "type": "array",
           "items": { "type": "string", "minLength": 1 },
           "default": []
-        },
-        "no_touch": {
-          "type": "array",
-          "items": { "type": "string", "minLength": 1 },
-          "default": []
         }
       }
     },
     "evidence_requirements": {
       "type": "array",
-      "items": { "type": "string", "minLength": 1 },
+      "items": {
+        "type": "string",
+        "enum": [
+          "analysis",
+          "commands",
+          "diff",
+          "files_read",
+          "git_diff",
+          "review_notes",
+          "verification"
+        ]
+      },
+      "uniqueItems": true,
       "default": []
     }
   },
@@ -88,16 +87,13 @@
       "agent_type": "builder",
       "slice_kind": "work",
       "work_package_id": "pkg-builder-1",
-      "expected_work_s": 480,
       "timebox_minutes": 12,
-      "allowed_paths": ["multi-agent/"],
       "ownership_paths": ["multi-agent/schemas/"],
       "dependencies": [],
       "task_contract": {
         "goal": "Add a new schema file.",
         "acceptance": ["Schema validates with Draft202012Validator."],
-        "constraints": ["Do not edit unrelated directories."],
-        "no_touch": []
+        "constraints": ["Do not edit unrelated directories."]
       },
       "evidence_requirements": ["commands", "verification"]
     }
@@ -106,10 +102,19 @@
     {
       "if": { "properties": { "agent_type": { "const": "builder" } } },
       "then": {
-        "required": ["work_package_id", "expected_work_s"],
+        "required": ["work_package_id", "ownership_paths"],
         "properties": {
-          "allowed_paths": { "minItems": 1 },
           "ownership_paths": { "minItems": 1 }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "agent_type": { "enum": ["runner", "inspector"] } }
+      },
+      "then": {
+        "properties": {
+          "ownership_paths": { "maxItems": 0 }
         }
       }
     }

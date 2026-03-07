@@ -7,8 +7,6 @@
     "agent_type": "runner",
     "slice_kind": "probe",
     "timebox_minutes": 5,
-    "allowed_paths": [],
-    "ownership_paths": [],
     "dependencies": [],
     "task_contract": {
       "goal": "Map the minimum evidence needed before a single Builder lane can proceed safely.",
@@ -19,8 +17,7 @@
       "constraints": [
         "Read-only.",
         "No repository edits."
-      ],
-      "no_touch": []
+      ]
     },
     "evidence_requirements": [
       "commands",
@@ -35,11 +32,7 @@
     "agent_type": "builder",
     "slice_kind": "work",
     "work_package_id": "pkg-serial-fix",
-    "expected_work_s": 480,
     "timebox_minutes": 10,
-    "allowed_paths": [
-      "dev/multi-agent/BROKER_E2E.md"
-    ],
     "ownership_paths": [
       "dev/multi-agent/BROKER_E2E.md"
     ],
@@ -54,8 +47,7 @@
       ],
       "constraints": [
         "Do not create extra Builder lanes."
-      ],
-      "no_touch": []
+      ]
     },
     "evidence_requirements": [
       "git_diff",

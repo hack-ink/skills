@@ -10,10 +10,10 @@ Hard constraint: runtime `max_depth = 1`.
   - `t_max_s` (max seconds expected to finish)
   - `t_why` (why that estimate / what evidence supports the route)
 - Route:
-  - `single` if the task is tiny, clear, low-risk, and clearly fits the fast path
+  - `single` only if the task is tiny, clear, low-risk, and clearly fits the fast path (`t_max_s <= 60`)
   - `multi` for everything else: long tasks, uncertain tasks, risky tasks, or work that needs scout-first boundary discovery
 - Escalation rule:
-  - start in `single` only when the task clearly fits the fast-path bar above
+  - start in `single` only when the task clearly fits the fast-path bar above, including the `t_max_s <= 60` cap
   - otherwise enter `multi` immediately
   - within `multi`, start with scout-first tickets when boundaries are unclear and expand fanout only after evidence
 - For `multi`, use ticket scheduling with wait-any replenishment. There is no required planning phase.
@@ -40,9 +40,18 @@ Mandatory ticket fields:
 
 - `ssot_id`, `task_id`, `slice_id`
 - `agent_type`, `slice_kind`, `timebox_minutes`
-- `allowed_paths`, `ownership_paths`, `dependencies`
+- `dependencies`
 - `task_contract.goal`, `task_contract.acceptance`, `task_contract.constraints`
-- Builder tickets additionally require `work_package_id`, `expected_work_s`, and non-empty `allowed_paths` plus `ownership_paths`
+- Builder tickets additionally require `work_package_id` and non-empty `ownership_paths`
+- Runner and Inspector tickets must omit `ownership_paths` or leave it empty; both mean no write lock
+- Worker result schemas use `agent_type` as the canonical identity field; legacy `/1` result payloads may still use `role` as an identity alias only, and new outputs should emit `agent_type`
+- Builder results carry the originating `work_package_id`; Broker validates that it matches the dispatch before accepting the result
+- For Builder results, `/1` compatibility does not preserve the pre-`work_package_id` wire shape. `work_package_id` remains mandatory even when a legacy payload uses `role="builder"`.
+- Worker evidence and recovery are structured by schema, not free prose:
+  - runner evidence: `analysis`, `commands`, `files_read`
+  - builder evidence: `diff_summary`, `git_diff_summary`, `verification`
+  - inspector evidence: `review_notes`
+  - blocked/partial runner and builder results use structured `recovery.checkpoint`
 
 Board state tracked by Broker:
 
@@ -136,9 +145,9 @@ Multi-mode scheduling is dynamic.
 - Broker deduplicates only when the fingerprint matches after normalization:
   - `schema`, `ssot_id`, `task_id`, `agent_type`, `slice_kind`
   - sorted `dependencies`
-  - normalized+sorted `allowed_paths` and `ownership_paths` (trim trailing `/`)
+  - normalized+sorted `ownership_paths` (trim trailing `/`; non-builder paths normalize to `[]`)
 - `slice_id` must remain unique on the board; dedup merges into one canonical ticket and never keeps duplicates with the same `slice_id`.
-- Merge rule is additive-only: union list-like constraints (`acceptance`, `constraints`, `no_touch`, `evidence_requirements`) and dependency sets; do not merge when core execution fields diverge.
+- Merge rule is additive-only: union list-like constraints (`acceptance`, `constraints`, `evidence_requirements`) and dependency sets; do not merge when core execution fields diverge.
 
 `handoff_requests` are suggestions, not direct spawns. Only the Broker dispatches workers.
 
@@ -197,6 +206,9 @@ Worker output schemas:
 - Runner: `worker-result.runner/1`
 - Builder: `worker-result.builder/1`
 - Inspector: `review-result.inspector/1`
+- Builder `done` results include `work_package_id`, owned `ownership_paths`, and structured diff/verification evidence.
+- Runner and Builder `blocked`/`partial` results include schema-shaped recovery data instead of prose-only stall notes.
+- Legacy `/1` compatibility is field-level, not shape-level: `role` is still accepted as an identity alias, but Builder `/1` results still require `work_package_id` and the current evidence/recovery contract.
 
 If output is non-JSON or schema-invalid:
 
@@ -208,7 +220,7 @@ If output is non-JSON or schema-invalid:
 
 If worker exceeds `timebox_minutes`:
 
-1. interrupt and request checkpoint (state, last action, next 3 steps, blocked status)
+1. interrupt and request a schema-shaped checkpoint (`state`, `last_action`, `resume_from`, next 1-3 steps, blocked reason if any)
 2. if still stuck/non-responsive, close and re-dispatch with smaller scope
 3. after repeated stalls, mark `blocked` with evidence
 

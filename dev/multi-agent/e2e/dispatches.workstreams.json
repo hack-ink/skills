@@ -7,8 +7,6 @@
     "agent_type": "runner",
     "slice_kind": "probe",
     "timebox_minutes": 5,
-    "allowed_paths": [],
-    "ownership_paths": [],
     "dependencies": [],
     "task_contract": {
       "goal": "Inventory current dev routing fixtures and identify split boundaries.",
@@ -19,8 +17,7 @@
       "constraints": [
         "Read-only.",
         "No repository edits."
-      ],
-      "no_touch": []
+      ]
     },
     "evidence_requirements": [
       "commands",
@@ -35,8 +32,6 @@
     "agent_type": "runner",
     "slice_kind": "work",
     "timebox_minutes": 6,
-    "allowed_paths": [],
-    "ownership_paths": [],
     "dependencies": [],
     "task_contract": {
       "goal": "Record t_max_s/t_why and explain why this task belongs in `multi` instead of the `single` fast path.",
@@ -47,8 +42,7 @@
       "constraints": [
         "Read-only.",
         "No repository edits."
-      ],
-      "no_touch": []
+      ]
     },
     "evidence_requirements": [
       "commands"
@@ -62,11 +56,7 @@
     "agent_type": "builder",
     "slice_kind": "work",
     "work_package_id": "pkg-broker-e2e",
-    "expected_work_s": 660,
     "timebox_minutes": 12,
-    "allowed_paths": [
-      "dev/multi-agent/BROKER_E2E.md"
-    ],
     "ownership_paths": [
       "dev/multi-agent/BROKER_E2E.md"
     ],
@@ -81,8 +71,7 @@
       ],
       "constraints": [
         "Only edit the owned file."
-      ],
-      "no_touch": []
+      ]
     },
     "evidence_requirements": [
       "diff"
@@ -96,11 +85,7 @@
     "agent_type": "builder",
     "slice_kind": "work",
     "work_package_id": "pkg-e2e-fixtures",
-    "expected_work_s": 720,
     "timebox_minutes": 12,
-    "allowed_paths": [
-      "dev/multi-agent/e2e/"
-    ],
     "ownership_paths": [
       "dev/multi-agent/e2e/"
     ],
@@ -116,8 +101,7 @@
       ],
       "constraints": [
         "Only edit the owned directory."
-      ],
-      "no_touch": []
+      ]
     },
     "evidence_requirements": [
       "diff",
@@ -132,11 +116,7 @@
     "agent_type": "builder",
     "slice_kind": "work",
     "work_package_id": "pkg-backtests",
-    "expected_work_s": 720,
     "timebox_minutes": 12,
-    "allowed_paths": [
-      "dev/multi-agent/backtests/"
-    ],
     "ownership_paths": [
       "dev/multi-agent/backtests/"
     ],
@@ -151,8 +131,7 @@
       ],
       "constraints": [
         "Only edit the owned directory."
-      ],
-      "no_touch": []
+      ]
     },
     "evidence_requirements": [
       "diff",
@@ -167,8 +146,6 @@
     "agent_type": "runner",
     "slice_kind": "work",
     "timebox_minutes": 8,
-    "allowed_paths": [],
-    "ownership_paths": [],
     "dependencies": [
       "multi--builder-broker-e2e",
       "multi--builder-e2e-fixtures",
@@ -182,12 +159,10 @@
       ],
       "constraints": [
         "Read-only verification only."
-      ],
-      "no_touch": []
+      ]
     },
     "evidence_requirements": [
-      "commands",
-      "verification"
+      "commands"
     ]
   },
   {
@@ -198,8 +173,6 @@
     "agent_type": "inspector",
     "slice_kind": "review",
     "timebox_minutes": 8,
-    "allowed_paths": [],
-    "ownership_paths": [],
     "dependencies": [
       "multi--runner-verify"
     ],
@@ -211,8 +184,7 @@
       ],
       "constraints": [
         "Review-only output."
-      ],
-      "no_touch": []
+      ]
     },
     "evidence_requirements": [
       "review_notes"

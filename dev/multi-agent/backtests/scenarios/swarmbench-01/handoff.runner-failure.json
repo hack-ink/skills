@@ -5,10 +5,8 @@
     "task_id": "swarmbench-01-backtest",
     "slice_id": "sb01--builder-lock-b",
     "agent_type": "builder",
+    "work_package_id": "pkg-builder-lock-b",
     "timebox_minutes": 6,
-    "allowed_paths": [
-      "/tmp/swarmbench-01/shared/assets"
-    ],
     "ownership_paths": [
       "/tmp/swarmbench-01/shared/assets"
     ],

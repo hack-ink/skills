@@ -3,10 +3,12 @@
   "ssot_id": "e2e-read-04c9d864d719",
   "task_id": "e2e-read_only",
   "slice_id": "runner-01",
-  "role": "runner",
   "status": "done",
   "summary": "Validated schema and fixture status, then proposed a follow-up write ticket.",
   "evidence": {
+    "analysis": [
+      "The follow-up builder handoff can stay scoped to dev/multi-agent/e2e/ and still close the fixture drift."
+    ],
     "commands": [
       {
         "cmd": "python3 dev/multi-agent/e2e/run_smoke.py",
@@ -32,11 +34,7 @@
       "agent_type": "builder",
       "slice_kind": "work",
       "work_package_id": "pkg-runner-handoff-builder-11",
-      "expected_work_s": 600,
       "timebox_minutes": 10,
-      "allowed_paths": [
-        "dev/multi-agent/e2e/"
-      ],
       "ownership_paths": [
         "dev/multi-agent/e2e/"
       ],
@@ -51,13 +49,13 @@
         "constraints": [
           "Only edit owned paths.",
           "No unrelated file changes."
-        ],
-        "no_touch": []
+        ]
       },
       "evidence_requirements": [
         "diff",
         "verification"
       ]
     }
-  ]
+  ],
+  "agent_type": "runner"
 }

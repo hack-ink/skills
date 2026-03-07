@@ -23,6 +23,19 @@
     ]
   },
   {
+    "scenario_id": "route-multi-tiny-over-cap",
+    "route": "multi",
+    "t_max_s": 75,
+    "t_why": "The task is tiny and clear, but it exceeds the verified 60-second single fast-path cap, so it must still enter multi.",
+    "tiny_clear_low_risk": true,
+    "initial_runnable_count": 1,
+    "dispatch_fixture": "dispatches.serial_multi.json",
+    "expected_agent_types": [
+      "builder",
+      "runner"
+    ]
+  },
+  {
     "scenario_id": "route-multi-dev-fixtures-batch1",
     "route": "multi",
     "t_max_s": 240,

@@ -7,11 +7,7 @@
     "agent_type": "builder",
     "slice_kind": "work",
     "work_package_id": "pkg-alpha",
-    "expected_work_s": 1500,
     "timebox_minutes": 12,
-    "allowed_paths": [
-      "/tmp/swarmbench-02/alpha"
-    ],
     "ownership_paths": [
       "/tmp/swarmbench-02/alpha"
     ],
@@ -33,11 +29,7 @@
     "agent_type": "builder",
     "slice_kind": "work",
     "work_package_id": "pkg-beta",
-    "expected_work_s": 300,
     "timebox_minutes": 12,
-    "allowed_paths": [
-      "/tmp/swarmbench-02/beta"
-    ],
     "ownership_paths": [
       "/tmp/swarmbench-02/beta"
     ],
@@ -59,11 +51,7 @@
     "agent_type": "builder",
     "slice_kind": "work",
     "work_package_id": "pkg-gamma",
-    "expected_work_s": 1200,
     "timebox_minutes": 12,
-    "allowed_paths": [
-      "/tmp/swarmbench-02/gamma"
-    ],
     "ownership_paths": [
       "/tmp/swarmbench-02/gamma"
     ],

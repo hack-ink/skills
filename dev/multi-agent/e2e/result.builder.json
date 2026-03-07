@@ -3,23 +3,22 @@
   "ssot_id": "e2e-write-4aeb119f4748",
   "task_id": "e2e-write_mixed",
   "slice_id": "builder-01",
-  "role": "builder",
-  "agent_type": "builder",
+  "work_package_id": "pkg-write-builder-01",
   "status": "done",
-  "summary": "Implemented two-state schema and fixture updates, then validated locally.",
-  "allowed_paths": [
-    "multi-agent/",
-    "dev/multi-agent/"
-  ],
+  "summary": "Updated schema fixtures inside the owned schema slice, then validated locally.",
   "changeset": {
     "touched_paths": [
       "multi-agent/schemas/task-dispatch.schema.json",
-      "dev/multi-agent/e2e/validate_payloads.py"
+      "multi-agent/schemas/worker-result.builder.schema.json"
     ],
     "notes": [
-      "Removed legacy linear gating assumptions.",
-      "Added handoff_requests coverage in worker result fixtures."
+      "Kept touched paths inside the originating builder dispatch ownership.",
+      "Left validator-side fixture coverage to the separate e2e fixture owner."
     ]
+  },
+  "evidence": {
+    "diff_summary": "Updated task-dispatch and builder-result schema fixtures inside the owned slice.",
+    "git_diff_summary": "Only multi-agent schema files changed under multi-agent/schemas/."
   },
   "verification": [
     {
@@ -38,8 +37,6 @@
       "agent_type": "inspector",
       "slice_kind": "review",
       "timebox_minutes": 6,
-      "allowed_paths": [],
-      "ownership_paths": [],
       "dependencies": [
         "builder-01"
       ],
@@ -51,12 +48,15 @@
         "constraints": [
           "Review-only output.",
           "No repository edits."
-        ],
-        "no_touch": []
+        ]
       },
       "evidence_requirements": [
         "review_notes"
       ]
     }
-  ]
+  ],
+  "ownership_paths": [
+    "multi-agent/schemas/"
+  ],
+  "agent_type": "builder"
 }

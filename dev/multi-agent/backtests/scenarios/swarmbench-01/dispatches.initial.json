@@ -7,8 +7,6 @@
     "agent_type": "runner",
     "slice_kind": "probe",
     "timebox_minutes": 4,
-    "allowed_paths": [],
-    "ownership_paths": [],
     "task_contract": {
       "goal": "Plan lock/dedup follow-up slices.",
       "acceptance": [
@@ -26,8 +24,6 @@
     "slice_id": "sb01--runner-failure",
     "agent_type": "runner",
     "timebox_minutes": 4,
-    "allowed_paths": [],
-    "ownership_paths": [],
     "task_contract": {
       "goal": "Exercise retry handling.",
       "acceptance": [
@@ -44,10 +40,8 @@
     "task_id": "swarmbench-01-backtest",
     "slice_id": "sb01--builder-long",
     "agent_type": "builder",
+    "work_package_id": "pkg-builder-long",
     "timebox_minutes": 12,
-    "allowed_paths": [
-      "/tmp/swarmbench-01/alpha"
-    ],
     "ownership_paths": [
       "/tmp/swarmbench-01/alpha"
     ],
@@ -67,10 +61,8 @@
     "task_id": "swarmbench-01-backtest",
     "slice_id": "sb01--builder-short",
     "agent_type": "builder",
+    "work_package_id": "pkg-builder-short",
     "timebox_minutes": 6,
-    "allowed_paths": [
-      "/tmp/swarmbench-01/beta"
-    ],
     "ownership_paths": [
       "/tmp/swarmbench-01/beta"
     ],
@@ -90,10 +82,8 @@
     "task_id": "swarmbench-01-backtest",
     "slice_id": "sb01--builder-after-short",
     "agent_type": "builder",
+    "work_package_id": "pkg-builder-after-short",
     "timebox_minutes": 6,
-    "allowed_paths": [
-      "/tmp/swarmbench-01/gamma"
-    ],
     "ownership_paths": [
       "/tmp/swarmbench-01/gamma"
     ],

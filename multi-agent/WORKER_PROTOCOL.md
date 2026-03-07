@@ -7,6 +7,8 @@ Hard constraints:
 - Workers never spawn; only the Broker spawns (`max_depth=1`).
 - `runner` and `inspector` never write repo content.
 - Worker outputs must be **JSON-only** and schema-valid.
+- `agent_type` is the canonical worker-result identity field. Legacy `/1` payloads may still use `role` as an identity alias only, and new outputs should emit `agent_type`.
+- Builder `/1` compatibility is not a full legacy wire-shape branch: `work_package_id` and the current evidence/recovery fields remain mandatory when applicable, even if a payload uses `role="builder"`.
 
 ## Multi-mode defaults (all workers)
 
@@ -15,17 +17,25 @@ Hard constraints:
 - Keep tickets small enough to finish inside `timebox_minutes`.
 - Make dependencies explicit and keep write ownership disjoint.
 - If blocked, say exactly what evidence/decision is needed to unblock.
+- When `status` is `blocked` or `partial`, return schema-valid structured recovery data instead of free-form prose:
+  - `recovery.blocked_reason` when work is blocked
+  - `recovery.required_evidence` / `recovery.required_decisions` when Broker input is needed
+  - `recovery.checkpoint.state`, `last_action`, optional `resume_from`, and up to 3 `next_steps`
 
 ## Runner checklist
 
-- Return concrete evidence (`commands`, `files_read`) for every claim.
+- Return concrete evidence under `evidence`:
+  - `analysis` for summarized findings or boundary maps
+  - `commands` for shell/tool proof
+  - `files_read` for inspected file paths
 - Propose follow-up tickets for:
   - parallelizable probes
   - disjoint write ownership partitions for Builder work packages
   - targeted Inspector reviews when risk is high
 - Avoid handoffing micro follow-ups when ownership is unchanged and effective work is under ~3 minutes.
-- Builder handoffs must include `work_package_id` and `expected_work_s`.
-- Builder handoffs must keep `allowed_paths` and `ownership_paths` non-empty.
+- Builder handoffs must include `work_package_id`.
+- Builder handoffs must keep `ownership_paths` non-empty.
+- Runner and Inspector handoffs should omit `ownership_paths` or leave it empty.
 
 Runner example (including a handoff request):
 
@@ -35,10 +45,13 @@ Runner example (including a handoff request):
   "ssot_id": "scenario-hash-5277daf391c2",
   "task_id": "example-task",
   "slice_id": "split--runner-boundary-map",
-  "role": "runner",
+  "agent_type": "runner",
   "status": "done",
   "summary": "Identified two disjoint ownership partitions and one shared dependency gate.",
   "evidence": {
+    "analysis": [
+      "src/app/ and src/lib/ can proceed independently after the schema gate is updated."
+    ],
     "commands": [
       {
         "cmd": "rg -n \"foo\" src/",
@@ -67,11 +80,7 @@ Runner example (including a handoff request):
       "agent_type": "builder",
       "slice_kind": "work",
       "work_package_id": "pkg-ownership-A",
-      "expected_work_s": 540,
       "timebox_minutes": 12,
-      "allowed_paths": [
-        "src/app/"
-      ],
       "ownership_paths": [
         "src/app/"
       ],
@@ -84,8 +93,7 @@ Runner example (including a handoff request):
         ],
         "constraints": [
           "Do not touch src/lib/."
-        ],
-        "no_touch": []
+        ]
       },
       "evidence_requirements": [
         "git_diff",
@@ -105,7 +113,13 @@ Runner example (including a handoff request):
   - stop expanding scope
   - propose schema-valid handoff requests with disjoint ownership
 - Emit new Builder handoffs only when ownership must split or package scope would exceed the timebox.
-- Return verification evidence (`verification`) and a tight `git_diff` summary.
+- For `status="done"`, return:
+  - `work_package_id`
+  - `changeset`
+  - `evidence.diff_summary` / `evidence.git_diff_summary` when diff-oriented evidence is required
+  - `verification`
+- `work_package_id` stays mandatory on every Builder `/1` result; using the legacy `role` alias does not waive it.
+- For `status="blocked"` or `status="partial"`, return the structured `recovery` object with checkpoint data instead of only a prose explanation.
 
 ## Inspector checklist
 
@@ -113,4 +127,6 @@ Runner example (including a handoff request):
   - missing evidence gates
   - ownership/lock collisions across Builder tickets
   - schema-invalid outputs or non-JSON output risks
+- Return `review_notes` when review evidence is requested.
+- Prefer structured findings with `severity`, `message`, and optional `category`, `confidence`, `evidence`, and `paths`.
 - Prefer short, decisive verdicts with explicit “what evidence would change my mind”.

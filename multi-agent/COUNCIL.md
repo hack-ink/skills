@@ -50,8 +50,6 @@ Bootstrap runner template:
   "agent_type": "runner",
   "slice_kind": "work",
   "timebox_minutes": 6,
-  "allowed_paths": [],
-  "ownership_paths": [],
   "dependencies": [],
   "task_contract": {
     "goal": "Map dependency graph and write ownership boundaries for parallel scheduling.",
@@ -62,8 +60,7 @@ Bootstrap runner template:
     "constraints": [
       "Read-only investigation",
       "No repo writes"
-    ],
-    "no_touch": []
+    ]
   },
   "evidence_requirements": [
     "commands",
@@ -83,8 +80,6 @@ Bootstrap inspector template:
   "agent_type": "inspector",
   "slice_kind": "review",
   "timebox_minutes": 8,
-  "allowed_paths": [],
-  "ownership_paths": [],
   "dependencies": [],
   "task_contract": {
     "goal": "Identify safety and sequencing risks before write tickets are scheduled.",
@@ -95,8 +90,7 @@ Bootstrap inspector template:
     "constraints": [
       "Review-only output",
       "No repo writes"
-    ],
-    "no_touch": []
+    ]
   },
   "evidence_requirements": [
     "review_notes"

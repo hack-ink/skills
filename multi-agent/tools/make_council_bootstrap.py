@@ -37,10 +37,9 @@ def make_dispatch(
     acceptance: list[str],
     constraints: list[str],
     evidence_requirements: list[str],
-    allowed_paths: list[str] | None = None,
     ownership_paths: list[str] | None = None,
 ) -> dict:
-    return {
+    dispatch = {
         "schema": "task-dispatch/1",
         "ssot_id": ssot_id,
         "task_id": task_id,
@@ -48,17 +47,17 @@ def make_dispatch(
         "agent_type": agent_type,
         "slice_kind": slice_kind,
         "timebox_minutes": timebox_minutes,
-        "allowed_paths": allowed_paths or [],
-        "ownership_paths": ownership_paths or [],
         "dependencies": dependencies or [],
         "task_contract": {
             "goal": goal,
             "acceptance": acceptance,
             "constraints": constraints,
-            "no_touch": [],
         },
         "evidence_requirements": evidence_requirements,
     }
+    if ownership_paths is not None:
+        dispatch["ownership_paths"] = ownership_paths
+    return dispatch
 
 
 def build_council_bootstrap(
