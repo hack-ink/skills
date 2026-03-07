@@ -1,6 +1,6 @@
-# Broker Split Protocol (Single-First)
+# Broker Split Protocol (Two-State)
 
-Use this when `route="multi"` and the task already has evidence-backed package boundaries: disjoint ownership, independent branches, or useful lane overlap. Uncertainty alone should route to `single-deep`, not `multi`.
+Use this when `route="multi"` and you need to turn current understanding into a runnable ticket board. If boundaries are already clear, go straight to Builder packages. If boundaries are unclear, emit a scout-first board that discovers them safely.
 
 Goal: produce a **runnable ticket board** (not a linear plan) with parallelism that is safe under ownership locks.
 
@@ -15,10 +15,9 @@ Split when any applies:
 
 Prefer sequential when none apply:
 
-- tiny single-file edits
-- one-pass mechanical transformations
 - tightly coupled edits requiring continuous shared context
-- uncertainty that still needs direct inspection before safe package boundaries exist
+- tasks that should stay scout-first until the Broker has enough evidence
+- one-pass mechanical transformations where a single Builder package is cleaner than fanout
 
 ## Work packages (default)
 
@@ -28,6 +27,16 @@ Use Builder work packages as the primary split unit.
 - Micro follow-ups (effective work under ~3 minutes) should be merged into an existing package when ownership and constraints stay compatible.
 - Cap initial Builder package fan-out at 4; expand only after evidence from the first wave.
 - Keep `handoff_requests` budget at 3 or fewer per worker; if above budget, propose merged packages instead of more slices.
+
+## Scout-first board pattern
+
+When boundaries are not yet credible, start `multi` with a low-fanout board:
+
+- `1 x runner` to map ownership, dependencies, or blocking I/O
+- optional `1 x inspector` to identify safety/evidence risks
+- no Builder tickets until the Broker has enough evidence to assign owned paths confidently
+
+Serial scout-first execution is still a valid `multi` run.
 
 ## Dedup fingerprint hygiene
 

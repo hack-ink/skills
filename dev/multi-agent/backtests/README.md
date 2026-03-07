@@ -1,10 +1,10 @@
-# Swarm Backtests (Deterministic)
+# Multi-Agent Backtests (Deterministic)
 
-This directory contains deterministic routing and broker scheduling backtests for the single-first protocol.
+This directory contains deterministic routing and broker scheduling backtests for the two-state protocol.
 
 The simulator covers scheduler behaviors that fixture/schema checks cannot prove:
 
-- route selection for `single`, `single-deep`, and `multi`
+- route selection for `single` and `multi`
 - wait-any replenishment vs wait-all wave scheduling
 - write-lock enforcement for overlapping builder ownership
 - handoff dedup merge behavior

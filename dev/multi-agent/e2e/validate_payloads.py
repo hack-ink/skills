@@ -164,26 +164,48 @@ def assert_handoff_requests(
         assert_ssot_id_policy(request["ssot_id"])
 
 
-def assert_swarm_ticket_invariants(dispatches: list[dict]) -> None:
-    if not all(d["slice_id"].startswith("swarm--") for d in dispatches):
-        bad = [d["slice_id"] for d in dispatches if not d["slice_id"].startswith("swarm--")]
+def assert_multi_ticket_invariants(dispatches: list[dict], *, label: str) -> None:
+    if not all(d["slice_id"].startswith("multi--") for d in dispatches):
+        bad = [d["slice_id"] for d in dispatches if not d["slice_id"].startswith("multi--")]
         raise AssertionError(
-            "dispatches.workstreams.json: slice_id must start with `swarm--`: "
-            + ", ".join(bad)
+            f"{label}: slice_id must start with `multi--`: " + ", ".join(bad)
         )
 
     builders = [d for d in dispatches if d["agent_type"] == "builder"]
     runners = [d for d in dispatches if d["agent_type"] == "runner"]
-    inspectors = [d for d in dispatches if d["agent_type"] == "inspector"]
 
-    if not builders or not runners or not inspectors:
-        raise AssertionError(
-            "dispatches.workstreams.json must include runner, builder, and inspector slices"
-        )
+    if not builders or not runners:
+        raise AssertionError(f"{label} must include runner and builder slices")
 
     for payload in builders:
         assert_builder_path_constraints(payload, label=payload["slice_id"])
-    assert_no_builder_ownership_overlap(builders, label="dispatches.workstreams.json")
+    assert_no_builder_ownership_overlap(builders, label=label)
+
+
+def count_initial_runnable_dispatches(dispatches: list[dict]) -> int:
+    locked_builder_paths: list[str] = []
+    runnable = 0
+
+    for dispatch in dispatches:
+        if dispatch.get("dependencies"):
+            continue
+
+        if dispatch["agent_type"] != "builder":
+            runnable += 1
+            continue
+
+        ownership_paths = dispatch.get("ownership_paths", [])
+        if any(
+            overlaps(left_path, right_path)
+            for left_path in ownership_paths
+            for right_path in locked_builder_paths
+        ):
+            continue
+
+        locked_builder_paths.extend(ownership_paths)
+        runnable += 1
+
+    return runnable
 
 
 def assert_route_cases() -> None:
@@ -191,11 +213,13 @@ def assert_route_cases() -> None:
     if not isinstance(route_cases, list):
         raise AssertionError("route_cases.json must be a JSON array")
     if len(route_cases) < 3:
-        raise AssertionError("route_cases.json must include `single`, `single-deep`, and `multi`")
+        raise AssertionError(
+            "route_cases.json must include at least one `single` case and multiple `multi` cases"
+        )
 
     seen_ids: set[str] = set()
     seen_routes: set[str] = set()
-    valid_routes = {"single", "single-deep", "multi"}
+    valid_routes = {"single", "multi"}
 
     for index, payload in enumerate(route_cases, 1):
         label = f"route_cases.json[{index}]"
@@ -222,19 +246,15 @@ def assert_route_cases() -> None:
         if not isinstance(t_why, str) or not t_why.strip():
             raise AssertionError(f"{label}: t_why must be a non-empty string")
 
-        decomposable = payload.get("decomposable")
-        if not isinstance(decomposable, bool):
-            raise AssertionError(f"{label}: decomposable must be a boolean")
+        tiny_clear_low_risk = payload.get("tiny_clear_low_risk")
+        if not isinstance(tiny_clear_low_risk, bool):
+            raise AssertionError(f"{label}: tiny_clear_low_risk must be a boolean")
 
-        dev_requires_deeper_inspection = payload.get("dev_requires_deeper_inspection", False)
-        if not isinstance(dev_requires_deeper_inspection, bool):
+        initial_runnable_count = payload.get("initial_runnable_count")
+        if not isinstance(initial_runnable_count, int) or initial_runnable_count < 0:
             raise AssertionError(
-                f"{label}: dev_requires_deeper_inspection must be a boolean when present"
+                f"{label}: initial_runnable_count must be a non-negative integer"
             )
-
-        spawn_count = payload.get("spawn_count")
-        if not isinstance(spawn_count, int) or spawn_count < 0:
-            raise AssertionError(f"{label}: spawn_count must be a non-negative integer")
 
         dispatch_fixture = payload.get("dispatch_fixture")
         if dispatch_fixture is not None and not isinstance(dispatch_fixture, str):
@@ -247,54 +267,39 @@ def assert_route_cases() -> None:
             raise AssertionError(f"{label}: expected_agent_types must be a list of strings")
 
         if route == "single":
-            if t_max_s > 90:
-                raise AssertionError(f"{label}: `single` must keep t_max_s <= 90")
-            if dev_requires_deeper_inspection:
+            if not tiny_clear_low_risk:
                 raise AssertionError(
-                    f"{label}: `single` cannot set dev_requires_deeper_inspection=true"
+                    f"{label}: `single` requires tiny_clear_low_risk=true"
                 )
-            if spawn_count != 0 or dispatch_fixture is not None or expected_agent_types:
+            if (
+                initial_runnable_count != 0
+                or dispatch_fixture is not None
+                or expected_agent_types
+            ):
                 raise AssertionError(
                     f"{label}: `single` must not spawn or reference dispatch fixtures"
                 )
             continue
 
-        if route == "single-deep":
-            if decomposable:
-                raise AssertionError(
-                    f"{label}: `single-deep` must stay non-decomposable and local"
-                )
-            if t_max_s <= 90 and not dev_requires_deeper_inspection:
-                raise AssertionError(
-                    f"{label}: `single-deep` with t_max_s <= 90 requires "
-                    "dev_requires_deeper_inspection=true"
-                )
-            if spawn_count != 0 or dispatch_fixture is not None or expected_agent_types:
-                raise AssertionError(
-                    f"{label}: `single-deep` must not spawn or reference dispatch fixtures"
-                )
-            continue
-
-        if t_max_s <= 90:
-            raise AssertionError(f"{label}: `multi` must exceed the 90-second gate")
-        if not decomposable:
-            raise AssertionError(f"{label}: `multi` requires decomposable=true")
-        if dev_requires_deeper_inspection:
+        if tiny_clear_low_risk:
             raise AssertionError(
-                f"{label}: `multi` cannot set dev_requires_deeper_inspection=true"
+                f"{label}: `multi` is only valid when the task is outside the `single` fast path"
             )
-        if spawn_count <= 0:
-            raise AssertionError(f"{label}: `multi` must plan at least one spawned slice")
+        if initial_runnable_count <= 0:
+            raise AssertionError(
+                f"{label}: `multi` must expose at least one initially runnable slice"
+            )
         if not dispatch_fixture:
             raise AssertionError(f"{label}: `multi` must reference a dispatch fixture")
 
         dispatches = load_json(E2E_DIR / dispatch_fixture)
         if not isinstance(dispatches, list):
             raise AssertionError(f"{label}: {dispatch_fixture} must be a JSON array")
-        if len(dispatches) != spawn_count:
+        actual_initial_runnable_count = count_initial_runnable_dispatches(dispatches)
+        if actual_initial_runnable_count != initial_runnable_count:
             raise AssertionError(
-                f"{label}: spawn_count={spawn_count} does not match {dispatch_fixture} "
-                f"item count {len(dispatches)}"
+                f"{label}: initial_runnable_count={initial_runnable_count} does not match "
+                f"{dispatch_fixture} initially runnable count {actual_initial_runnable_count}"
             )
 
         actual_agent_types = sorted({dispatch["agent_type"] for dispatch in dispatches})
@@ -306,7 +311,7 @@ def assert_route_cases() -> None:
 
     if seen_routes != valid_routes:
         raise AssertionError(
-            "route_cases.json must cover exactly `single`, `single-deep`, and `multi`"
+            "route_cases.json must cover exactly `single` and `multi`"
         )
 
 
@@ -368,17 +373,20 @@ def assert_dispatch_invariants() -> None:
         assert_builder_path_constraints(payload, label=payload["slice_id"])
     assert_no_builder_ownership_overlap(builders, label="dispatches.write_mixed.json")
 
-    workstreams = validate_dispatches(
-        E2E_DIR / "dispatches.workstreams.json", expected_count=7
+    serial_multi = validate_dispatches(
+        E2E_DIR / "dispatches.serial_multi.json", expected_count=2
     )
-    assert_swarm_ticket_invariants(workstreams)
+    assert_multi_ticket_invariants(serial_multi, label="dispatches.serial_multi.json")
+
+    workstreams = validate_dispatches(E2E_DIR / "dispatches.workstreams.json", expected_count=7)
+    assert_multi_ticket_invariants(workstreams, label="dispatches.workstreams.json")
     assert_route_cases()
 
 
 def main() -> None:
     assert_dispatch_invariants()
     validate_results()
-    print("OK: fixtures + route cases + invariants (single-first)")
+    print("OK: fixtures + route cases + invariants (two-state)")
 
 
 if __name__ == "__main__":

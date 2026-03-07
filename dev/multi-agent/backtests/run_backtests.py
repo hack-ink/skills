@@ -6,6 +6,7 @@ from broker_sim import BrokerSimulator, load_json
 
 BACKTESTS_DIR = Path(__file__).resolve().parent
 SCENARIOS_DIR = BACKTESTS_DIR / "scenarios"
+E2E_DIR = BACKTESTS_DIR.parent / "e2e"
 
 
 def assert_expectations(
@@ -77,15 +78,39 @@ def assert_expectations(
 
 def derive_route(
     *,
-    t_max_s: int,
-    decomposable: bool,
-    dev_requires_deeper_inspection: bool,
+    tiny_clear_low_risk: bool,
 ) -> str:
-    if not decomposable and (t_max_s > 90 or dev_requires_deeper_inspection):
-        return "single-deep"
-    if t_max_s <= 90:
+    if tiny_clear_low_risk:
         return "single"
     return "multi"
+
+
+def count_initial_runnable_dispatches(dispatches: list[dict]) -> int:
+    locked_builder_paths: list[str] = []
+    runnable = 0
+
+    for dispatch in dispatches:
+        if dispatch.get("dependencies"):
+            continue
+
+        if dispatch["agent_type"] != "builder":
+            runnable += 1
+            continue
+
+        ownership_paths = dispatch.get("ownership_paths", [])
+        if any(
+            left_path == right_path
+            or left_path.startswith(right_path.rstrip("/") + "/")
+            or right_path.startswith(left_path.rstrip("/") + "/")
+            for left_path in ownership_paths
+            for right_path in locked_builder_paths
+        ):
+            continue
+
+        locked_builder_paths.extend(ownership_paths)
+        runnable += 1
+
+    return runnable
 
 
 def run_scheduler_scenario(
@@ -130,20 +155,20 @@ def run_routing_scenario(scenario_dir: Path, scenario: dict) -> str:
     if not isinstance(t_why, str) or not t_why.strip():
         raise AssertionError(f"{scenario_id}: route_input.t_why must be a non-empty string")
 
-    decomposable = route_input.get("decomposable")
-    if not isinstance(decomposable, bool):
-        raise AssertionError(f"{scenario_id}: route_input.decomposable must be a boolean")
-
-    dev_requires_deeper_inspection = route_input.get("dev_requires_deeper_inspection", False)
-    if not isinstance(dev_requires_deeper_inspection, bool):
+    tiny_clear_low_risk = route_input.get("tiny_clear_low_risk")
+    if not isinstance(tiny_clear_low_risk, bool):
         raise AssertionError(
-            f"{scenario_id}: route_input.dev_requires_deeper_inspection must be a boolean"
+            f"{scenario_id}: route_input.tiny_clear_low_risk must be a boolean"
+        )
+
+    dispatch_fixture = route_input.get("dispatch_fixture")
+    if dispatch_fixture is not None and not isinstance(dispatch_fixture, str):
+        raise AssertionError(
+            f"{scenario_id}: route_input.dispatch_fixture must be a string or null"
         )
 
     actual_route = derive_route(
-        t_max_s=t_max_s,
-        decomposable=decomposable,
-        dev_requires_deeper_inspection=dev_requires_deeper_inspection,
+        tiny_clear_low_risk=tiny_clear_low_risk,
     )
     expected_route = expectations.get("expected_route")
     if actual_route != expected_route:
@@ -151,25 +176,43 @@ def run_routing_scenario(scenario_dir: Path, scenario: dict) -> str:
             f"{scenario_id}: expected route {expected_route!r}, got {actual_route!r}"
         )
 
-    actual_spawn_count = 0 if actual_route != "multi" else 1
-    expected_spawn_count = expectations.get("expected_spawn_count")
-    if not isinstance(expected_spawn_count, int) or expected_spawn_count < 0:
+    if actual_route == "single":
+        if dispatch_fixture is not None:
+            raise AssertionError(f"{scenario_id}: single route must not reference a dispatch fixture")
+        actual_initial_runnable_count = 0
+    else:
+        if not dispatch_fixture:
+            raise AssertionError(f"{scenario_id}: multi route requires route_input.dispatch_fixture")
+        dispatches = load_json(E2E_DIR / dispatch_fixture)
+        if not isinstance(dispatches, list):
+            raise AssertionError(
+                f"{scenario_id}: {dispatch_fixture} must be a JSON array when used for routing"
+            )
+        actual_initial_runnable_count = count_initial_runnable_dispatches(dispatches)
+
+    expected_initial_runnable_count = expectations.get("expected_initial_runnable_count")
+    if (
+        not isinstance(expected_initial_runnable_count, int)
+        or expected_initial_runnable_count < 0
+    ):
         raise AssertionError(
-            f"{scenario_id}: expectations.expected_spawn_count must be a non-negative integer"
+            f"{scenario_id}: expectations.expected_initial_runnable_count must be a "
+            "non-negative integer"
         )
-    if actual_spawn_count != expected_spawn_count:
+    if actual_initial_runnable_count != expected_initial_runnable_count:
         raise AssertionError(
-            f"{scenario_id}: expected spawn_count={expected_spawn_count}, got {actual_spawn_count}"
+            f"{scenario_id}: expected initial_runnable_count={expected_initial_runnable_count}, "
+            f"got {actual_initial_runnable_count}"
         )
 
     print(
         "PASS: "
         f"{scenario_id} "
         f"route={actual_route} "
-        f"spawn_count={actual_spawn_count} "
+        f"initial_runnable_count={actual_initial_runnable_count} "
         f"t_max_s={t_max_s} "
-        f"decomposable={str(decomposable).lower()} "
-        f"dev_requires_deeper_inspection={str(dev_requires_deeper_inspection).lower()}"
+        f"tiny_clear_low_risk={str(tiny_clear_low_risk).lower()} "
+        f"dispatch_fixture={dispatch_fixture or 'none'}"
     )
     return scenario_id
 

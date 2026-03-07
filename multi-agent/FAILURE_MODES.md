@@ -1,4 +1,4 @@
-# Failure Modes (Single-First Multi)
+# Failure Modes (Two-State Multi)
 
 Use this when a run becomes unreliable (stalls, schema failures, ownership deadlocks, or over-splitting).
 

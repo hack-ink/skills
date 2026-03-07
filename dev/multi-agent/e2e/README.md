@@ -1,11 +1,11 @@
-# E2E Sample Fixtures (vNext)
+# E2E Sample Fixtures (Two-State)
 
-This directory contains schema-valid **example payloads** for the vNext broker model:
+This directory contains schema-valid **example payloads** for the two-state broker model:
 
 - Broker-only spawning (`max_depth=1`)
 - No Orchestrator role
 - JSON-only dispatch + JSON-only worker results
-- Route fixtures for `single`, `single-deep`, and `multi`
+- Route fixtures for `single` and multiple `multi` shapes
 
 ## Validate (repo-local)
 
@@ -19,5 +19,5 @@ python3 dev/multi-agent/e2e/validate_payloads.py
 
 ## What this proves / doesn’t prove
 
-- Proves: schema validity, ssot_id format (scenario-hash), route-tier fixtures, and fixture invariants (no forbidden roles, no write ownership overlap).
+- Proves: schema validity, ssot_id format (scenario-hash), two-state route fixtures, and fixture invariants (no forbidden roles, no write ownership overlap).
 - Does not prove: runtime behavior (actual spawning, `functions.wait`, `close_agent` hygiene).

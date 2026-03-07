@@ -1,4 +1,4 @@
-# Worker Protocol (Single-First Multi)
+# Worker Protocol (Two-State Multi)
 
 This document defines how depth-1 workers should behave once the Broker has already escalated into `route="multi"`.
 

@@ -1,0 +1,15 @@
+{
+  "id": "routebench-03-multi-parallel",
+  "kind": "routing",
+  "description": "A longer task outside the single fast path enters multi and can fan out into parallel lanes.",
+  "route_input": {
+    "t_max_s": 240,
+    "t_why": "Broker docs, fixtures, and backtests can advance in separate owned lanes.",
+    "tiny_clear_low_risk": false,
+    "dispatch_fixture": "dispatches.workstreams.json"
+  },
+  "expectations": {
+    "expected_route": "multi",
+    "expected_initial_runnable_count": 2
+  }
+}

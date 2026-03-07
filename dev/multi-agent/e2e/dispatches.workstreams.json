@@ -1,9 +1,9 @@
 [
   {
     "schema": "task-dispatch/1",
-    "ssot_id": "ws2-dev-swarm-0d26dfd05c80",
-    "task_id": "swarm-ticket-flow",
-    "slice_id": "swarm--runner-inventory",
+    "ssot_id": "multi-dev-orchestration-da6a468d8d93",
+    "task_id": "multi-ticket-flow",
+    "slice_id": "multi--runner-inventory",
     "agent_type": "runner",
     "slice_kind": "probe",
     "timebox_minutes": 5,
@@ -29,9 +29,9 @@
   },
   {
     "schema": "task-dispatch/1",
-    "ssot_id": "ws2-dev-swarm-0d26dfd05c80",
-    "task_id": "swarm-ticket-flow",
-    "slice_id": "swarm--runner-routing-gate",
+    "ssot_id": "multi-dev-orchestration-da6a468d8d93",
+    "task_id": "multi-ticket-flow",
+    "slice_id": "multi--runner-scout-gate",
     "agent_type": "runner",
     "slice_kind": "work",
     "timebox_minutes": 6,
@@ -39,10 +39,10 @@
     "ownership_paths": [],
     "dependencies": [],
     "task_contract": {
-      "goal": "Record t_max_s/t_why and determine whether the task should stay `single`, `single-deep`, or `multi`.",
+      "goal": "Record t_max_s/t_why and explain why this task belongs in `multi` instead of the `single` fast path.",
       "acceptance": [
-        "State whether decomposability justifies `multi`.",
-        "Call out the no-spawn requirement when the route stays single-lane."
+        "State why the task is outside the tiny-clear-low-risk bar.",
+        "Call out whether execution should stay scout-first or expand into parallel lanes."
       ],
       "constraints": [
         "Read-only.",
@@ -56,9 +56,9 @@
   },
   {
     "schema": "task-dispatch/1",
-    "ssot_id": "ws2-dev-swarm-0d26dfd05c80",
-    "task_id": "swarm-ticket-flow",
-    "slice_id": "swarm--builder-broker-e2e",
+    "ssot_id": "multi-dev-orchestration-da6a468d8d93",
+    "task_id": "multi-ticket-flow",
+    "slice_id": "multi--builder-broker-e2e",
     "agent_type": "builder",
     "slice_kind": "work",
     "work_package_id": "pkg-broker-e2e",
@@ -71,13 +71,13 @@
       "dev/multi-agent/BROKER_E2E.md"
     ],
     "dependencies": [
-      "swarm--runner-routing-gate"
+      "multi--runner-scout-gate"
     ],
     "task_contract": {
-      "goal": "Update the dev Broker E2E doc for the three-tier single-first routing model.",
+      "goal": "Update the dev Broker E2E doc for the two-state routing model.",
       "acceptance": [
-        "Doc covers `single`, `single-deep`, and `multi`.",
-        "Doc makes no-spawn and decomposability gates explicit."
+        "Doc covers `single` plus both serial and parallel `multi` cases.",
+        "Doc makes scout-first and Broker no-write rules explicit."
       ],
       "constraints": [
         "Only edit the owned file."
@@ -90,9 +90,9 @@
   },
   {
     "schema": "task-dispatch/1",
-    "ssot_id": "ws2-dev-swarm-0d26dfd05c80",
-    "task_id": "swarm-ticket-flow",
-    "slice_id": "swarm--builder-e2e-fixtures",
+    "ssot_id": "multi-dev-orchestration-da6a468d8d93",
+    "task_id": "multi-ticket-flow",
+    "slice_id": "multi--builder-e2e-fixtures",
     "agent_type": "builder",
     "slice_kind": "work",
     "work_package_id": "pkg-e2e-fixtures",
@@ -105,14 +105,14 @@
       "dev/multi-agent/e2e/"
     ],
     "dependencies": [
-      "swarm--runner-inventory",
-      "swarm--builder-broker-e2e"
+      "multi--runner-inventory",
+      "multi--builder-broker-e2e"
     ],
     "task_contract": {
-      "goal": "Update e2e fixtures and validators to cover the new route tiers.",
+      "goal": "Update e2e fixtures and validators to cover the two-state routing model.",
       "acceptance": [
-        "Fixtures cover `single`, `single-deep`, and `multi`.",
-        "Smoke validators no longer require a bootstrap planning fixture."
+        "Fixtures cover `single` and multiple `multi` shapes.",
+        "Smoke validators accept scout-first serial `multi` runs."
       ],
       "constraints": [
         "Only edit the owned directory."
@@ -126,9 +126,9 @@
   },
   {
     "schema": "task-dispatch/1",
-    "ssot_id": "ws2-dev-swarm-0d26dfd05c80",
-    "task_id": "swarm-ticket-flow",
-    "slice_id": "swarm--builder-backtests",
+    "ssot_id": "multi-dev-orchestration-da6a468d8d93",
+    "task_id": "multi-ticket-flow",
+    "slice_id": "multi--builder-backtests",
     "agent_type": "builder",
     "slice_kind": "work",
     "work_package_id": "pkg-backtests",
@@ -141,12 +141,12 @@
       "dev/multi-agent/backtests/"
     ],
     "dependencies": [
-      "swarm--runner-routing-gate"
+      "multi--runner-scout-gate"
     ],
     "task_contract": {
-      "goal": "Add or update deterministic backtests for the three-tier routing model.",
+      "goal": "Add or update deterministic backtests for the two-state routing model.",
       "acceptance": [
-        "At least one `single-deep` scenario stays local with no spawned workers.",
+        "Backtests cover one `single` scenario and both serial and parallel `multi` routes.",
         "Backtests remain runnable from the smoke entrypoint."
       ],
       "constraints": [
@@ -161,24 +161,24 @@
   },
   {
     "schema": "task-dispatch/1",
-    "ssot_id": "ws2-dev-swarm-0d26dfd05c80",
-    "task_id": "swarm-ticket-flow",
-    "slice_id": "swarm--runner-verify",
+    "ssot_id": "multi-dev-orchestration-da6a468d8d93",
+    "task_id": "multi-ticket-flow",
+    "slice_id": "multi--runner-verify",
     "agent_type": "runner",
     "slice_kind": "work",
     "timebox_minutes": 8,
     "allowed_paths": [],
     "ownership_paths": [],
     "dependencies": [
-      "swarm--builder-broker-e2e",
-      "swarm--builder-e2e-fixtures",
-      "swarm--builder-backtests"
+      "multi--builder-broker-e2e",
+      "multi--builder-e2e-fixtures",
+      "multi--builder-backtests"
     ],
     "task_contract": {
-      "goal": "Run smoke validation and capture route-tier evidence.",
+      "goal": "Run smoke validation and capture two-state routing evidence.",
       "acceptance": [
         "Smoke script passes.",
-        "Verification output references the new routing cases."
+        "Verification output references the new single vs multi routing cases."
       ],
       "constraints": [
         "Read-only verification only."
@@ -192,19 +192,19 @@
   },
   {
     "schema": "task-dispatch/1",
-    "ssot_id": "ws2-dev-swarm-0d26dfd05c80",
-    "task_id": "swarm-ticket-flow",
-    "slice_id": "swarm--inspector-final",
+    "ssot_id": "multi-dev-orchestration-da6a468d8d93",
+    "task_id": "multi-ticket-flow",
+    "slice_id": "multi--inspector-final",
     "agent_type": "inspector",
     "slice_kind": "review",
     "timebox_minutes": 8,
     "allowed_paths": [],
     "ownership_paths": [],
     "dependencies": [
-      "swarm--runner-verify"
+      "multi--runner-verify"
     ],
     "task_contract": {
-      "goal": "Review final evidence and issue PASS/BLOCK/NEEDS_EVIDENCE for the route-tier update.",
+      "goal": "Review final evidence and issue PASS/BLOCK/NEEDS_EVIDENCE for the two-state routing update.",
       "acceptance": [
         "Findings map to concrete smoke or backtest evidence.",
         "Final verdict is explicit and actionable."

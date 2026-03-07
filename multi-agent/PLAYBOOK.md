@@ -1,22 +1,21 @@
-# Multi-Agent Playbook (Single-First)
+# Multi-Agent Playbook (Two-State)
 
 Hard constraint: runtime `max_depth = 1`.
 
 `max_depth=1` makes the Broker a **scheduler**. Depth-1 children do not have collab tools, so they cannot spawn. This is the topology guardrail that prevents same-level spawning.
 
-## 0) Routing gate (single-first)
+## 0) Routing gate (two-state)
 
 - Always record:
   - `t_max_s` (max seconds expected to finish)
   - `t_why` (why that estimate / what evidence supports the route)
 - Route:
-  - `single` if the task is tiny, clear, low-risk, and likely to finish inside `t_max_s <= 90`
-  - `single-deep` if the task is still one coherent lane but needs deeper inspection, longer focused execution, or uncertainty reduction before splitting
-  - `multi` only if the task is actually decomposable into coherent packages with disjoint ownership, independent branches, or useful lane parallelism
+  - `single` if the task is tiny, clear, low-risk, and clearly fits the fast path
+  - `multi` for everything else: long tasks, uncertain tasks, risky tasks, or work that needs scout-first boundary discovery
 - Escalation rule:
-  - start at the smallest route that can plausibly finish
-  - move from `single` to `single-deep` when the work grows but remains tightly coupled
-  - move from `single` or `single-deep` to `multi` only after the split is justified by evidence, not by uncertainty alone
+  - start in `single` only when the task clearly fits the fast-path bar above
+  - otherwise enter `multi` immediately
+  - within `multi`, start with scout-first tickets when boundaries are unclear and expand fanout only after evidence
 - For `multi`, use ticket scheduling with wait-any replenishment. There is no required planning phase.
 
 ## 1) Role model
@@ -154,10 +153,12 @@ Split when at least one condition holds:
 
 Keep sequential when none apply:
 
-- tiny single-file edits
-- one-pass mechanical transformations
 - tightly coupled edits requiring continuous shared context
-- exploratory or uncertain work that has not yet produced a safe package boundary (`single-deep` first)
+- tasks that still need guarded scout-first execution before the Broker can assign owned paths confidently
+- one-pass changes where a single Builder lane plus Inspector sequencing is clearer than fanout
+- initial probes that must finish before ownership boundaries are credible
+
+If a task was tiny and clear enough to stay local, it should have routed to `single` before reaching this section. Once in `multi`, keeping execution serial is acceptable; do not force fanout just to satisfy the route name.
 
 Recommended timeboxes:
 
@@ -168,8 +169,8 @@ Recommended timeboxes:
 
 Protocol modules (use as needed; do not turn them into mandatory linear phases):
 
-- `COUNCIL.md`: optional bootstrap wave (read/review only)
-- `BROKER_SPLIT.md`: split ladder + dispatch templates for safe parallel scheduling
+- `COUNCIL.md`: optional scout-first bootstrap wave (read/review only)
+- `BROKER_SPLIT.md`: split ladder + dispatch templates for scout-first or parallel scheduling
 - `WORKER_PROTOCOL.md`: worker behavior and handoff request quality bar once `route="multi"` is active
 - `FAILURE_MODES.md`: recovery playbook for stalls, schema failures, deadlocks, and over-splitting
 

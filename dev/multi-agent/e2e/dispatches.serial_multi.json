@@ -1,0 +1,65 @@
+[
+  {
+    "schema": "task-dispatch/1",
+    "ssot_id": "multi-dev-serial-scout-6fd8880a1f5b",
+    "task_id": "multi-serial-scout",
+    "slice_id": "multi--runner-scout",
+    "agent_type": "runner",
+    "slice_kind": "probe",
+    "timebox_minutes": 5,
+    "allowed_paths": [],
+    "ownership_paths": [],
+    "dependencies": [],
+    "task_contract": {
+      "goal": "Map the minimum evidence needed before a single Builder lane can proceed safely.",
+      "acceptance": [
+        "State why this task is outside the single fast path.",
+        "List the one Builder package that should run after the scout phase."
+      ],
+      "constraints": [
+        "Read-only.",
+        "No repository edits."
+      ],
+      "no_touch": []
+    },
+    "evidence_requirements": [
+      "commands",
+      "files_read"
+    ]
+  },
+  {
+    "schema": "task-dispatch/1",
+    "ssot_id": "multi-dev-serial-scout-6fd8880a1f5b",
+    "task_id": "multi-serial-scout",
+    "slice_id": "multi--builder-serial-fix",
+    "agent_type": "builder",
+    "slice_kind": "work",
+    "work_package_id": "pkg-serial-fix",
+    "expected_work_s": 480,
+    "timebox_minutes": 10,
+    "allowed_paths": [
+      "dev/multi-agent/BROKER_E2E.md"
+    ],
+    "ownership_paths": [
+      "dev/multi-agent/BROKER_E2E.md"
+    ],
+    "dependencies": [
+      "multi--runner-scout"
+    ],
+    "task_contract": {
+      "goal": "Apply the single owned change set after the scout phase completes.",
+      "acceptance": [
+        "Edits stay within the owned file.",
+        "Verification evidence is returned with the result."
+      ],
+      "constraints": [
+        "Do not create extra Builder lanes."
+      ],
+      "no_touch": []
+    },
+    "evidence_requirements": [
+      "git_diff",
+      "verification"
+    ]
+  }
+]

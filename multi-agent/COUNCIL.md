@@ -1,6 +1,6 @@
 # Multi-Agent Council (Optional Multi Bootstrap)
 
-When `route="multi"`, Council is an optional bootstrap pattern that improves split quality before the main write wave. It is not a mandatory gate.
+When `route="multi"`, Council is an optional bootstrap pattern for scout-first orchestration. Use it when boundaries, ownership, or risk are unclear before the main write wave. It is not a mandatory gate.
 
 ## 1) Bootstrap wave (read/review only)
 
@@ -15,7 +15,7 @@ Expected outputs:
 
 - dependency and ownership boundary recommendations
 - lock-collision risks and mitigation notes
-- candidate ticket suggestions for Builder/Runner phases
+- candidate ticket suggestions for Runner/Builder phases
 
 ## 2) Merge behavior for council findings
 
@@ -107,6 +107,7 @@ Bootstrap inspector template:
 ## 5) Governance reminders
 
 - Council is optional; skip it for tiny, clear tasks.
+- Use Council freely for `multi` runs that still need scout-first boundary or risk discovery before Builder packages are ready.
 - All dispatches must validate against `schemas/task-dispatch.schema.json`.
 - Keep Builder write ownership disjoint before dispatching parallel write tickets.
 - For quick bootstrap skeleton generation in this workspace, use:

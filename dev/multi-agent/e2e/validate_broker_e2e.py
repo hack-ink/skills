@@ -32,22 +32,21 @@ def main() -> None:
         "Test A - Routing gate (`single`)": [
             'route="single"',
             "t_max_s",
-            "<= 90",
+            "tiny, clear",
             "Broker does not spawn any agents.",
         ],
-        "Test B - Routing gate (`single-deep`)": [
-            'route="single-deep"',
-            "decomposable=false",
-            "t_max_s > 90",
-            "dev_requires_deeper_inspection=true",
-            "t_max_s <= 90",
-            "Broker does not spawn any agents.",
-        ],
-        "Test C - Routing gate (`multi`, single-first)": [
+        "Test B - Routing gate (`multi`, scout-first)": [
             'route="multi"',
-            "decomposable=true",
-            "`single-deep`",
+            "not tiny, clear, and low-risk",
+            "scout-first",
+            "smallest safe Builder package",
+            "No direct Broker repo writes occur in `multi`.",
+        ],
+        "Test C - Routing gate (`multi`, parallel expansion)": [
+            'route="multi"',
+            "independent read/write/review lanes",
             "ticket-board scheduling",
+            "At least two lanes overlap",
         ],
     }
 
@@ -57,7 +56,7 @@ def main() -> None:
             raise AssertionError(f"Missing section: {title}")
         assert_tokens(section, title=title, tokens=tokens)
 
-    print("OK: BROKER_E2E routing coverage (`single`, `single-deep`, `multi`)")
+    print("OK: BROKER_E2E routing coverage (`single`, `multi` scout-first, `multi` parallel)")
 
 
 if __name__ == "__main__":

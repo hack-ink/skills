@@ -1,0 +1,15 @@
+{
+  "id": "routebench-01-single-fast",
+  "kind": "routing",
+  "description": "Tiny, clear, low-risk work stays in the single fast path.",
+  "route_input": {
+    "t_max_s": 45,
+    "t_why": "One isolated doc-line correction with a clear desired outcome.",
+    "tiny_clear_low_risk": true,
+    "dispatch_fixture": null
+  },
+  "expectations": {
+    "expected_route": "single",
+    "expected_initial_runnable_count": 0
+  }
+}

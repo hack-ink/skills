@@ -1,4 +1,4 @@
-# Broker E2E (interactive, single-first)
+# Broker E2E (interactive, two-state)
 
 This is an interactive end-to-end test that exercises the protocol in a real Codex session (as the Broker).
 
@@ -6,7 +6,7 @@ It is intentionally separate from `dev/multi-agent/e2e/run_smoke.py`, which vali
 
 ## Goals
 
-- Verify the Broker routing gate applies the three-tier single-first model consistently.
+- Verify the Broker routing gate applies the two-state model consistently.
 - Verify the `max_depth=1` broker topology and spawn allowlists are respected in practice.
 - Verify ticket-board scheduling uses wait-any replenishment with reuse-first warm workers.
 - Verify optional Inspector review works for write/mixed runs.
@@ -20,11 +20,11 @@ It is intentionally separate from `dev/multi-agent/e2e/run_smoke.py`, which vali
 
 ## Test A - Routing gate (`single`)
 
-Goal: confirm small, clear tasks do not enter multi-agent mode.
+Goal: confirm tiny, clear tasks do not enter multi-agent mode.
 
 1. Pick a tiny local-only task (example: rename one variable or adjust one doc line).
 2. As Broker, record:
-   - `t_max_s` (must be `<= 90`)
+   - `t_max_s`
    - `t_why`
    - `route="single"`
 3. Execute the change in `single`.
@@ -34,46 +34,40 @@ Pass criteria:
 - Broker does not spawn any agents.
 - Task completes with `route="single"`.
 
-## Test B - Routing gate (`single-deep`)
+## Test B - Routing gate (`multi`, scout-first)
 
-Goal: confirm non-decomposable work stays local when it is either long or explicitly marked as needing deeper local inspection.
+Goal: confirm tasks outside the `single` fast path enter `multi` and begin with a scout-first board when split boundaries are not ready yet.
 
-1. Pick one coherent lane of work that is not safely decomposable.
-2. Use one of these qualifying shapes:
-   - `t_max_s > 90`, or
-   - `t_max_s <= 90` with `dev_requires_deeper_inspection=true` because more local inspection or uncertainty reduction is needed before any split decision would be credible.
-3. Confirm it is not safely decomposable:
-   - tightly coupled edits or reasoning steps,
-   - one owner path or one continuous integration step,
-   - splitting would add coordination cost without useful overlap.
-4. As Broker, record:
+1. Pick a task that is not tiny, clear, and low-risk enough to stay in `single`.
+2. As Broker, record:
    - `t_max_s` and `t_why`,
-   - `decomposable=false`,
-   - `dev_requires_deeper_inspection=true` when the task stays `single-deep` at `t_max_s <= 90`,
-   - `route="single-deep"`.
-5. Execute the task directly in the main thread.
+   - why the task is not tiny, clear, and low-risk,
+   - `route="multi"`.
+3. Begin with a scout-first wave:
+   - one runner probe,
+   - optional inspector risk check,
+   - no Builder ticket until the Broker has enough evidence to assign owned paths.
+4. Continue in `multi` even if execution stays on one Builder work package after the scout phase.
 
 Pass criteria:
 
-- Broker does not spawn any agents.
-- No `spawn_agent`, `functions.wait`, `send_input`, or `close_agent` calls are needed.
-- Task completes with `route="single-deep"`.
+- Broker enters `multi` and spawns at least one allowed worker.
+- No direct Broker repo writes occur in `multi`.
+- The run stays in `multi` while the Broker keeps work scoped to the smallest safe Builder package.
 
-## Test C - Routing gate (`multi`, single-first)
+## Test C - Routing gate (`multi`, parallel expansion)
 
-Goal: confirm `route="multi"` is used only when the task is decomposable and then uses ticket-board scheduling, not a linear planning bottleneck.
+Goal: confirm `route="multi"` can expand into independent lanes once boundary evidence exists and still use ticket-board scheduling instead of a linear planning bottleneck.
 
-1. Pick a task estimated `> 90` seconds (or high uncertainty) that can be decomposed into independent read/write/review lanes.
+1. Pick a task outside the `single` fast path with independent read/write/review lanes.
 2. Prepare at least 3 lanes:
    - one runner lane (`runner`) for probes/inventory,
    - one builder lane (`builder`) for scoped edits,
    - one inspector lane (`inspector`) for risk/evidence checks.
 3. As Broker, record:
-   - `t_max_s` (`> 90`) and `t_why`,
-   - `decomposable=true`,
+   - `t_max_s` and `t_why`,
    - `route="multi"`.
-4. If a task is not decomposable, keep it in `single-deep` even when `t_max_s > 90`.
-5. Run the protocol:
+4. Run the protocol:
    - Broker dispatches JSON-only `task-dispatch/1` tickets for allowed agent types (`runner`, `builder`, `inspector`).
    - Broker schedules with wait-any (`functions.wait`) and replenishes when slots free up.
    - Broker enforces write ownership locks (no overlapping in-flight `ownership_paths` for builder tickets).
@@ -90,6 +84,7 @@ Pass criteria:
 - No non-Broker spawns occur (brokered topology).
 - `functions.wait` is used with wait-any behavior and the run does not stop while children remain in-flight.
 - No direct Broker repo writes occur in `multi`.
+- At least two lanes overlap once the Broker has enough evidence to expand.
 - Only allowed agent types are dispatched (`runner`, `builder`, `inspector`).
 - Worker outputs are raw JSON (no markdown/code fences) and match their schemas.
 - If any worker returns invalid/non-JSON output, Broker runs remediation (`send_input(interrupt=true)`, then close/re-dispatch when needed).
