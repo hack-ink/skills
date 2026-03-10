@@ -26,8 +26,9 @@ To add or update a skill:
 1. Create a new `<skill-name>/SKILL.md` with required frontmatter (`name`, `description`).
 2. Keep installable runtime assets with the skill itself. If `SKILL.md` references a script, template, schema, or helper at runtime, keep it under `<skill-name>/`.
 3. Keep repo-local validation assets under `dev/<skill-name>/`. Smoke tests, e2e fixtures, backtests, and maintainer-only validation entrypoints belong there and are not part of the installed skill contract.
-4. Keep instructions concise, testable, and narrowly scoped.
-5. Update this `README.md` catalog when new skills are added.
+4. Treat generated artifacts, lockfiles, codegen outputs, and build outputs as tooling-owned. Skills must not instruct manual edits to those files when a canonical regeneration or sync command exists; they should point to the canonical command and verify the regenerated result instead.
+5. Keep instructions concise, testable, and narrowly scoped.
+6. Update this `README.md` catalog when new skills are added.
 
 ## Repository layout
 

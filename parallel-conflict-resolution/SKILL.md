@@ -19,8 +19,10 @@ Typical triggers:
 ## Core rule
 
 - Inspect the current state first: do not start editing conflict markers blindly.
+- Detect the Git operation state automatically before editing conflicted files. This is an AI-side probe, not a default reason to ask the user.
 - Preserve uncommitted work before changing strategy.
 - Choose the reconciliation method that matches the lane relationship instead of defaulting to merge-everything.
+- Treat generated artifacts, lockfiles, codegen outputs, and build outputs as tooling-owned: when the repo exposes a canonical regeneration path, reconcile the source inputs and rerun that command instead of editing the generated file by hand.
 - Verify the final integrated state before claiming the lane is ready.
 
 ## Triage first
@@ -31,14 +33,27 @@ Run the smallest commands that tell you what kind of conflict you have:
 git status --short
 git rev-parse --abbrev-ref HEAD
 git diff --name-only --diff-filter=U
+git rev-parse -q --verify MERGE_HEAD
+git rev-parse -q --verify CHERRY_PICK_HEAD
+git rev-parse -q --verify REBASE_HEAD
 ```
 
 Then inspect the conflicted files and the operation in progress:
 
 ```bash
+[ -d "$(git rev-parse --git-path rebase-merge)" ] || \
+[ -d "$(git rev-parse --git-path rebase-apply)" ]
 git status
 git ls-files -u
 ```
+
+Interpret the probe before editing:
+
+- `MERGE_HEAD` present: treat the operation as `merge`.
+- `CHERRY_PICK_HEAD` present: treat the operation as `cherry-pick`.
+- `REBASE_HEAD` present, or `rebase-merge` / `rebase-apply` exists via `git rev-parse --git-path ...`: treat the operation as `rebase`.
+- No operation marker but unresolved files remain: treat this as an unresolved index state. Continue analysis, but do not assume a specific `--continue` / `--abort` flow without more evidence.
+- Ask the user only when the operation state stays ambiguous or the intended reconciliation strategy cannot be inferred safely.
 
 If needed, read the relevant patch or branch delta before choosing a fix:
 
@@ -75,7 +90,7 @@ Good heuristics:
 
 - If one branch is clearly the destination lane, rebase or cherry-pick toward it.
 - If commits are entangled and repeated conflicts keep appearing, stop and re-split before stacking more fixes.
-- If generated files dominate the conflict, regenerate from source rather than hand-merging build output when the repo workflow supports that.
+- If generated files dominate the conflict, resolve the source-of-truth inputs first and rerun the repo's canonical generation command. Do not hand-merge build output, lockfiles, or codegen artifacts.
 
 ## Resolve carefully
 
@@ -97,8 +112,9 @@ git show :3:path/to/file
 After resolving:
 
 1. Confirm the operation state is clean enough to continue.
-2. Run the repo's scoped verification for the touched area.
-3. Review the resulting diff to ensure no accidental lane bleed-through remains.
+2. If any generated artifacts, lockfiles, or codegen outputs were involved, rerun the canonical regeneration/sync command before verification.
+3. Run the repo's scoped verification for the touched area.
+4. Review the resulting diff to ensure no accidental lane bleed-through remains.
 
 Minimum checks:
 
@@ -114,5 +130,5 @@ Then run the repo-native test, build, or lint command that covers the reconciled
 - Resolving conflicts without first identifying whether the operation is a merge, rebase, or cherry-pick
 - Aborting an operation after making useful manual edits without preserving them
 - Combining unrelated lanes just to make the conflict disappear
-- Leaving generated files or lockfiles hand-edited when the repo has a canonical regeneration path
+- Manually resolving generated files, lockfiles, codegen outputs, or build outputs instead of rerunning the canonical regeneration path
 - Claiming the conflict is fixed before `git status` and repo-native verification say so
