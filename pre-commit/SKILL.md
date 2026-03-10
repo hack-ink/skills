@@ -33,12 +33,6 @@ Run these commands and record their exit codes in the report:
 - `git status --porcelain`
 - `git diff --stat`
 
-If the repository has a "no CJK characters" policy, also run:
-
-- `rg -n \"[\\x{4E00}-\\x{9FFF}]\" -S .`
-
-Note: `rg` exits with `0` when matches are found, `1` when no matches are found, and `2` on errors. Record the exit code and interpret it correctly.
-
 ## Commit message gate (required)
 
 Before committing, draft a commit message that is:
@@ -102,7 +96,6 @@ Pre-commit report
 Preflight
 - `git status --porcelain` (exit: <code>)
 - `git diff --stat` (exit: <code>)
-- `rg -n \"[\\x{4E00}-\\x{9FFF}]\" -S .` (exit: <code> (0=matches, 1=none, 2=error) | skipped: <reason>)
 
 Commit message
 - proposed: `<single-line cmsg/1 JSON>`
