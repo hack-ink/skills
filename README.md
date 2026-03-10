@@ -24,11 +24,15 @@ This repository hosts reusable agent skills for Codex workflows.
 To add or update a skill:
 
 1. Create a new `<skill-name>/SKILL.md` with required frontmatter (`name`, `description`).
-2. Keep instructions concise, testable, and narrowly scoped.
-3. Update this `README.md` catalog when new skills are added.
+2. Keep installable runtime assets with the skill itself. If `SKILL.md` references a script, template, schema, or helper at runtime, keep it under `<skill-name>/`.
+3. Keep repo-local validation assets under `dev/<skill-name>/`. Smoke tests, e2e fixtures, backtests, and maintainer-only validation entrypoints belong there and are not part of the installed skill contract.
+4. Keep instructions concise, testable, and narrowly scoped.
+5. Update this `README.md` catalog when new skills are added.
 
 ## Repository layout
 
 - This repo intentionally ships **skills only**.
 - Routing/push policy (if any) should live in your Codex home configuration (outside this repo).
 - `<skill-name>/SKILL.md` - required skill definition.
+- `<skill-name>/...` - installable runtime assets referenced by `SKILL.md` (scripts, templates, schemas, references).
+- `dev/<skill-name>/...` - repo-local smoke/e2e/backtests for maintainers; these are validation helpers, not part of the installed skill contract.
