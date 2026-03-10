@@ -14,9 +14,6 @@ This smoke entrypoint creates a temporary Git repository and validates the curre
 
 - `.worktrees/<single-segment>` layout with a slash branch name
 - ignored local worktree directory
-- worktree-local Rust `.cargo/config.toml`
-- `target-dir = "../../target"` resolving to the repo-root `target/`
 - lane commit and merge
-- cleanup of the temporary Rust patch before teardown
 - `git worktree remove` plus `git worktree prune`
 - no stale worktree entry after closeout

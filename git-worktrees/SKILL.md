@@ -1,6 +1,6 @@
 ---
 name: git-worktrees
-description: Use when starting feature work that benefits from branch isolation, independent parallel implementation lanes, or a disposable workspace. Creates Git worktrees with directory selection, ignore verification, repo-native bootstrap, lane naming guidance, and Rust-aware cache guidance for large local builds.
+description: Use when starting feature work that benefits from branch isolation, independent parallel implementation lanes, or a disposable workspace. Creates Git worktrees with directory selection, ignore verification, repo-native bootstrap, and lane naming guidance.
 ---
 
 # Git Worktrees
@@ -15,7 +15,7 @@ Typical triggers:
 - Parallel feature work on the same repository
 - Executing a plan in a clean branch-specific workspace
 - Hotfix work while the current tree is dirty or mid-refactor
-- Large Rust repos where branch isolation is useful but repeated setup cost matters
+- Large Rust repos where branch isolation is useful
 
 ## Core rule
 
@@ -49,7 +49,6 @@ Use this priority order:
 2. If the repository has scoped instructions (`AGENTS.md` or runtime-equivalent guidance), follow any stated worktree location convention.
 3. If there is no existing convention, prefer `.worktrees/` only when it is already ignored or can be safely verified as ignored.
 4. If neither a safe project-local directory nor a documented convention exists, ask the user where worktrees should live instead of inventing a global path.
-5. If you rely on the repo-root shared `target/` convention below, the worktree directory name must be a single path segment even when the Git branch name contains `/`.
 
 ## Name the lane simply
 
@@ -168,59 +167,6 @@ If a worktree or the main repository was moved manually and Git can no longer fi
 git worktree repair
 ```
 
-## Rust guidance
-
-### What happens to `target/`
-
-- `git worktree add` checks out tracked files. It does not copy untracked build output such as `target/`.
-- A fresh Rust worktree therefore starts without a `target/` directory unless you create one later.
-- By default, Cargo writes build output to `<workspace-root>/target`, so each worktree gets its own build directory and disk usage can multiply quickly.
-
-### Required approach
-
-1. If active development happens inside `.worktrees/<worktree-dir-name>`, treat shared Rust build output as a worktree-local temporary patch.
-2. Use `build.target-dir` as the primary mechanism.
-3. Keep the target directory project-local.
-4. Do not commit this patch to `main` or any branch that will be merged unchanged.
-
-Temporary patch example:
-
-```toml
-# .cargo/config.toml
-[build]
-target-dir = "../../target"
-```
-
-### Path-resolution constraint
-
-- A tracked `.cargo/config.toml` is checked out into every linked worktree.
-- Relative `build.target-dir` paths are therefore resolved from each checkout's own root, not from Git's common directory.
-- That means a `.worktrees/<worktree-dir-name>`-specific path such as `../../target` must **not** be committed as a repository-wide default.
-- The `../../target` example assumes the worktree root is exactly one level below `.worktrees/`, so keep the worktree directory name to a single path segment when using this convention.
-- For the `.worktrees` layout, keep this as a local temporary patch inside the worktree where it is needed.
-
-### Practical recommendation for Rust repos
-
-- When developing inside `.worktrees/<worktree-dir-name>`, patch `.cargo/config.toml` locally in that worktree.
-- If the repository already tracks `.cargo/config.toml`, leave the worktree-only change uncommitted.
-- If the repository does not track `.cargo/config.toml`, you may create it locally in the worktree, but do not `git add` it unless the user explicitly asks for a repo-wide policy change.
-- If the repository has branch-specific generated outputs that clash often, reconsider whether full `target` sharing is worth the contention cost before enabling it.
-
-### `.worktrees` convention
-
-- If active development happens inside `.worktrees/<worktree-dir-name>`, do **not** copy `target/` into the linked worktree.
-- Instead, always point Cargo's output directory back at the repository-root `target/` directory.
-- In this skill, "build directory" means Cargo's `build.target-dir`, not `build.build-dir`.
-- For that layout, the required setting from the linked worktree root is:
-
-```toml
-[build]
-target-dir = "../../target"
-```
-
-- This convention is for linked worktrees that live directly under `.worktrees/` only. Do not assume the same relative path is correct for the main checkout or for nested worktree paths.
-- Before creating a commit or PR from the worktree, make sure this temporary patch is not included unless the user explicitly requested a repository-wide Rust build policy change.
-
 ## Closeout / Teardown
 
 Use this when a lane is merged, intentionally abandoned, or paused long enough that the checkout should be reclaimed.
@@ -244,7 +190,6 @@ git log <target-branch>..<branch-name>
 ```
 
 - If the worktree contains uncommitted edits, stop and inspect them before any force removal.
-- For Rust lanes under `.worktrees/<worktree-dir-name>`, make sure the worktree-only `.cargo/config.toml` patch (for example `target-dir = "../../target"`) is not staged or committed unless the user explicitly requested a repository-wide policy change.
 
 Teardown flow:
 
@@ -256,12 +201,10 @@ Teardown flow:
 Notes:
 
 - Worktree removal does not delete branch refs automatically.
-- Do not delete the shared repo-root `target/` directory just because one Rust lane finished; other lanes or the main checkout may still rely on it.
 
 ## Red flags
 
 - Creating a project-local worktree without verifying the directory is ignored
 - Running a generic bootstrap command while ignoring repo instructions
 - Treating a worktree as "copied state" from the original checkout
-- Assuming Rust `target/` is shared automatically
 - Deleting a worktree directory with plain `rm -rf` instead of `git worktree remove`

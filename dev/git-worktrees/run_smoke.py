@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import shutil
 import subprocess
 import tempfile
 from pathlib import Path
@@ -88,27 +87,11 @@ def main() -> None:
         assert_in(str(worktree_path), worktree_list, "new worktree missing from porcelain list")
         print("OK: verified new worktree is registered")
 
-        repo_target = repo_root / "target"
-        repo_target.mkdir()
-        cargo_config = worktree_path / ".cargo" / "config.toml"
-        write_file(
-            cargo_config,
-            "[build]\n"
-            'target-dir = "../../target"\n',
-        )
-        resolved_target = (cargo_config.parent.parent / "../../target").resolve()
-        assert_equal(resolved_target, repo_target.resolve(), "target-dir should resolve to repo-root target/")
-        print(f"OK: worktree-local .cargo/config.toml resolves to {resolved_target}")
-
         lane_file = worktree_path / "lane.txt"
         write_file(lane_file, "lane-owned change\n")
         run(["git", "add", "lane.txt"], cwd=worktree_path)
         run(["git", "commit", "-m", "add lane change"], cwd=worktree_path)
         print("OK: committed a lane change inside the linked worktree")
-
-        lane_status = run(["git", "status", "--short"], cwd=worktree_path)
-        assert_equal(lane_status.stdout.strip(), "?? .cargo/", "worktree-only cargo patch should remain untracked before cleanup")
-        print("OK: confirmed temporary Rust patch is untracked before merge")
 
         run(["git", "merge", "--ff-only", branch_name], cwd=repo_root)
         main_head = run(["git", "rev-parse", "HEAD"], cwd=repo_root).stdout.strip()
@@ -122,13 +105,9 @@ def main() -> None:
         assert_equal(unique_commits, "", "lane branch should have no unique commits after merge")
         print("OK: verified no unique lane commits remain after merge")
 
-        cargo_config.unlink()
-        cargo_dir = cargo_config.parent
-        if cargo_dir.exists():
-            cargo_dir.rmdir()
         clean_status = run(["git", "status", "--short"], cwd=worktree_path).stdout.strip()
         assert_equal(clean_status, "", "worktree should be clean before teardown")
-        print("OK: removed the temporary Rust patch before teardown")
+        print("OK: verified worktree is clean before teardown")
 
         run(["git", "worktree", "remove", str(worktree_path)], cwd=repo_root)
         if worktree_path.exists():
@@ -146,8 +125,6 @@ def main() -> None:
         assert_equal(len(worktree_entries), 1, "only the main checkout should remain after prune")
         print("OK: pruned worktree metadata and found no stale worktree entry")
 
-        if repo_target.exists():
-            shutil.rmtree(repo_target)
         print("OK: lifecycle smoke completed")
 
 
