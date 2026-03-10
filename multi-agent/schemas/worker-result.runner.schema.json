@@ -20,7 +20,7 @@
     },
     "role": {
       "const": "runner",
-      "description": "Legacy /1 compatibility-only field accepted for older payloads; do not emit on new outputs."
+      "description": "Accepted /1 identity alias field; do not emit on new outputs."
     },
     "status": { "type": "string", "enum": ["done", "blocked", "partial"] },
     "summary": { "type": "string", "minLength": 1 },

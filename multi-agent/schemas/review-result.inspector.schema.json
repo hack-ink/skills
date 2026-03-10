@@ -19,7 +19,7 @@
     },
     "role": {
       "const": "inspector",
-      "description": "Legacy /1 compatibility-only field accepted for older payloads; do not emit on new outputs."
+      "description": "Accepted /1 identity alias field; do not emit on new outputs."
     },
     "verdict": { "type": "string", "enum": ["PASS", "BLOCK", "NEEDS_EVIDENCE"] },
     "review_mode": {

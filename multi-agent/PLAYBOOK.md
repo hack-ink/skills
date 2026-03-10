@@ -46,9 +46,9 @@ Mandatory ticket fields:
 - Inspector tickets that participate in ordered review gates should set `review_mode`. Leave `review_mode` unset for pre-mortems or other review slices that are not part of a named gate sequence.
 - Builder tickets additionally require `work_package_id` and non-empty `ownership_paths`
 - Runner and Inspector tickets must omit `ownership_paths` or leave it empty; both mean no write lock
-- Worker result schemas use `agent_type` as the canonical identity field; legacy `/1` result payloads may still use `role` as an identity alias only, and new outputs should emit `agent_type`
+- Worker result schemas use `agent_type` as the canonical identity field; `/1` result payloads may also use `role` as an identity alias only, and new outputs should emit `agent_type`
 - Builder results carry the originating `work_package_id`; Broker validates that it matches the dispatch before accepting the result
-- For Builder results, `/1` compatibility does not preserve the pre-`work_package_id` wire shape. `work_package_id` remains mandatory even when a legacy payload uses `role="builder"`.
+- For Builder results, using the `role="builder"` alias does not change the required `/1` wire shape. `work_package_id` remains mandatory.
 - Worker evidence and recovery are structured by schema, not free prose:
   - runner evidence: `analysis`, `commands`, `files_read`
   - builder evidence: `diff_summary`, `git_diff_summary`, `verification`
@@ -218,7 +218,7 @@ Worker output schemas:
 - Inspector: `review-result.inspector/1`
 - Builder `done` results include `work_package_id`, owned `ownership_paths`, and structured diff/verification evidence.
 - Runner and Builder `blocked`/`partial` results include schema-shaped recovery data instead of prose-only stall notes.
-- Legacy `/1` compatibility is field-level, not shape-level: `role` is still accepted as an identity alias, but Builder `/1` results still require `work_package_id` and the current evidence/recovery contract.
+- `/1` alias support is field-level, not shape-level: `role` is still accepted as an identity alias, but Builder `/1` results still require `work_package_id` and the current evidence/recovery contract.
 
 If output is non-JSON or schema-invalid:
 

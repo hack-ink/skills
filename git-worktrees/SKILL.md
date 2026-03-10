@@ -150,7 +150,7 @@ git config worktree.useRelativePaths true
 
 Or pass `--relative-paths` when creating the worktree.
 
-Only do this when the team is on a modern Git version, because relative worktrees are incompatible with older Git versions.
+Only do this when the team is on a Git release that supports relative worktrees.
 
 ### Lock worktrees on removable or intermittently mounted storage
 

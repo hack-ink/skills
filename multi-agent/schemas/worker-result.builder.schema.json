@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "worker-result.builder/1",
   "title": "worker-result.builder/1",
-  "description": "Builder result contract for route=multi. /1 compatibility is limited to accepting the legacy role=\"builder\" identity alias; builder-required fields such as work_package_id remain mandatory for all /1 payloads. status=partial is reserved for landed edits that provide a salvageable checkpoint rather than a generic in-progress note.",
+  "description": "Builder result contract for route=multi. /1 accepts role=\"builder\" as an identity alias; builder-required fields such as work_package_id remain mandatory for all /1 payloads. status=partial is reserved for landed edits that provide a salvageable checkpoint rather than a generic in-progress note.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -27,7 +27,7 @@
     "work_package_id": {
       "type": "string",
       "minLength": 1,
-      "description": "Required on every /1 builder result, including payloads that use the legacy role alias."
+      "description": "Required on every /1 builder result, including payloads that use the role alias."
     },
     "agent_type": {
       "const": "builder",
@@ -35,7 +35,7 @@
     },
     "role": {
       "const": "builder",
-      "description": "Legacy /1 compatibility-only identity alias. This does not relax builder-required fields such as work_package_id; do not emit role on new outputs."
+      "description": "Accepted /1 identity alias. This does not relax builder-required fields such as work_package_id; do not emit role on new outputs."
     },
     "status": { "type": "string", "enum": ["done", "blocked", "partial"] },
     "summary": { "type": "string", "minLength": 1 },

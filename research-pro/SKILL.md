@@ -66,7 +66,7 @@ Get decision-grade research and architecture recommendations from ChatGPT Pro, t
 
 ### Pro model + latency (must follow)
 
-10. Ensure the latest available Pro model is selected (do not pin a specific Pro version string), then set Pro thinking to `Extended` by default.
+10. Ensure the latest available Pro model is selected, then set Pro thinking to `Extended` by default.
    - Switch to `Standard` only if the user explicitly asks for `Standard`/`default`.
 11. Poll every 180 seconds while waiting for completion because Pro Standard can still take minutes to hours.
    - There is no fixed polling budget or max cycle count. Keep polling the same conversation until the completion gate passes, the run is explicitly aborted, or a real `needs-user-action` blocker is reached.

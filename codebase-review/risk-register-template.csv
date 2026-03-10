@@ -1,0 +1,2 @@
+risk_id,area,owner,evidence,impact,likelihood,exposure,risk_score,status,slice_id,related_files,decision_ref,mitigation_notes
+R-001,auth-path,alice,Recent auth bypass incident,5,4,4,80,mitigated,S-001,src/auth/**,decision-log.md#ADR-0001,Reviewed and mitigated before release

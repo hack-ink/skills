@@ -9,6 +9,7 @@ description: Use for open-box review of medium/large codebases requiring full-br
 
 This skill defines a repeatable codebase-wide review workflow for any language stack.
 It combines risk triage, execution slicing, severity-driven findings, decision logs, and measurable review coverage.
+It keeps file attestation coverage and campaign closeout as separate machine-checked gates.
 
 ## When to use
 
@@ -35,7 +36,8 @@ It combines risk triage, execution slicing, severity-driven findings, decision l
   - Initialize campaign artifacts under a stable folder such as `review/`.
 
 2. Build risk register
-  - Fill `risk-register-template.md` from domain knowledge and recent incidents.
+  - Fill `risk-register-template.csv` from domain knowledge and recent incidents.
+  - Use `risk-register-template.md` only for supplemental narrative notes that do not drive gates.
   - Score each item by `impact` / `likelihood` / `exposure` on 1-5 scales.
   - Use a concise risk score formula:
     - `risk_score = impact × likelihood × exposure` (range 1-125).
@@ -66,8 +68,8 @@ It combines risk triage, execution slicing, severity-driven findings, decision l
     - Optional CVSS mapping is advisory; use local severity judgment when CVSS is unavailable.
   - Acceptance criteria:
     - No unresolved Critical on close.
-    - No High with `triage_state` not equal to `fixed|verified|accepted_risk`.
-    - Medium items without mitigation or due date are blockers.
+    - No High with `triage_state` not equal to `fixed|verified|accepted_risk|waived`.
+    - Medium items without `mitigation_plan` or `due_date` are blockers.
     - Low items can remain open only with explicit backlog closure plan.
   - Re-review triggers:
     - Any reviewed file changes after its ledger row is created (SHA stale).
@@ -85,12 +87,13 @@ It combines risk triage, execution slicing, severity-driven findings, decision l
   - A campaign can close only when:
     - all active slices have ledger rows,
     - all Critical and High are resolved or explicitly waived,
-    - every high-risk register entry has an owner decision.
+    - every High/Critical risk-register row has an owner decision and closeout status.
 
 7. Coverage + forward gates
   - Run `check-review-coverage.py` regularly and before merge gates.
+  - Run `check-review-closeout.py` before campaign close and before merge gates.
   - Coverage is per current blob SHA with status `approved` only.
-  - Forward gates must block merges when scope files are stale or uncovered.
+  - Forward gates must block merges when scope files are stale or uncovered, or when campaign closeout fails.
   - GitHub forward gates (copy/paste checklist):
     - [ ] Create/enable branch ruleset or branch protection for release and main branches.
     - [ ] Add CODEOWNERS and define ownership for high-risk paths (`/src/security/**`, `/migrations/**`, etc.).
@@ -100,6 +103,7 @@ It combines risk triage, execution slicing, severity-driven findings, decision l
     - [ ] Enable `Dismiss stale pull request approvals when new commits are pushed`.
     - [ ] Require status checks to pass:
       - [ ] Code review coverage job (e.g., `python3 check-review-coverage.py --min-coverage 100`).
+      - [ ] Code review closeout job (e.g., `python3 check-review-closeout.py ...`).
       - [ ] Security/static checks and relevant build/test pipelines.
     - [ ] Restrict bypass:
       - [ ] Turn off branch-bypass for non-admin/service roles.
@@ -122,6 +126,20 @@ It combines risk triage, execution slicing, severity-driven findings, decision l
       - [ ] Require successful build/status checks and merge checks.
       - [ ] Restrict push and merge rights for protected branches.
 
+## Mechanical trust model
+
+- `check-review-coverage.py` is the attestation gate only.
+- A file is covered only when it is in scope, the ledger row status is `approved`, and the ledger `blob_sha` matches the current file blob SHA.
+- `MISSING`, `NOT_APPROVED`, and `STALE` ledger outcomes all count as uncovered.
+- `check-review-closeout.py` is the campaign closeout gate.
+- Closeout trusts machine-readable campaign artifacts:
+  - `findings-backlog.csv` for finding severity and triage state,
+  - `slice-plan.csv` for active slice state,
+  - `risk-register.csv` for high-risk owner decisions,
+  - `ledger.csv` for attested evidence that an active slice has review rows.
+- Passing coverage does not prove campaign closeout.
+- Passing closeout does not prove per-file coverage.
+
 ## Attestation rules
 
 A file is covered only when:
@@ -139,10 +157,12 @@ This is review coverage, not test coverage.
 - `ledger-template.csv`
 - `notes-template.md`
 - `risk-register-template.md`
+- `risk-register-template.csv`
 - `slice-plan-template.csv`
 - `findings-backlog-template.csv`
 - `decision-log-template.md`
 - `check-review-coverage.py`
+- `check-review-closeout.py`
 - `forward-gates-template.md`
 
 ## Commands
@@ -160,7 +180,8 @@ Adapt the scope patterns below to the language stack under review.
 ```bash
 mkdir -p review
 cp "$CODEBASE_REVIEW_HOME"/ledger-template.csv review/ledger.csv
-cp "$CODEBASE_REVIEW_HOME"/risk-register-template.md review/risk-register.md
+cp "$CODEBASE_REVIEW_HOME"/risk-register-template.csv review/risk-register.csv
+cp "$CODEBASE_REVIEW_HOME"/risk-register-template.md review/risk-register-notes.md
 cp "$CODEBASE_REVIEW_HOME"/slice-plan-template.csv review/slice-plan.csv
 cp "$CODEBASE_REVIEW_HOME"/findings-backlog-template.csv review/findings-backlog.csv
 cp "$CODEBASE_REVIEW_HOME"/decision-log-template.md review/decision-log.md
@@ -182,7 +203,8 @@ repo-root/
   review/
     scope-files.txt
     ledger.csv
-    risk-register.md
+    risk-register.csv
+    risk-register-notes.md
     slice-plan.csv
     findings-backlog.csv
     decision-log.md
@@ -197,6 +219,17 @@ python3 "$CODEBASE_REVIEW_HOME"/check-review-coverage.py \
   --scope-file review/scope-files.txt \
   --ledger review/ledger.csv \
   --min-coverage 100
+```
+
+- Check campaign closeout with machine-readable artifacts:
+
+```bash
+python3 "$CODEBASE_REVIEW_HOME"/check-review-closeout.py \
+  --repo-root . \
+  --ledger review/ledger.csv \
+  --findings review/findings-backlog.csv \
+  --slice-plan review/slice-plan.csv \
+  --risk-register review/risk-register.csv
 ```
 
 - Example: check a Rust-oriented slice without frozen scope:
@@ -221,6 +254,13 @@ python3 "$CODEBASE_REVIEW_HOME"/check-review-coverage.py \
   --scope-file review/scope-files.txt \
   --ledger review/ledger.csv \
   --min-coverage 100
+
+python3 "$CODEBASE_REVIEW_HOME"/check-review-closeout.py \
+  --repo-root . \
+  --ledger review/ledger.csv \
+  --findings review/findings-backlog.csv \
+  --slice-plan review/slice-plan.csv \
+  --risk-register review/risk-register.csv
 ```
 
 ## References
@@ -250,4 +290,5 @@ python3 "$CODEBASE_REVIEW_HOME"/check-review-coverage.py \
 - Using file touch history as review evidence.
 - Marking files covered with non-approved status.
 - Allowing stale SHA rows to remain active.
+- Treating coverage success as campaign closeout success.
 - Closing Critical or High findings without a decision record.

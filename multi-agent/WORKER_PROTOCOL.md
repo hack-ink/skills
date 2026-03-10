@@ -7,8 +7,8 @@ Hard constraints:
 - Workers never spawn; only the Broker spawns (`max_depth=1`).
 - `runner` and `inspector` never write repo content.
 - Worker outputs must be **JSON-only** and schema-valid.
-- `agent_type` is the canonical worker-result identity field. Legacy `/1` payloads may still use `role` as an identity alias only, and new outputs should emit `agent_type`.
-- Builder `/1` compatibility is not a full legacy wire-shape branch: `work_package_id` and the current evidence/recovery fields remain mandatory when applicable, even if a payload uses `role="builder"`.
+- `agent_type` is the canonical worker-result identity field. `/1` payloads may also use `role` as an identity alias only, and new outputs should emit `agent_type`.
+- Using `role="builder"` does not create a separate `/1` wire-shape branch: `work_package_id` and the current evidence/recovery fields remain mandatory when applicable.
 
 ## Multi-mode defaults (all workers)
 
@@ -122,7 +122,7 @@ Runner example (including a handoff request):
   - `changeset`
   - `evidence.diff_summary` / `evidence.git_diff_summary` when diff-oriented evidence is required
   - `verification`
-- `work_package_id` stays mandatory on every Builder `/1` result; using the legacy `role` alias does not waive it.
+- `work_package_id` stays mandatory on every Builder `/1` result; using the `role` alias does not waive it.
 - For `status="blocked"` or `status="partial"`, return the structured `recovery` object with checkpoint data instead of only a prose explanation.
 - When returning `status="partial"` after landed edits, include `changeset`, set `recovery.checkpoint.resume_from` and `next_steps`, and either attach the verification already run or list `verification` in `recovery.required_evidence`.
 - Broker/runtime salvage follow-ups may reuse the same `work_package_id` only when the owned `ownership_paths` stay unchanged.

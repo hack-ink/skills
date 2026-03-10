@@ -1,4 +1,7 @@
-# Risk Register
+# Risk Register Notes
+
+Use `risk-register-template.csv` for the machine-checkable campaign risk register.
+Use this Markdown file only for supplemental narrative that does not participate in closeout gates.
 
 - risk_id: R-001
 - area:
