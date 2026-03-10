@@ -19,7 +19,7 @@ Perform version constraint updates and regenerate dependency artifacts in a disc
 
 - Optional list of relevant manifests/lockfiles present in the repository.
 - Installed tooling for any ecosystem being updated.
-- Existing Dependabot PR list for final reconciliation.
+- Existing Dependabot PR list or GitHub visibility for final reconciliation.
 
 ## Version policy
 
@@ -33,6 +33,7 @@ Perform version constraint updates and regenerate dependency artifacts in a disc
 
 - Do not hand-edit lockfiles or other generated dependency artifacts. Regenerate them with the ecosystem tooling.
 - Do not proceed to Dependabot reconciliation until verification has run for the touched ecosystems.
+- If GitHub or Dependabot visibility is unavailable, mark reconciliation as `blocked` and report why instead of guessing or silently skipping it.
 - If verification fails, stop and report the failure; do not "fix forward" by stacking unrelated changes.
 
 ## Procedure (repo-agnostic)
@@ -54,13 +55,12 @@ Perform version constraint updates and regenerate dependency artifacts in a disc
         - Keep root and workspace entries at `major.minor` unless pinning is required.
     - If manifests use Poetry version operators and the package is in `0.x`, normalize to `X.Y.*` (or `==X.Y.*` in PEP 508 strings).
     - If manifests use Poetry version operators and the package is `>=1.0`, normalize to `~=X.Y`.
-    - For lockfile updates without manifest changes, skip dependency regeneration commands and run the appropriate non-updating lock-sync path.
 
 3. Regenerate lockfiles and dependency artifacts.
-    - Update manifests first, then regenerate lockfiles and any related generated dependency artifacts (unless a no-change lockfile sync is required).
+    - Update manifests first, then regenerate lockfiles and any related generated dependency artifacts.
     - Never resolve generated dependency files manually when a package manager can regenerate them from the manifest/source of truth.
     - Use the ecosystem lockfile commands:
-        - `pnpm -w install` (or `pnpm -w update` when manifest ranges are unchanged)
+        - `pnpm -w install`
         - `poetry update --with dev`
         - `cargo update -w`
     - If lockfiles require sync because an additional lockfile format is present, run:
@@ -74,6 +74,7 @@ Perform version constraint updates and regenerate dependency artifacts in a disc
 
 5. Reconcile Dependabot PRs last.
     - Re-check open Dependabot PRs first by list (`gh pr list --state open --search "author:app/dependabot"`).
+    - If GitHub or Dependabot visibility is unavailable, stop this step as `blocked` and report the missing access/tooling.
     - Classify each open PR as: covered by this change, blocked by constraints, or intentionally deferred.
     - If intentionally deferred, document the reason clearly in release/dependency notes.
     - If a dependency is intentionally capped but still noisy, either upgrade the capped line or add a documented `.github/dependabot.yml` ignore rule.
@@ -105,7 +106,7 @@ If your repo uses Cargo workspace dependencies:
   - `pnpm -r outdated`
   - `poetry show --outdated --top-level`
 - Lockfiles and generated dependency artifacts (never hand-edit):
-  - `pnpm -w install` / `pnpm -w update`
+  - `pnpm -w install`
   - `poetry update --with dev`
   - `cargo update -w`
 - Reconcile Dependabot last: `gh pr list --state open --search "author:app/dependabot"`.
@@ -114,5 +115,6 @@ If your repo uses Cargo workspace dependencies:
 
 - Editing lockfiles or generated dependency artifacts by hand instead of regenerating.
 - Mixing ecosystems in one verification step (run verification for each touched stack).
+- Treating a missing GitHub/Dependabot view as success instead of reporting reconciliation as `blocked`.
 - Reconciling Dependabot before manifests/lockfiles are consistent.
 - Stacking “fix forward” unrelated changes after a verify failure (stop and report instead).
