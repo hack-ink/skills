@@ -1,23 +1,26 @@
 # E2E Sample Fixtures (Two-State)
 
-This directory contains schema-valid **example payloads** for the two-state broker model:
+This directory contains schema-valid fixtures and validators for the reset protocol.
 
-- Broker-only spawning (`max_depth=1`)
-- No Orchestrator role
-- JSON-only dispatch + JSON-only worker results
-- Route fixtures for `single` and multiple `multi` shapes
+## What is covered
 
-## Validate (repo-local)
+- `ticket-dispatch/1` examples for Runner, Builder, and Inspector tickets
+- `ticket-result/1` examples for done and blocked results
+- route selection fixtures for `single` and `multi`
+- repo-local manual-policy validation for `authorized_skills`, policy skill names, and fixed `default_child_policy`
+- broker-local recovery expectations for invalid or stalled workers
+
+## Validate
 
 From the repo root:
 
 ```sh
-python3 dev/multi-agent/e2e/run_smoke.py
-python3 dev/multi-agent/e2e/validate_broker_e2e.py
 python3 dev/multi-agent/e2e/validate_payloads.py
+python3 dev/multi-agent/e2e/validate_doc_templates.py
+python3 dev/multi-agent/e2e/validate_broker_e2e.py
+python3 dev/multi-agent/e2e/run_smoke.py
 ```
 
-## What this proves / doesn’t prove
+## Limits
 
-- Proves: schema validity, ssot_id format (scenario-hash), two-state route fixtures, `/1` worker-result alias acceptance (`agent_type` is canonical, `role` remains accepted as an identity alias), builder work-package binding, handoff dependency/identity validation, evidence-requirement satisfiability, blocked/partial recovery regressions, fail-closed Builder partial checkpoint schema/fixture coverage (`changeset` + `resume_from` + verification state), and fixture invariants (no write ownership overlap).
-- Does not prove: live runtime behavior by itself. This e2e directory covers schema/document payload contracts, and the paired backtests (`dev/multi-agent/backtests/run_backtests.py` and `swarmbench-04-salvage`) cover simulator-level salvage continuity, but neither is live proof of real `functions.wait` behavior or `close_agent` hygiene.
+These checks prove schema validity, fixture integrity, and doc-template consistency. They do not prove live `functions.wait` behavior by themselves.

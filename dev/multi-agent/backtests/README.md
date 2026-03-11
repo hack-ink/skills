@@ -1,15 +1,14 @@
 # Multi-Agent Backtests (Deterministic)
 
-This directory contains deterministic routing and broker scheduling backtests for the two-state protocol.
+This directory contains deterministic backtests for the reset protocol.
 
-The simulator covers scheduler behaviors that fixture/schema checks cannot prove:
+The simulator covers:
 
-- route selection for `single` and `multi`
-- wait-any replenishment vs wait-all wave scheduling
-- write-lock enforcement for overlapping builder ownership
-- handoff dedup merge behavior
-- retry handling for failed attempts
-- observable concurrency
+- two-state route selection
+- wait-any scheduling with role lane caps
+- Builder `write_scope` locking
+- Inspector gate ordering
+- broker-local salvage handling for stalled workers
 
 ## Run
 
@@ -19,17 +18,6 @@ From the repo root:
 python3 dev/multi-agent/backtests/run_backtests.py
 ```
 
-Or run the full smoke gate:
-
-```sh
-python3 dev/multi-agent/e2e/run_smoke.py
-```
-
-## Scenario layout
-
-Each scenario folder contains:
-
-- `scenario.json`: scenario kind, deterministic inputs, and expectations
-- `dispatches.initial.json`: initial ticket board for scheduler scenarios
-- `handoff.*.json`: deterministic handoff payload fixtures for scheduler scenarios
-- `MANUAL.md`: manual replay/inspection notes when a scenario needs them
+The scenarios live under `dev/multi-agent/backtests/scenarios/` and use inline
+`initial_tickets` plus reset-protocol metadata only. No separate handoff or
+dispatch fixture files remain in the active scenario format.

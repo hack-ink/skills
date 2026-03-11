@@ -1,0 +1,99 @@
+{
+  "route_case": {
+    "tiny_clear_low_risk": false,
+    "t_max_s": 240,
+    "expected_route": "multi"
+  },
+  "scheduler": {
+    "lane_caps": {
+      "runner": 0,
+      "builder": 2,
+      "inspector": 0
+    },
+    "retry_delay_s": 1,
+    "max_retries_by_role": {
+      "runner": 0,
+      "builder": 0,
+      "inspector": 0
+    }
+  },
+  "tickets": [
+    {
+      "schema": "ticket-dispatch/1",
+      "run_id": "swarmbench-02",
+      "ticket_id": "builder-long",
+      "role": "builder",
+      "objective": "Run the long builder lane.",
+      "acceptance": [
+        "Stay in the owned alpha scope."
+      ],
+      "timebox_minutes": 12,
+      "depends_on": [],
+      "write_scope": [
+        "tmp/alpha/"
+      ]
+    },
+    {
+      "schema": "ticket-dispatch/1",
+      "run_id": "swarmbench-02",
+      "ticket_id": "builder-short",
+      "role": "builder",
+      "objective": "Run the short builder lane.",
+      "acceptance": [
+        "Stay in the owned beta scope."
+      ],
+      "timebox_minutes": 12,
+      "depends_on": [],
+      "write_scope": [
+        "tmp/beta/"
+      ]
+    },
+    {
+      "schema": "ticket-dispatch/1",
+      "run_id": "swarmbench-02",
+      "ticket_id": "builder-after-short",
+      "role": "builder",
+      "objective": "Reuse the warm worker after the short lane completes.",
+      "acceptance": [
+        "Stay in the owned gamma scope."
+      ],
+      "timebox_minutes": 12,
+      "depends_on": [
+        "builder-short"
+      ],
+      "write_scope": [
+        "tmp/gamma/"
+      ]
+    }
+  ],
+  "durations_s": {
+    "builder-long": 90,
+    "builder-short": 5,
+    "builder-after-short": 10
+  },
+  "expectations": {
+    "min_max_parallel": 2,
+    "min_reuse_count": 1,
+    "min_reuse_count_by_role": {
+      "builder": 1
+    },
+    "min_wait_any_speedup_s": 10,
+    "expected_dispatch_count": 3,
+    "expected_completed_ticket_ids": [
+      "builder-long",
+      "builder-short",
+      "builder-after-short"
+    ],
+    "expected_terminal_status_by_ticket": {
+      "builder-long": "done",
+      "builder-short": "done",
+      "builder-after-short": "done"
+    },
+    "must_start_after_done": [
+      [
+        "builder-after-short",
+        "builder-short"
+      ]
+    ]
+  }
+}

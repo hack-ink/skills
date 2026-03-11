@@ -1,0 +1,59 @@
+{
+  "route_case": {
+    "tiny_clear_low_risk": false,
+    "t_max_s": 180,
+    "expected_route": "multi"
+  },
+  "scheduler": {
+    "lane_caps": {
+      "runner": 0,
+      "builder": 1,
+      "inspector": 0
+    },
+    "retry_delay_s": 3,
+    "max_retries_by_role": {
+      "runner": 0,
+      "builder": 1,
+      "inspector": 0
+    }
+  },
+  "tickets": [
+    {
+      "schema": "ticket-dispatch/1",
+      "run_id": "swarmbench-04",
+      "ticket_id": "builder-stall",
+      "role": "builder",
+      "objective": "Simulate a stalled builder that requires broker-local salvage.",
+      "acceptance": [
+        "Stay inside the owned package."
+      ],
+      "timebox_minutes": 8,
+      "depends_on": [],
+      "write_scope": [
+        "pkg/reset/"
+      ]
+    }
+  ],
+  "durations_s": {
+    "builder-stall": 6
+  },
+  "fail_attempts": {
+    "builder-stall": [
+      1,
+      2
+    ]
+  },
+  "terminal_status_by_ticket": {
+    "builder-stall": "blocked"
+  },
+  "expectations": {
+    "min_retry_count": 1,
+    "expected_dispatch_count": 2,
+    "expected_completed_ticket_ids": [
+      "builder-stall"
+    ],
+    "expected_terminal_status_by_ticket": {
+      "builder-stall": "blocked"
+    }
+  }
+}

@@ -1,0 +1,9 @@
+version = 3
+default_child_policy = "any-agent"
+
+[skills]
+# Optional manual restrictions. Empty means child agents may use any skill.
+# Add entries only when you want to restrict a known local skill explicitly.
+# Example:
+# "plan-execution" = "dispatch-authorized"
+# "multi-agent" = "main-thread-only"

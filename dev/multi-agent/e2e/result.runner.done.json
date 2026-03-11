@@ -1,0 +1,12 @@
+{
+  "schema": "ticket-result/1",
+  "run_id": "runtime-reset",
+  "ticket_id": "runner-inventory",
+  "role": "runner",
+  "status": "done",
+  "summary": "Identified every installable and dev path that depended on the legacy protocol.",
+  "findings": [
+    "The installable skill still mentioned the previous schema file names.",
+    "The dev harness still expected worker-managed follow-up payloads."
+  ]
+}

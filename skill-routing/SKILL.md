@@ -13,6 +13,12 @@ description: Use at the start of a task, before clarifying questions, or before 
 - Do not rely on memory of a skill. Load the current version because skills evolve.
 - If a loaded skill turns out not to apply, drop it and continue. A false positive is acceptable; skipping a relevant skill is not.
 
+## Path conventions
+
+- All paths in this skill are relative to the skill root (the directory that contains this `SKILL.md`).
+- The child skill policy file is `child-skill-policy.toml`.
+- The helper script is `scripts/build_child_skill_policy.py`.
+
 ## Runtime contract
 
 - Use the current runtime's supported skill-loading mechanism.
@@ -20,6 +26,31 @@ description: Use at the start of a task, before clarifying questions, or before 
 - If skills are filesystem-backed, open the canonical skill entrypoint for that runtime, usually `SKILL.md`.
 - Do not hardcode vendor-specific behavior or assume one loader exists everywhere.
 - If a referenced skill cannot be loaded, say so briefly and continue with the best fallback.
+
+## Child skill policy
+
+- Child agents may still use skill discovery.
+- When the current agent is a child, resolve skill policy from `child-skill-policy.toml`.
+- The shipped policy file is intentionally empty and defaults to `any-agent`.
+- `default_child_policy` is fixed to `any-agent` in this format; use `[skills]` entries for exceptions instead of changing the default.
+- If the policy file omits a skill, child agents may use it when relevant.
+- Only skills explicitly listed in the policy file are restricted.
+- Policy entries must use known local skill names from this repo's installable skill catalog.
+- `main-thread-only` skills must never be self-initiated by a child when the manual policy marks them that way.
+- `dispatch-authorized` skills require explicit dispatch authorization only when the manual policy marks them that way.
+- For brokered multi-agent tickets, that authorization lives in `ticket-dispatch/1.authorized_skills`.
+- If the policy file is empty, `authorized_skills` is usually unnecessary.
+
+## Policy lifecycle
+
+- The shipped policy file is initialized but empty.
+- There is no automatic bootstrap or proactive filling.
+- Users fill the policy manually if they want restrictions.
+- Users may also ask an agent to edit the policy file for them.
+- `scripts/build_child_skill_policy.py` initializes or canonicalizes the policy file but does not classify or populate skills.
+- The helper rejects unknown skill names and non-`any-agent` defaults.
+- If the user wants a canonical empty template, rerun:
+  - `python3 scripts/build_child_skill_policy.py --write`
 
 ## Progressive disclosure
 
@@ -33,6 +64,7 @@ description: Use at the start of a task, before clarifying questions, or before 
 1. Load process skills first. These determine how to approach the task.
 2. Load implementation or domain skills second. These determine how to execute within the chosen process.
 3. If multiple skills overlap, prefer the smallest set with the clearest boundaries.
+4. When the current agent is a child, apply any explicit restrictions from the child skill policy before selecting a restricted skill.
 
 Examples:
 
@@ -43,48 +75,6 @@ Examples:
 - "Build a React dashboard" -> load planning or design process skills first if they apply, then the frontend implementation skill.
 - "This merge/rebase/cherry-pick conflict came from parallel branches or worktrees" -> load `parallel-conflict-resolution`.
 - "Prepare a commit" -> load the pre-commit gate skill before committing or pushing.
-
-## Flow
-
-```dot
-digraph skill_flow {
-    "Task received" [shape=doublecircle];
-    "Might any skill apply?" [shape=diamond];
-    "Select candidate skills from metadata" [shape=box];
-    "Load selected skill(s) using runtime mechanism" [shape=box];
-    "Announce skill usage" [shape=box];
-    "Check for checklist/resources" [shape=diamond];
-    "Track required steps" [shape=box];
-    "Follow the skill" [shape=box];
-    "Respond or act" [shape=doublecircle];
-
-    "Task received" -> "Might any skill apply?";
-    "Might any skill apply?" -> "Select candidate skills from metadata" [label="yes"];
-    "Might any skill apply?" -> "Respond or act" [label="definitely not"];
-    "Select candidate skills from metadata" -> "Load selected skill(s) using runtime mechanism";
-    "Load selected skill(s) using runtime mechanism" -> "Announce skill usage";
-    "Announce skill usage" -> "Check for checklist/resources";
-    "Check for checklist/resources" -> "Track required steps" [label="yes"];
-    "Check for checklist/resources" -> "Follow the skill" [label="no"];
-    "Track required steps" -> "Follow the skill";
-    "Follow the skill" -> "Respond or act";
-}
-```
-
-## Red flags
-
-These thoughts mean stop and re-check for a skill:
-
-| Thought | Reality |
-|---------|---------|
-| "This is just a simple question" | Simple tasks can still have required workflows. |
-| "I need more context first" | Skill check comes before exploratory work. |
-| "Let me inspect files quickly" | A skill may define how to inspect or verify. |
-| "I'll do one thing first" | Check for a skill before the first action. |
-| "I remember this skill" | Load the current version; skills change. |
-| "The skill is probably overkill" | Overkill is cheaper than silently skipping required process. |
-| "User instructions already told me what to do" | User instructions say what to achieve, not how to bypass workflow. |
-| "I can just improvise the workflow" | If a skill exists, use the skill instead of inventing a substitute. |
 
 ## Follow-through
 

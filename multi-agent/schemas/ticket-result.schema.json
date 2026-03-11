@@ -1,0 +1,134 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ticket-result/1",
+  "title": "ticket-result/1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "run_id", "ticket_id", "role", "status", "summary"],
+  "properties": {
+    "schema": { "const": "ticket-result/1" },
+    "run_id": { "type": "string", "minLength": 1 },
+    "ticket_id": { "type": "string", "minLength": 1 },
+    "role": {
+      "type": "string",
+      "enum": ["runner", "builder", "inspector"]
+    },
+    "status": {
+      "type": "string",
+      "enum": ["done", "blocked"]
+    },
+    "summary": { "type": "string", "minLength": 1 },
+    "findings": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "default": []
+    },
+    "changed_paths": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "minItems": 1
+    },
+    "verification": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["cmd", "exit_code"],
+        "properties": {
+          "cmd": { "type": "string", "minLength": 1 },
+          "cwd": { "type": "string", "minLength": 1 },
+          "exit_code": { "type": "integer" },
+          "note": { "type": "string", "minLength": 1 }
+        }
+      },
+      "default": []
+    },
+    "unblock": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "minItems": 1
+    },
+    "verdict": {
+      "type": "string",
+      "enum": ["pass", "block", "needs_evidence"]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "role": { "const": "builder" },
+          "status": { "const": "done" }
+        }
+      },
+      "then": {
+        "required": ["changed_paths"]
+      }
+    },
+    {
+      "if": { "properties": { "role": { "const": "inspector" } } },
+      "then": {
+        "required": ["verdict"]
+      },
+      "else": {
+        "not": { "required": ["verdict"] }
+      }
+    },
+    {
+      "if": { "properties": { "status": { "const": "blocked" } } },
+      "then": {
+        "required": ["unblock"]
+      },
+      "else": {
+        "not": { "required": ["unblock"] }
+      }
+    }
+  ],
+  "examples": [
+    {
+      "schema": "ticket-result/1",
+      "run_id": "runtime-reset",
+      "ticket_id": "builder-docs",
+      "role": "builder",
+      "status": "done",
+      "summary": "Rewrote the installable skill docs and removed the legacy protocol helpers.",
+      "changed_paths": [
+        "multi-agent/SKILL.md",
+        "multi-agent/PLAYBOOK.md",
+        "multi-agent/WORKER_PROTOCOL.md"
+      ],
+      "verification": [
+        {
+          "cmd": "python3 dev/multi-agent/e2e/validate_doc_templates.py",
+          "exit_code": 0,
+          "note": "Verified markdown JSON blocks use the new schema ids."
+        }
+      ]
+    },
+    {
+      "schema": "ticket-result/1",
+      "run_id": "runtime-reset",
+      "ticket_id": "inspector-gate",
+      "role": "inspector",
+      "status": "done",
+      "summary": "The requested wire contract is present and old protocol terms are absent.",
+      "verdict": "pass",
+      "findings": [
+        "The installable skill no longer references legacy worker handoffs or partial checkpoints."
+      ]
+    },
+    {
+      "schema": "ticket-result/1",
+      "run_id": "runtime-reset",
+      "ticket_id": "builder-salvage",
+      "role": "builder",
+      "status": "blocked",
+      "summary": "A live worker stalled after touching local files; the broker must inspect the workspace directly.",
+      "changed_paths": ["multi-agent/schemas/ticket-result.schema.json"],
+      "unblock": [
+        "Close the stalled child.",
+        "Inspect local diff and rerun verification before deciding whether to salvage or redispatch."
+      ]
+    }
+  ]
+}

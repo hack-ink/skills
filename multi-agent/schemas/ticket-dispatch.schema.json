@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ticket-dispatch/1",
+  "title": "ticket-dispatch/1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "run_id",
+    "ticket_id",
+    "role",
+    "objective",
+    "acceptance",
+    "timebox_minutes"
+  ],
+  "properties": {
+    "schema": { "const": "ticket-dispatch/1" },
+    "run_id": { "type": "string", "minLength": 1 },
+    "ticket_id": { "type": "string", "minLength": 1 },
+    "role": {
+      "type": "string",
+      "enum": ["runner", "builder", "inspector"]
+    },
+    "objective": { "type": "string", "minLength": 1 },
+    "acceptance": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "minItems": 1
+    },
+    "timebox_minutes": { "type": "integer", "minimum": 1, "maximum": 90 },
+    "constraints": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "default": []
+    },
+    "context": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "default": []
+    },
+    "depends_on": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "default": []
+    },
+    "authorized_skills": {
+      "description": "Explicit grants for child use of known local skills whose effective policy is dispatch-authorized. Omit or use [] when none are authorized.",
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true,
+      "default": []
+    },
+    "write_scope": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "default": []
+    },
+    "review_mode": {
+      "type": "string",
+      "enum": ["spec_compliance", "code_quality", "final_closeout"]
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "role": { "const": "builder" } } },
+      "then": {
+        "required": ["write_scope"],
+        "properties": {
+          "write_scope": { "minItems": 1 }
+        }
+      },
+      "else": {
+        "properties": {
+          "write_scope": { "maxItems": 0 }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "role": { "const": "inspector" } } },
+      "then": {},
+      "else": {
+        "not": { "required": ["review_mode"] }
+      }
+    }
+  ],
+  "examples": [
+    {
+      "schema": "ticket-dispatch/1",
+      "run_id": "runtime-reset",
+      "ticket_id": "builder-docs",
+      "role": "builder",
+      "objective": "Rewrite the installable skill docs for the new protocol.",
+      "acceptance": [
+        "Only the new schema names remain in the skill docs.",
+        "Examples use the new wire contract."
+      ],
+      "timebox_minutes": 15,
+      "constraints": ["Do not touch runtime config files."],
+      "context": [
+        "Broker owns follow-up ticket generation and salvage bookkeeping."
+      ],
+      "depends_on": [],
+      "write_scope": ["multi-agent/"]
+    }
+  ]
+}

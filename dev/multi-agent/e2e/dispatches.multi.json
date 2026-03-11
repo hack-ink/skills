@@ -1,0 +1,64 @@
+[
+  {
+    "schema": "ticket-dispatch/1",
+    "run_id": "runtime-reset",
+    "ticket_id": "runner-inventory",
+    "role": "runner",
+    "objective": "List every installable file that still references the legacy wire contract.",
+    "acceptance": [
+      "Return only findings relevant to the protocol reset."
+    ],
+    "timebox_minutes": 8,
+    "constraints": [
+      "Read-only."
+    ],
+    "context": [
+      "The new protocol keeps only ticket-dispatch/1 and ticket-result/1."
+    ],
+    "depends_on": []
+  },
+  {
+    "schema": "ticket-dispatch/1",
+    "run_id": "runtime-reset",
+    "ticket_id": "builder-reset",
+    "role": "builder",
+    "objective": "Rewrite the installable schema files to the new two-file contract.",
+    "acceptance": [
+      "Only the new schema ids remain under multi-agent/schemas/."
+    ],
+    "timebox_minutes": 12,
+    "constraints": [
+      "Do not touch runtime config files."
+    ],
+    "context": [
+      "Broker owns salvage and follow-up ticket creation."
+    ],
+    "depends_on": [
+      "runner-inventory"
+    ],
+    "write_scope": [
+      "multi-agent/schemas/"
+    ]
+  },
+  {
+    "schema": "ticket-dispatch/1",
+    "run_id": "runtime-reset",
+    "ticket_id": "inspector-closeout",
+    "role": "inspector",
+    "objective": "Review the rewritten protocol for scope compliance.",
+    "acceptance": [
+      "Return pass, block, or needs_evidence against the reset contract."
+    ],
+    "timebox_minutes": 6,
+    "constraints": [
+      "Review-only."
+    ],
+    "context": [
+      "The broker, not the worker, owns review ordering."
+    ],
+    "depends_on": [
+      "builder-reset"
+    ],
+    "review_mode": "spec_compliance"
+  }
+]

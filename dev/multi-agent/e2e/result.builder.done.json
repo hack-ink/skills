@@ -1,0 +1,18 @@
+{
+  "schema": "ticket-result/1",
+  "run_id": "runtime-reset",
+  "ticket_id": "builder-reset",
+  "role": "builder",
+  "status": "done",
+  "summary": "Replaced the legacy wire contract with the new dispatch and result schemas.",
+  "changed_paths": [
+    "multi-agent/schemas/ticket-dispatch.schema.json",
+    "multi-agent/schemas/ticket-result.schema.json"
+  ],
+  "verification": [
+    {
+      "cmd": "python3 dev/multi-agent/e2e/validate_payloads.py",
+      "exit_code": 0
+    }
+  ]
+}

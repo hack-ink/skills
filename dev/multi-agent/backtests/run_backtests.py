@@ -4,230 +4,17 @@ import json
 from pathlib import Path
 from typing import Any, Callable
 
-from broker_sim import (
-    BrokerSimulator,
-    assert_dispatch_contract,
-    is_path_overlap,
-    load_json,
-)
+from broker_sim import BrokerSimulator, assert_dispatch_contract, load_json
 
 BACKTESTS_DIR = Path(__file__).resolve().parent
 SCENARIOS_DIR = BACKTESTS_DIR / "scenarios"
-E2E_DIR = BACKTESTS_DIR.parent / "e2e"
-SINGLE_FAST_PATH_MAX_S = 60
+SINGLE_FAST_PATH_MAX_S = 90
 
 
-def assert_expectations(
-    scenario_id: str,
-    expectations: dict,
-    wait_any: dict,
-    wait_all: dict,
-) -> None:
-    min_parallel = int(expectations.get("min_max_parallel", 1))
-    if wait_any["max_parallel"] < min_parallel:
-        raise AssertionError(
-            f"{scenario_id}: max_parallel={wait_any['max_parallel']} < {min_parallel}"
-        )
-
-    min_lock_conflicts = int(expectations.get("min_lock_conflicts", 0))
-    if wait_any["lock_conflicts"] < min_lock_conflicts:
-        raise AssertionError(
-            f"{scenario_id}: lock_conflicts={wait_any['lock_conflicts']} < {min_lock_conflicts}"
-        )
-
-    min_dedup_merged = int(expectations.get("min_dedup_merged", 0))
-    if wait_any["dedup_merged"] < min_dedup_merged:
-        raise AssertionError(
-            f"{scenario_id}: dedup_merged={wait_any['dedup_merged']} < {min_dedup_merged}"
-        )
-
-    min_retry_count = int(expectations.get("min_retry_count", 0))
-    if wait_any["retry_count"] < min_retry_count:
-        raise AssertionError(
-            f"{scenario_id}: retry_count={wait_any['retry_count']} < {min_retry_count}"
-        )
-
-    min_reuse_count = int(expectations.get("min_reuse_count", 0))
-    if wait_any["reuse_count"] < min_reuse_count:
-        raise AssertionError(
-            f"{scenario_id}: reuse_count={wait_any['reuse_count']} < {min_reuse_count}"
-        )
-
-    min_reuse_count_by_agent = expectations.get("min_reuse_count_by_agent", {})
-    if min_reuse_count_by_agent:
-        if not isinstance(min_reuse_count_by_agent, dict):
-            raise AssertionError(
-                f"{scenario_id}: min_reuse_count_by_agent must be an object"
-            )
-        for agent_type, minimum in min_reuse_count_by_agent.items():
-            if agent_type not in wait_any["reuse_count_by_agent"]:
-                raise AssertionError(
-                    f"{scenario_id}: unknown agent_type in min_reuse_count_by_agent: "
-                    f"{agent_type!r}"
-                )
-            if wait_any["reuse_count_by_agent"][agent_type] < int(minimum):
-                raise AssertionError(
-                    f"{scenario_id}: reuse_count_by_agent[{agent_type!r}]="
-                    f"{wait_any['reuse_count_by_agent'][agent_type]} < {minimum}"
-                )
-
-    expected_dispatch_count = expectations.get("expected_dispatch_count")
-    if expected_dispatch_count is not None and wait_any["dispatch_count"] != int(
-        expected_dispatch_count
-    ):
-        raise AssertionError(
-            f"{scenario_id}: dispatch_count={wait_any['dispatch_count']} != {expected_dispatch_count}"
-        )
-
-    speedup_s = wait_all["makespan_s"] - wait_any["makespan_s"]
-    min_speedup = int(expectations.get("min_wait_any_speedup_s", 0))
-    if speedup_s < min_speedup:
-        raise AssertionError(
-            f"{scenario_id}: wait-any speedup={speedup_s}s < {min_speedup}s"
-        )
-
-    expected_wait_any = expectations.get("expected_wait_any_makespan_s")
-    if expected_wait_any is not None and wait_any["makespan_s"] != int(expected_wait_any):
-        raise AssertionError(
-            f"{scenario_id}: wait_any makespan={wait_any['makespan_s']} != {expected_wait_any}"
-        )
-
-    expected_wait_all = expectations.get("expected_wait_all_makespan_s")
-    if expected_wait_all is not None and wait_all["makespan_s"] != int(expected_wait_all):
-        raise AssertionError(
-            f"{scenario_id}: wait_all makespan={wait_all['makespan_s']} != {expected_wait_all}"
-        )
-
-    expected_ids = expectations.get("expected_completed_slice_ids")
-    if expected_ids is not None:
-        expected_set = sorted(set(expected_ids))
-        actual_set = sorted(set(wait_any["completed_slice_ids"]))
-        if actual_set != expected_set:
-            raise AssertionError(
-                f"{scenario_id}: completed slices mismatch: expected={expected_set}, got={actual_set}"
-            )
-
-    expected_terminal_status_by_slice = expectations.get(
-        "expected_terminal_status_by_slice", {}
-    )
-    if expected_terminal_status_by_slice:
-        if not isinstance(expected_terminal_status_by_slice, dict):
-            raise AssertionError(
-                f"{scenario_id}: expected_terminal_status_by_slice must be an object"
-            )
-        for slice_id, expected_status in expected_terminal_status_by_slice.items():
-            actual_status = wait_any["completed_status_by_slice"].get(slice_id)
-            if actual_status != expected_status:
-                raise AssertionError(
-                    f"{scenario_id}: completed_status_by_slice[{slice_id!r}]="
-                    f"{actual_status!r} != {expected_status!r}"
-                )
-
-    must_start_after_done = expectations.get("must_start_after_done", [])
-    if must_start_after_done:
-        if not isinstance(must_start_after_done, list):
-            raise AssertionError(f"{scenario_id}: must_start_after_done must be a list")
-        for index, pair in enumerate(must_start_after_done, 1):
-            if (
-                not isinstance(pair, list)
-                or len(pair) != 2
-                or not all(isinstance(value, str) and value for value in pair)
-            ):
-                raise AssertionError(
-                    f"{scenario_id}: must_start_after_done[{index}] must be "
-                    "[start_slice_id, completed_slice_id]"
-                )
-            start_slice_id, completed_slice_id = pair
-            start_index, start_time = find_event_position_and_time(
-                wait_any["events"],
-                slice_id=start_slice_id,
-                event_name="start",
-                scenario_id=scenario_id,
-            )
-            done_index, done_time = find_event_position_and_time(
-                wait_any["events"],
-                slice_id=completed_slice_id,
-                event_name="done",
-                scenario_id=scenario_id,
-            )
-            if start_time < done_time or (
-                start_time == done_time and start_index <= done_index
-            ):
-                raise AssertionError(
-                    f"{scenario_id}: expected {start_slice_id} to start after "
-                    f"{completed_slice_id} completed, got start_index={start_index} "
-                    f"start_t={start_time}s done_index={done_index} done_t={done_time}s"
-                )
-
-    must_start_after_event = expectations.get("must_start_after_event", [])
-    if must_start_after_event:
-        if not isinstance(must_start_after_event, list):
-            raise AssertionError(f"{scenario_id}: must_start_after_event must be a list")
-        for index, triple in enumerate(must_start_after_event, 1):
-            if (
-                not isinstance(triple, list)
-                or len(triple) != 3
-                or not all(isinstance(value, str) and value for value in triple)
-            ):
-                raise AssertionError(
-                    f"{scenario_id}: must_start_after_event[{index}] must be "
-                    "[start_slice_id, completed_slice_id, event_name]"
-                )
-            start_slice_id, completed_slice_id, event_name = triple
-            start_index, start_time = find_event_position_and_time(
-                wait_any["events"],
-                slice_id=start_slice_id,
-                event_name="start",
-                scenario_id=scenario_id,
-            )
-            event_index, event_time = find_event_position_and_time(
-                wait_any["events"],
-                slice_id=completed_slice_id,
-                event_name=event_name,
-                scenario_id=scenario_id,
-            )
-            if start_time < event_time or (
-                start_time == event_time and start_index <= event_index
-            ):
-                raise AssertionError(
-                    f"{scenario_id}: expected {start_slice_id} to start after "
-                    f"{completed_slice_id} emitted {event_name}, got start_index={start_index} "
-                    f"start_t={start_time}s event_index={event_index} event_t={event_time}s"
-                )
-
-
-def find_event_position_and_time(
-    events: list[dict[str, Any]],
-    *,
-    slice_id: str,
-    event_name: str,
-    scenario_id: str,
-) -> tuple[int, int]:
-    for index, event in enumerate(events):
-        if event.get("event") == event_name and event.get("slice_id") == slice_id:
-            timestamp = event.get("t")
-            if not isinstance(timestamp, int):
-                raise AssertionError(
-                    f"{scenario_id}: event {event_name!r} for {slice_id!r} must have integer t"
-                )
-            return index, timestamp
-    raise AssertionError(
-        f"{scenario_id}: missing event {event_name!r} for slice_id={slice_id!r}"
-    )
-
-
-def derive_route(
-    *,
-    tiny_clear_low_risk: bool,
-    t_max_s: int,
-) -> str:
+def derive_route(*, tiny_clear_low_risk: bool, t_max_s: int) -> str:
     if tiny_clear_low_risk and t_max_s <= SINGLE_FAST_PATH_MAX_S:
         return "single"
     return "multi"
-
-
-def clone_payload(payload: Any) -> Any:
-    return json.loads(json.dumps(payload))
 
 
 def assert_rejected(
@@ -244,403 +31,245 @@ def assert_rejected(
     raise AssertionError(f"{label}: expected AssertionError")
 
 
-def count_initial_runnable_dispatches(dispatches: list[dict], *, label: str) -> int:
-    locked_builder_paths: list[str] = []
-    runnable = 0
-
-    for index, dispatch in enumerate(dispatches):
-        slice_id = (
-            dispatch.get("slice_id", f"dispatch[{index}]")
-            if isinstance(dispatch, dict)
-            else f"dispatch[{index}]"
-        )
-        ownership_paths = assert_dispatch_contract(
-            dispatch,
-            label=f"{label}: {slice_id}",
-        )
-
-        if dispatch.get("dependencies", []):
-            continue
-
-        if dispatch["agent_type"] != "builder":
-            runnable += 1
-            continue
-
-        if any(
-            is_path_overlap(left_path, right_path)
-            for left_path in ownership_paths
-            for right_path in locked_builder_paths
-        ):
-            continue
-
-        locked_builder_paths.extend(ownership_paths)
-        runnable += 1
-
-    return runnable
-
-
-def run_scheduler_scenario(
-    scenario_dir: Path, scenario: dict
-) -> tuple[str, dict, dict]:
-    scenario_id = scenario["id"]
-    expectations = scenario.get("expectations", {})
-
-    wait_any = BrokerSimulator(scenario_dir, scenario, mode="wait_any").run()
-    wait_all = BrokerSimulator(scenario_dir, scenario, mode="wait_all").run()
-
-    assert_expectations(scenario_id, expectations, wait_any, wait_all)
-
-    speedup_s = wait_all["makespan_s"] - wait_any["makespan_s"]
-    print(
-        "PASS: "
-        f"{scenario_id} "
-        f"wait_any={wait_any['makespan_s']}s "
-        f"wait_all={wait_all['makespan_s']}s "
-        f"speedup={speedup_s}s "
-        f"parallel={wait_any['max_parallel']} "
-        f"retry={wait_any['retry_count']} "
-        f"reuse={wait_any['reuse_count']} "
-        f"dedup={wait_any['dedup_merged']} "
-        f"lock_conflicts={wait_any['lock_conflicts']} "
-        f"dispatch={wait_any['dispatch_count']}"
-    )
-    return scenario_id, wait_any, wait_all
-
-
-def run_routing_scenario(scenario_dir: Path, scenario: dict) -> str:
-    del scenario_dir
-
-    scenario_id = scenario["id"]
-    route_input = scenario.get("route_input", {})
-    expectations = scenario.get("expectations", {})
-
-    t_max_s = route_input.get("t_max_s")
-    if not isinstance(t_max_s, int) or t_max_s <= 0:
-        raise AssertionError(f"{scenario_id}: route_input.t_max_s must be a positive integer")
-
-    t_why = route_input.get("t_why")
-    if not isinstance(t_why, str) or not t_why.strip():
-        raise AssertionError(f"{scenario_id}: route_input.t_why must be a non-empty string")
-
-    tiny_clear_low_risk = route_input.get("tiny_clear_low_risk")
-    if not isinstance(tiny_clear_low_risk, bool):
+def assert_expectations(
+    scenario_id: str,
+    expectations: dict[str, Any],
+    wait_any: dict[str, Any],
+    wait_all: dict[str, Any],
+) -> None:
+    min_parallel = int(expectations.get("min_max_parallel", 1))
+    if wait_any["max_parallel"] < min_parallel:
         raise AssertionError(
-            f"{scenario_id}: route_input.tiny_clear_low_risk must be a boolean"
+            f"{scenario_id}: max_parallel={wait_any['max_parallel']} < {min_parallel}"
         )
 
-    dispatch_fixture = route_input.get("dispatch_fixture")
-    if dispatch_fixture is not None and not isinstance(dispatch_fixture, str):
+    min_lock_conflicts = int(expectations.get("min_lock_conflicts", 0))
+    if wait_any["lock_conflicts"] < min_lock_conflicts:
         raise AssertionError(
-            f"{scenario_id}: route_input.dispatch_fixture must be a string or null"
+            f"{scenario_id}: lock_conflicts={wait_any['lock_conflicts']} < {min_lock_conflicts}"
         )
 
-    actual_route = derive_route(
-        tiny_clear_low_risk=tiny_clear_low_risk,
-        t_max_s=t_max_s,
-    )
-    expected_route = expectations.get("expected_route")
-    if actual_route != expected_route:
+    min_retry_count = int(expectations.get("min_retry_count", 0))
+    if wait_any["retry_count"] < min_retry_count:
         raise AssertionError(
-            f"{scenario_id}: expected route {expected_route!r}, got {actual_route!r}"
+            f"{scenario_id}: retry_count={wait_any['retry_count']} < {min_retry_count}"
         )
 
-    if actual_route == "single":
-        if dispatch_fixture is not None:
-            raise AssertionError(f"{scenario_id}: single route must not reference a dispatch fixture")
-        actual_initial_runnable_count = 0
-    else:
-        if not dispatch_fixture:
-            raise AssertionError(f"{scenario_id}: multi route requires route_input.dispatch_fixture")
-        dispatches = load_json(E2E_DIR / dispatch_fixture)
-        if not isinstance(dispatches, list):
+    min_reuse_count = int(expectations.get("min_reuse_count", 0))
+    if wait_any["reuse_count"] < min_reuse_count:
+        raise AssertionError(
+            f"{scenario_id}: reuse_count={wait_any['reuse_count']} < {min_reuse_count}"
+        )
+
+    min_reuse_count_by_role = expectations.get("min_reuse_count_by_role", {})
+    for role, minimum in min_reuse_count_by_role.items():
+        actual = wait_any["reuse_count_by_role"].get(role)
+        if actual is None:
             raise AssertionError(
-                f"{scenario_id}: {dispatch_fixture} must be a JSON array when used for routing"
+                f"{scenario_id}: missing reuse_count_by_role entry for {role!r}"
             )
-        actual_initial_runnable_count = count_initial_runnable_dispatches(
-            dispatches,
-            label=f"{scenario_id}: {dispatch_fixture}",
-        )
+        if actual < int(minimum):
+            raise AssertionError(
+                f"{scenario_id}: reuse_count_by_role[{role!r}]={actual} < {minimum}"
+            )
 
-    expected_initial_runnable_count = expectations.get("expected_initial_runnable_count")
-    if (
-        not isinstance(expected_initial_runnable_count, int)
-        or expected_initial_runnable_count < 0
+    expected_dispatch_count = expectations.get("expected_dispatch_count")
+    if expected_dispatch_count is not None and wait_any["dispatch_count"] != int(
+        expected_dispatch_count
     ):
         raise AssertionError(
-            f"{scenario_id}: expectations.expected_initial_runnable_count must be a "
-            "non-negative integer"
+            f"{scenario_id}: dispatch_count={wait_any['dispatch_count']} != {expected_dispatch_count}"
         )
-    if actual_initial_runnable_count != expected_initial_runnable_count:
+
+    speedup_s = wait_all["makespan_s"] - wait_any["makespan_s"]
+    min_speedup = int(expectations.get("min_wait_any_speedup_s", 0))
+    if speedup_s < min_speedup:
         raise AssertionError(
-            f"{scenario_id}: expected initial_runnable_count={expected_initial_runnable_count}, "
-            f"got {actual_initial_runnable_count}"
+            f"{scenario_id}: wait-any speedup={speedup_s}s < {min_speedup}s"
         )
 
-    print(
-        "PASS: "
-        f"{scenario_id} "
-        f"route={actual_route} "
-        f"initial_runnable_count={actual_initial_runnable_count} "
-        f"t_max_s={t_max_s} "
-        f"tiny_clear_low_risk={str(tiny_clear_low_risk).lower()} "
-        f"dispatch_fixture={dispatch_fixture or 'none'}"
-    )
-    return scenario_id
-
-
-def assert_negative_regressions() -> None:
-    invalid_runner_scope = clone_payload(
-        load_json(SCENARIOS_DIR / "swarmbench-01" / "dispatches.initial.json")[0]
-    )
-    invalid_runner_scope["ownership_paths"] = ["/tmp/swarmbench-01/invalid-runner-scope"]
-
-    assert_rejected(
-        lambda: count_initial_runnable_dispatches(
-            [invalid_runner_scope],
-            label="regression.routing_non_builder_scope",
-        ),
-        label="regression.routing_non_builder_scope",
-        expected_substring="dispatch.ownership_paths",
-    )
-    print("PASS: regression.routing_non_builder_scope")
-
-    scenario_dir = SCENARIOS_DIR / "swarmbench-01"
-    scenario = load_json(scenario_dir / "scenario.json")
-    simulator = BrokerSimulator(scenario_dir, scenario, mode="wait_any")
-    simulator.initial_dispatches = [invalid_runner_scope]
-    assert_rejected(
-        simulator.run,
-        label="regression.scheduler_non_builder_scope",
-        expected_substring="dispatch.ownership_paths",
-    )
-    print("PASS: regression.scheduler_non_builder_scope")
-
-    invalid_builder_contract = clone_payload(
-        load_json(SCENARIOS_DIR / "swarmbench-01" / "dispatches.initial.json")[2]
-    )
-    del invalid_builder_contract["work_package_id"]
-    assert_rejected(
-        lambda: count_initial_runnable_dispatches(
-            [invalid_builder_contract],
-            label="regression.routing_invalid_builder_contract",
-        ),
-        label="regression.routing_invalid_builder_contract",
-        expected_substring="work_package_id",
-    )
-    print("PASS: regression.routing_invalid_builder_contract")
-
-    invalid_acceptance_type = clone_payload(
-        load_json(SCENARIOS_DIR / "swarmbench-01" / "dispatches.initial.json")[0]
-    )
-    invalid_acceptance_type["task_contract"]["acceptance"] = "oops"
-    simulator = BrokerSimulator(scenario_dir, scenario, mode="wait_any")
-    simulator.initial_dispatches = [invalid_acceptance_type]
-    assert_rejected(
-        simulator.run,
-        label="regression.scheduler_invalid_acceptance_type",
-        expected_substring="task_contract.acceptance",
-    )
-    print("PASS: regression.scheduler_invalid_acceptance_type")
-
-    invalid_dependencies_type = clone_payload(
-        load_json(SCENARIOS_DIR / "swarmbench-01" / "dispatches.initial.json")[0]
-    )
-    invalid_dependencies_type["dependencies"] = "oops"
-    simulator = BrokerSimulator(scenario_dir, scenario, mode="wait_any")
-    simulator.initial_dispatches = [invalid_dependencies_type]
-    assert_rejected(
-        simulator.run,
-        label="regression.scheduler_invalid_dependencies_type",
-        expected_substring="dispatch.dependencies",
-    )
-    print("PASS: regression.scheduler_invalid_dependencies_type")
-
-    if derive_route(
-        tiny_clear_low_risk=True,
-        t_max_s=SINGLE_FAST_PATH_MAX_S + 1,
-    ) != "multi":
-        raise AssertionError(
-            "regression.route_threshold: over-fast-path t_max_s must force route=multi"
-        )
-    print(
-        "PASS: regression.route_threshold "
-        f"single fast path capped at {SINGLE_FAST_PATH_MAX_S}s"
-    )
-
-    dedup_scenario = load_json(scenario_dir / "scenario.json")
-    dedup_simulator = BrokerSimulator(scenario_dir, dedup_scenario, mode="wait_any")
-    dedup_base = clone_payload(load_json(scenario_dir / "dispatches.initial.json")[2])
-    dedup_copy = clone_payload(dedup_base)
-    dedup_base["work_package_id"] = "pkg-dedup-a"
-    dedup_copy["slice_id"] = "sb01--builder-long-copy"
-    dedup_copy["work_package_id"] = "pkg-dedup-b"
-    dedup_simulator.initial_dispatches = [dedup_base, dedup_copy]
-    dedup_simulator.durations_s["sb01--builder-long-copy"] = 1
-    dedup_result = dedup_simulator.run()
-    if dedup_result["status"] != "completed":
-        raise AssertionError(
-            "regression.work_package_identity: expected completed run, got "
-            f"{dedup_result['status']!r}"
-        )
-    if dedup_result["dedup_merged"] != 0:
-        raise AssertionError(
-            "regression.work_package_identity: divergent work_package_id values "
-            f"must not merge (dedup_merged={dedup_result['dedup_merged']})"
-        )
-    completed_ids = set(dedup_result["completed_slice_ids"])
-    if {"sb01--builder-long", "sb01--builder-long-copy"} - completed_ids:
-        raise AssertionError(
-            "regression.work_package_identity: both builder slices must complete when "
-            "work_package_id differs"
-        )
-    print("PASS: regression.work_package_identity")
-
-    salvage_scenario_dir = SCENARIOS_DIR / "swarmbench-04-salvage"
-    salvage_scenario = load_json(salvage_scenario_dir / "scenario.json")
-    salvage_scope_shift = BrokerSimulator(
-        salvage_scenario_dir, salvage_scenario, mode="wait_any"
-    )
-    salvage_scope_shift.handoff_requests_by_slice = {
-        "sb04--builder-partial": [
-            clone_payload(
-                load_json(salvage_scenario_dir / "handoff.builder-salvage.json")[0]
+    expected_ids = expectations.get("expected_completed_ticket_ids")
+    if expected_ids is not None:
+        actual = sorted(set(wait_any["completed_ticket_ids"]))
+        expected = sorted(set(expected_ids))
+        if actual != expected:
+            raise AssertionError(
+                f"{scenario_id}: completed tickets mismatch: expected={expected}, got={actual}"
             )
-        ]
+
+    expected_terminal_status = expectations.get("expected_terminal_status_by_ticket", {})
+    for ticket_id, expected_status in expected_terminal_status.items():
+        actual_status = wait_any["completed_status_by_ticket"].get(ticket_id)
+        if actual_status != expected_status:
+            raise AssertionError(
+                f"{scenario_id}: completed_status_by_ticket[{ticket_id!r}]={actual_status!r} != {expected_status!r}"
+            )
+
+    for index, pair in enumerate(expectations.get("must_start_after_done", []), 1):
+        if (
+            not isinstance(pair, list)
+            or len(pair) != 2
+            or not all(isinstance(value, str) and value for value in pair)
+        ):
+            raise AssertionError(
+                f"{scenario_id}: must_start_after_done[{index}] must be [start_ticket_id, completed_ticket_id]"
+            )
+        start_ticket_id, completed_ticket_id = pair
+        start_index, start_t = find_event_position_and_time(
+            wait_any["events"],
+            ticket_id=start_ticket_id,
+            event_name="start",
+            scenario_id=scenario_id,
+        )
+        done_index, done_t = find_event_position_and_time(
+            wait_any["events"],
+            ticket_id=completed_ticket_id,
+            event_name="done",
+            scenario_id=scenario_id,
+        )
+        if start_t < done_t or (start_t == done_t and start_index <= done_index):
+            raise AssertionError(
+                f"{scenario_id}: expected {start_ticket_id} to start after {completed_ticket_id} completed"
+            )
+
+
+def find_event_position_and_time(
+    events: list[dict[str, Any]],
+    *,
+    ticket_id: str,
+    event_name: str,
+    scenario_id: str,
+) -> tuple[int, int]:
+    for index, event in enumerate(events):
+        if event.get("event") == event_name and event.get("ticket_id") == ticket_id:
+            timestamp = event.get("t")
+            if not isinstance(timestamp, int):
+                raise AssertionError(
+                    f"{scenario_id}: event {event_name!r} for {ticket_id!r} must have integer t"
+                )
+            return index, timestamp
+    raise AssertionError(
+        f"{scenario_id}: missing event {event_name!r} for ticket_id={ticket_id!r}"
+    )
+
+
+def assert_ticket_dependencies(tickets: list[dict[str, Any]], *, label: str) -> None:
+    ticket_ids = {ticket["ticket_id"] for ticket in tickets}
+    for ticket in tickets:
+        for dependency in ticket.get("depends_on", []):
+            if dependency not in ticket_ids:
+                raise AssertionError(
+                    f"{label}: {ticket['ticket_id']} depends on missing ticket_id {dependency!r}"
+                )
+
+
+def iter_scenarios() -> list[tuple[str, dict[str, Any]]]:
+    scenarios: list[tuple[str, dict[str, Any]]] = []
+    for scenario_path in sorted(SCENARIOS_DIR.rglob("scenario.json")):
+        scenario = load_json(scenario_path)
+        scenario_id = str(scenario_path.parent.relative_to(SCENARIOS_DIR))
+        scenarios.append((scenario_id, scenario))
+    if not scenarios:
+        raise AssertionError(f"No scenario.json files found under {SCENARIOS_DIR}")
+    return scenarios
+
+
+def assert_schema_regressions() -> None:
+    builder_valid = {
+        "schema": "ticket-dispatch/1",
+        "run_id": "regression",
+        "ticket_id": "builder-write",
+        "role": "builder",
+        "objective": "Edit the owned scope.",
+        "acceptance": ["Owned paths only."],
+        "timebox_minutes": 10,
+        "write_scope": ["src/app/"],
     }
-    salvage_scope_shift.handoff_requests_by_slice["sb04--builder-partial"][0][
-        "ownership_paths"
-    ] = ["/tmp/swarmbench-04/reassigned"]
+    assert_dispatch_contract(builder_valid, label="regression.builder_valid")
+
+    invalid_builder = json.loads(json.dumps(builder_valid))
+    del invalid_builder["write_scope"]
     assert_rejected(
-        salvage_scope_shift.run,
-        label="regression.salvage_work_package_scope_change",
-        expected_substring="cannot continue with changed ownership_paths",
+        lambda: assert_dispatch_contract(
+            invalid_builder, label="regression.builder_missing_write_scope"
+        ),
+        label="regression.builder_missing_write_scope",
+        expected_substring="write_scope",
     )
-    print("PASS: regression.salvage_work_package_scope_change")
 
-    review_mode_scenario_dir = SCENARIOS_DIR / "swarmbench-03-review-gates"
-    review_mode_scenario = load_json(review_mode_scenario_dir / "scenario.json")
-    review_mode_simulator = BrokerSimulator(
-        review_mode_scenario_dir, review_mode_scenario, mode="wait_any"
-    )
-    review_mode_simulator.handoff_requests_by_slice = {}
-    review_mode_dispatches = load_json(
-        review_mode_scenario_dir / "dispatches.initial.json"
-    )
-    review_mode_copy = clone_payload(review_mode_dispatches[1])
-    review_mode_copy["slice_id"] = "sb03--inspector-spec-copy"
-    review_mode_copy["review_mode"] = "code_quality"
-    review_mode_simulator.initial_dispatches = [
-        clone_payload(review_mode_dispatches[0]),
-        clone_payload(review_mode_dispatches[1]),
-        review_mode_copy,
-    ]
-    review_mode_simulator.durations_s["sb03--inspector-spec-copy"] = 1
-    review_mode_result = review_mode_simulator.run()
-    if review_mode_result["status"] != "completed":
-        raise AssertionError(
-            "regression.review_mode_identity: expected completed run, got "
-            f"{review_mode_result['status']!r}"
-        )
-    if review_mode_result["dedup_merged"] != 0:
-        raise AssertionError(
-            "regression.review_mode_identity: divergent review_mode values "
-            f"must not merge (dedup_merged={review_mode_result['dedup_merged']})"
-        )
-    completed_ids = set(review_mode_result["completed_slice_ids"])
-    if {"sb03--inspector-spec", "sb03--inspector-spec-copy"} - completed_ids:
-        raise AssertionError(
-            "regression.review_mode_identity: both inspector slices must complete "
-            "when review_mode differs"
-        )
-    print("PASS: regression.review_mode_identity")
-
-    review_mode_same_slice_simulator = BrokerSimulator(
-        review_mode_scenario_dir, review_mode_scenario, mode="wait_any"
-    )
-    review_mode_same_slice_simulator.handoff_requests_by_slice = {}
-    review_mode_same_slice_conflict = clone_payload(review_mode_dispatches[1])
-    review_mode_same_slice_conflict["review_mode"] = "code_quality"
-    review_mode_same_slice_simulator.initial_dispatches = [
-        clone_payload(review_mode_dispatches[0]),
-        clone_payload(review_mode_dispatches[1]),
-        review_mode_same_slice_conflict,
-    ]
+    invalid_runner = {
+        "schema": "ticket-dispatch/1",
+        "run_id": "regression",
+        "ticket_id": "runner-bad-scope",
+        "role": "runner",
+        "objective": "Read the repo.",
+        "acceptance": ["No writes."],
+        "timebox_minutes": 5,
+        "write_scope": ["src/app/"],
+    }
     assert_rejected(
-        review_mode_same_slice_simulator.run,
-        label="regression.review_mode_same_slice_merge",
-        expected_substring="cannot merge divergent field 'review_mode'",
+        lambda: assert_dispatch_contract(
+            invalid_runner, label="regression.runner_write_scope"
+        ),
+        label="regression.runner_write_scope",
+        expected_substring="write_scope",
     )
-    print("PASS: regression.review_mode_same_slice_merge")
 
-    retry_scenario = load_json(scenario_dir / "scenario.json")
-    retry_simulator = BrokerSimulator(scenario_dir, retry_scenario, mode="wait_any")
-    retry_simulator.initial_dispatches = [
-        clone_payload(load_json(scenario_dir / "dispatches.initial.json")[1])
-    ]
-    retry_simulator.max_retries_by_agent["runner"] = 0
-    retry_result = retry_simulator.run()
-    if retry_result["status"] != "blocked":
-        raise AssertionError(
-            "regression.retry_exhausted: expected blocked run, got "
-            f"{retry_result['status']!r}"
-        )
-    if "retry exhausted" not in (retry_result["blocked_reason"] or ""):
-        raise AssertionError(
-            "regression.retry_exhausted: blocked_reason must mention retry exhaustion"
-        )
-    print("PASS: regression.retry_exhausted")
-
-    deadlock_scenario = load_json(scenario_dir / "scenario.json")
-    deadlock_simulator = BrokerSimulator(scenario_dir, deadlock_scenario, mode="wait_any")
-    deadlock_dispatch = clone_payload(load_json(scenario_dir / "dispatches.initial.json")[0])
-    deadlock_dispatch["dependencies"] = ["missing-slice"]
-    deadlock_simulator.initial_dispatches = [deadlock_dispatch]
-    deadlock_result = deadlock_simulator.run()
-    if deadlock_result["status"] != "blocked":
-        raise AssertionError(
-            "regression.dependency_deadlock: expected blocked run, got "
-            f"{deadlock_result['status']!r}"
-        )
-    if "dependency deadlock" not in (deadlock_result["blocked_reason"] or ""):
-        raise AssertionError(
-            "regression.dependency_deadlock: blocked_reason must mention dependency deadlock"
-        )
-    print("PASS: regression.dependency_deadlock")
+    print("PASS: regression.dispatch_contract")
 
 
 def main() -> None:
-    scenario_dirs = sorted(
-        path for path in SCENARIOS_DIR.iterdir() if (path / "scenario.json").exists()
-    )
-    if not scenario_dirs:
-        raise AssertionError(f"No scenario.json files found under {SCENARIOS_DIR}")
+    assert_schema_regressions()
 
-    scheduler_results: dict[str, tuple[dict, dict]] = {}
-    for scenario_dir in scenario_dirs:
-        scenario = load_json(scenario_dir / "scenario.json")
-        scenario_kind = scenario.get("kind", "scheduler")
-        if scenario_kind == "routing":
-            run_routing_scenario(scenario_dir, scenario)
-            continue
-        if scenario_kind != "scheduler":
-            raise AssertionError(f"{scenario['id']}: unsupported scenario kind {scenario_kind!r}")
-
-        scenario_id, wait_any, wait_all = run_scheduler_scenario(scenario_dir, scenario)
-        scheduler_results[scenario_id] = (wait_any, wait_all)
-
-    assert_negative_regressions()
-
-    if "swarmbench-02-micro" in scheduler_results and "swarmbench-02-pack" in scheduler_results:
-        micro_wait_any = scheduler_results["swarmbench-02-micro"][0]["makespan_s"]
-        pack_wait_any = scheduler_results["swarmbench-02-pack"][0]["makespan_s"]
-        if (micro_wait_any - pack_wait_any) < 10:
+    for scenario_id, scenario in iter_scenarios():
+        route_case = scenario["route_case"]
+        derived_route = derive_route(
+            tiny_clear_low_risk=bool(route_case["tiny_clear_low_risk"]),
+            t_max_s=int(route_case["t_max_s"]),
+        )
+        expected_route = route_case["expected_route"]
+        if derived_route != expected_route:
             raise AssertionError(
-                "cross-scenario regression failed: "
-                f"micro wait_any={micro_wait_any}s should be at least 10s slower than "
-                f"pack wait_any={pack_wait_any}s"
+                f"{scenario_id}: derived route {derived_route!r} != {expected_route!r}"
             )
 
-    print(f"OK: backtests ({len(scenario_dirs)} scenarios)")
+        tickets = scenario.get("tickets", [])
+        if expected_route == "single":
+            if tickets:
+                raise AssertionError(
+                    f"{scenario_id}: single-route scenarios must not define broker tickets"
+                )
+            print(f"PASS: {scenario_id} (single)")
+            continue
+
+        if not tickets:
+            raise AssertionError(f"{scenario_id}: multi scenario must define tickets")
+        for index, ticket in enumerate(tickets, 1):
+            assert_dispatch_contract(ticket, label=f"{scenario_id}.tickets[{index}]")
+        assert_ticket_dependencies(tickets, label=scenario_id)
+
+        wait_any = BrokerSimulator(scenario, mode="wait_any").run()
+        wait_all = BrokerSimulator(scenario, mode="wait_all").run()
+        if wait_any["status"] not in {"completed", "blocked"}:
+            raise AssertionError(
+                f"{scenario_id}: unexpected wait_any status {wait_any['status']!r}"
+            )
+        if wait_all["status"] not in {"completed", "blocked"}:
+            raise AssertionError(
+                f"{scenario_id}: unexpected wait_all status {wait_all['status']!r}"
+            )
+        assert_expectations(
+            scenario_id,
+            scenario.get("expectations", {}),
+            wait_any,
+            wait_all,
+        )
+        print(
+            f"PASS: {scenario_id} "
+            f"(wait_any={wait_any['makespan_s']}s, wait_all={wait_all['makespan_s']}s)"
+        )
+
+    print("OK: deterministic backtests cover the reset protocol")
 
 
 if __name__ == "__main__":

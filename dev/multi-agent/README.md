@@ -1,6 +1,13 @@
 # multi-agent (Dev-only)
 
-This directory contains development-only artifacts for the `multi-agent` skill (tests, fixtures, and methodology docs). It is intentionally kept **outside** the installable skill directory so installations do not include test content.
+This directory contains development-only artifacts for the installable `multi-agent` skill.
+
+The current dev harness covers only the reset protocol:
+
+- `ticket-dispatch/1`
+- `ticket-result/1`
+- broker-local follow-up generation, salvage, and review-gate bookkeeping
+- manual-policy-aware `authorized_skills` enforcement against the repo-local child-skill policy, including known-skill validation
 
 ## Quick smoke
 
@@ -10,17 +17,8 @@ From the repo root:
 python3 dev/multi-agent/e2e/run_smoke.py
 ```
 
-This smoke entrypoint validates the installable JSON templates, the dev Broker routing doc, two-state route fixtures, and the deterministic backtests.
+## Contents
 
-## Backtests
-
-Deterministic scheduler simulations live under `dev/multi-agent/backtests/`.
-
-```sh
-python3 dev/multi-agent/backtests/run_backtests.py
-```
-
-## Docs
-
-- Broker interactive e2e: `dev/multi-agent/BROKER_E2E.md`
-- Fixtures + validators: `dev/multi-agent/e2e/`
+- `e2e/`: schema fixtures, markdown template validation, and interactive Broker doc checks
+- `backtests/`: deterministic routing and scheduler simulations for the new protocol, using inline scenario tickets
+- `BROKER_E2E.md`: manual runtime checklist for live Broker sessions

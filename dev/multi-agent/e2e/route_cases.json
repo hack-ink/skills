@@ -1,52 +1,20 @@
 [
   {
-    "scenario_id": "route-single-fast-fix",
-    "route": "single",
+    "label": "single-fast-path",
+    "tiny_clear_low_risk": true,
     "t_max_s": 45,
-    "t_why": "One doc-line correction with a clear desired outcome.",
+    "expected_route": "single"
+  },
+  {
+    "label": "multi-over-cap",
     "tiny_clear_low_risk": true,
-    "initial_runnable_count": 0,
-    "dispatch_fixture": null,
-    "expected_agent_types": []
+    "t_max_s": 91,
+    "expected_route": "multi"
   },
   {
-    "scenario_id": "route-multi-scout",
-    "route": "multi",
-    "t_max_s": 75,
-    "t_why": "The task falls outside the single fast path, so it should enter multi and start scout-first.",
+    "label": "multi-risky-even-under-cap",
     "tiny_clear_low_risk": false,
-    "initial_runnable_count": 1,
-    "dispatch_fixture": "dispatches.serial_multi.json",
-    "expected_agent_types": [
-      "builder",
-      "runner"
-    ]
-  },
-  {
-    "scenario_id": "route-multi-tiny-over-cap",
-    "route": "multi",
-    "t_max_s": 75,
-    "t_why": "The task is tiny and clear, but it exceeds the verified 60-second single fast-path cap, so it must still enter multi.",
-    "tiny_clear_low_risk": true,
-    "initial_runnable_count": 1,
-    "dispatch_fixture": "dispatches.serial_multi.json",
-    "expected_agent_types": [
-      "builder",
-      "runner"
-    ]
-  },
-  {
-    "scenario_id": "route-multi-dev-fixtures-batch1",
-    "route": "multi",
-    "t_max_s": 240,
-    "t_why": "Broker docs, e2e fixtures, and backtests can advance in separate owned lanes with final verification.",
-    "tiny_clear_low_risk": false,
-    "initial_runnable_count": 2,
-    "dispatch_fixture": "dispatches.workstreams.json",
-    "expected_agent_types": [
-      "builder",
-      "inspector",
-      "runner"
-    ]
+    "t_max_s": 30,
+    "expected_route": "multi"
   }
 ]

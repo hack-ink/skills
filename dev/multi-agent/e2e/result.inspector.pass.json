@@ -1,27 +1,12 @@
 {
-  "schema": "review-result.inspector/1",
-  "ssot_id": "multi-dev-orchestration-da6a468d8d93",
-  "task_id": "multi-ticket-flow",
-  "slice_id": "multi--inspector-final",
-  "verdict": "PASS",
-  "review_mode": "final_closeout",
-  "summary": "Evidence is sufficient and invariants are stated clearly.",
-  "review_notes": [
-    "Checked the final evidence bundle against the two-state routing and ownership-lock rules."
-  ],
+  "schema": "ticket-result/1",
+  "run_id": "runtime-reset",
+  "ticket_id": "inspector-closeout",
+  "role": "inspector",
+  "status": "done",
+  "summary": "The rewritten protocol is coherent and the legacy wire contract is gone.",
+  "verdict": "pass",
   "findings": [
-    {
-      "severity": "info",
-      "category": "topology",
-      "confidence": "high",
-      "message": "max_depth=1 broker prevents same-level spawns by construction.",
-      "paths": [
-        "multi-agent/PLAYBOOK.md",
-        "dev/multi-agent/e2e/dispatches.workstreams.json"
-      ]
-    }
-  ],
-  "required_fixes": [],
-  "required_evidence": [],
-  "agent_type": "inspector"
+    "Only ticket-dispatch/1 and ticket-result/1 remain in the installable skill."
+  ]
 }

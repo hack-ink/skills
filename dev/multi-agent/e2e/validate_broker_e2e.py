@@ -25,29 +25,34 @@ def assert_tokens(section: str, *, title: str, tokens: list[str]) -> None:
 
 
 def main() -> None:
-    text = BROKER_E2E_PATH.read_text()
-    sections = load_sections(text)
-
+    sections = load_sections(BROKER_E2E_PATH.read_text())
     required_sections = {
         "Test A - Routing gate (`single`)": [
             'route="single"',
-            "t_max_s",
-            "tiny, clear",
-            "Broker does not spawn any agents.",
+            "tiny, clear, low-risk",
+            "Broker does not spawn any agents."
         ],
-        "Test B - Routing gate (`multi`, scout-first)": [
+        "Test B - Routing gate (`multi`)": [
             'route="multi"',
-            "not tiny, clear, and low-risk",
-            "scout-first",
-            "smallest safe Builder package",
-            "No direct Broker repo writes occur in `multi`.",
+            "ticket-dispatch/1",
+            "authorized_skills",
+            "Broker never writes repo content directly in `multi`."
         ],
-        "Test C - Routing gate (`multi`, parallel expansion)": [
-            'route="multi"',
-            "independent read/write/review lanes",
-            "ticket-board scheduling",
-            "At least two lanes overlap",
+        "Test C - Wait-any scheduling": [
+            "wait-any",
+            "warm workers",
+            "write_scope"
         ],
+        "Test D - Invalid-output recovery": [
+            "one bounded retry",
+            "closes the child",
+            "salvage or redispatch"
+        ],
+        "Test E - Required review gates": [
+            "spec_compliance",
+            "code_quality",
+            "ticket-result/1"
+        ]
     }
 
     for title, tokens in required_sections.items():
@@ -56,7 +61,7 @@ def main() -> None:
             raise AssertionError(f"Missing section: {title}")
         assert_tokens(section, title=title, tokens=tokens)
 
-    print("OK: BROKER_E2E routing coverage (`single`, `multi` scout-first, `multi` parallel)")
+    print("OK: BROKER_E2E covers single, multi, wait-any, recovery, and review gates")
 
 
 if __name__ == "__main__":

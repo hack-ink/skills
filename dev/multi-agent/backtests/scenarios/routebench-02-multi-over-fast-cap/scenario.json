@@ -1,0 +1,52 @@
+{
+  "route_case": {
+    "tiny_clear_low_risk": true,
+    "t_max_s": 91,
+    "expected_route": "multi"
+  },
+  "scheduler": {
+    "lane_caps": {
+      "runner": 1,
+      "builder": 0,
+      "inspector": 0
+    },
+    "retry_delay_s": 1,
+    "max_retries_by_role": {
+      "runner": 0,
+      "builder": 0,
+      "inspector": 0
+    }
+  },
+  "tickets": [
+    {
+      "schema": "ticket-dispatch/1",
+      "run_id": "routebench-02",
+      "ticket_id": "runner-inventory",
+      "role": "runner",
+      "objective": "Inspect the reset protocol entrypoints.",
+      "acceptance": [
+        "Report the live schema ids."
+      ],
+      "timebox_minutes": 5,
+      "constraints": [
+        "Read-only."
+      ],
+      "context": [
+        "The task exceeds the single fast-path cap."
+      ],
+      "depends_on": []
+    }
+  ],
+  "durations_s": {
+    "runner-inventory": 4
+  },
+  "expectations": {
+    "expected_dispatch_count": 1,
+    "expected_completed_ticket_ids": [
+      "runner-inventory"
+    ],
+    "expected_terminal_status_by_ticket": {
+      "runner-inventory": "done"
+    }
+  }
+}

@@ -1,0 +1,114 @@
+{
+  "route_case": {
+    "tiny_clear_low_risk": false,
+    "t_max_s": 300,
+    "expected_route": "multi"
+  },
+  "scheduler": {
+    "lane_caps": {
+      "runner": 0,
+      "builder": 2,
+      "inspector": 1
+    },
+    "retry_delay_s": 1,
+    "max_retries_by_role": {
+      "runner": 0,
+      "builder": 0,
+      "inspector": 0
+    }
+  },
+  "tickets": [
+    {
+      "schema": "ticket-dispatch/1",
+      "run_id": "swarmbench-03",
+      "ticket_id": "builder-core",
+      "role": "builder",
+      "objective": "Apply the primary builder package.",
+      "acceptance": [
+        "Stay inside src/app."
+      ],
+      "timebox_minutes": 10,
+      "depends_on": [],
+      "write_scope": [
+        "src/app/"
+      ]
+    },
+    {
+      "schema": "ticket-dispatch/1",
+      "run_id": "swarmbench-03",
+      "ticket_id": "builder-overlap",
+      "role": "builder",
+      "objective": "Attempt an overlapping builder package.",
+      "acceptance": [
+        "Stay inside src/app/sub."
+      ],
+      "timebox_minutes": 10,
+      "depends_on": [],
+      "write_scope": [
+        "src/app/sub/"
+      ]
+    },
+    {
+      "schema": "ticket-dispatch/1",
+      "run_id": "swarmbench-03",
+      "ticket_id": "inspector-spec",
+      "role": "inspector",
+      "objective": "Review spec compliance after the first builder package.",
+      "acceptance": [
+        "Return the spec gate verdict."
+      ],
+      "timebox_minutes": 6,
+      "depends_on": [
+        "builder-core"
+      ],
+      "review_mode": "spec_compliance"
+    },
+    {
+      "schema": "ticket-dispatch/1",
+      "run_id": "swarmbench-03",
+      "ticket_id": "inspector-quality",
+      "role": "inspector",
+      "objective": "Review code quality after spec compliance passes.",
+      "acceptance": [
+        "Return the quality gate verdict."
+      ],
+      "timebox_minutes": 6,
+      "depends_on": [
+        "inspector-spec"
+      ],
+      "review_mode": "code_quality"
+    }
+  ],
+  "durations_s": {
+    "builder-core": 8,
+    "builder-overlap": 4,
+    "inspector-spec": 2,
+    "inspector-quality": 2
+  },
+  "expectations": {
+    "min_lock_conflicts": 1,
+    "expected_dispatch_count": 4,
+    "expected_completed_ticket_ids": [
+      "builder-core",
+      "builder-overlap",
+      "inspector-spec",
+      "inspector-quality"
+    ],
+    "expected_terminal_status_by_ticket": {
+      "builder-core": "done",
+      "builder-overlap": "done",
+      "inspector-spec": "done",
+      "inspector-quality": "done"
+    },
+    "must_start_after_done": [
+      [
+        "builder-overlap",
+        "builder-core"
+      ],
+      [
+        "inspector-quality",
+        "inspector-spec"
+      ]
+    ]
+  }
+}

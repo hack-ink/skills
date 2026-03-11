@@ -1,29 +1,12 @@
 {
-  "schema": "review-result.inspector/1",
-  "ssot_id": "multi-dev-orchestration-da6a468d8d93",
-  "task_id": "multi-ticket-flow",
-  "slice_id": "multi--inspector-final",
-  "verdict": "NEEDS_EVIDENCE",
-  "review_mode": "final_closeout",
-  "summary": "Need one more concrete proof point before the final review can pass.",
-  "review_notes": [
-    "The final evidence bundle is close, but it still lacks a concrete verification artifact for the runtime helper behavior."
-  ],
+  "schema": "ticket-result/1",
+  "run_id": "runtime-reset",
+  "ticket_id": "inspector-quality",
+  "role": "inspector",
+  "status": "done",
+  "summary": "The protocol is close, but more runtime evidence is required before closeout.",
+  "verdict": "needs_evidence",
   "findings": [
-    {
-      "severity": "minor",
-      "category": "evidence",
-      "confidence": "medium",
-      "message": "The final review bundle does not include concrete output for the helper behavior under review.",
-      "paths": [
-        "dev/multi-agent/e2e/result.builder.json",
-        "dev/multi-agent/e2e/dispatches.workstreams.json"
-      ]
-    }
-  ],
-  "required_fixes": [],
-  "required_evidence": [
-    "One command output excerpt showing the helper behavior that the final review is still waiting on."
-  ],
-  "agent_type": "inspector"
+    "Run the full smoke bundle after the dev harness rewrite lands."
+  ]
 }

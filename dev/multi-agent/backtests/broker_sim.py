@@ -10,11 +10,11 @@ from typing import Any
 from jsonschema import Draft202012Validator
 from jsonschema.exceptions import ValidationError
 
-AGENT_TYPES = ("runner", "builder", "inspector")
-TASK_DISPATCH_SCHEMA_ID = "task-dispatch/1"
+ROLES = ("runner", "builder", "inspector")
+DISPATCH_SCHEMA_ID = "ticket-dispatch/1"
 SKILLS_ROOT = Path(__file__).resolve().parents[3]
-TASK_DISPATCH_SCHEMA_PATH = (
-    SKILLS_ROOT / "multi-agent" / "schemas" / "task-dispatch.schema.json"
+DISPATCH_SCHEMA_PATH = (
+    SKILLS_ROOT / "multi-agent" / "schemas" / "ticket-dispatch.schema.json"
 )
 
 
@@ -22,7 +22,7 @@ TASK_DISPATCH_SCHEMA_PATH = (
 class InflightItem:
     finish_time: int
     order: int
-    slice_id: str = dataclasses.field(compare=False)
+    ticket_id: str = dataclasses.field(compare=False)
     attempt: int = dataclasses.field(compare=False)
     worker_id: str = dataclasses.field(compare=False)
     dispatch_mode: str = dataclasses.field(compare=False)
@@ -43,21 +43,10 @@ def load_json(path: Path) -> Any:
 
 
 @functools.lru_cache(maxsize=1)
-def task_dispatch_validator() -> Draft202012Validator:
-    schema = load_json(TASK_DISPATCH_SCHEMA_PATH)
+def dispatch_validator() -> Draft202012Validator:
+    schema = load_json(DISPATCH_SCHEMA_PATH)
     Draft202012Validator.check_schema(schema)
     return Draft202012Validator(schema)
-
-
-def merge_unique(base: list[Any], incoming: list[Any]) -> list[Any]:
-    out: list[Any] = []
-    seen: set[Any] = set()
-    for item in [*base, *incoming]:
-        if item in seen:
-            continue
-        seen.add(item)
-        out.append(item)
-    return out
 
 
 def normalize_path(path: str) -> str:
@@ -71,23 +60,8 @@ def is_path_overlap(left: str, right: str) -> bool:
     return left == right or left.startswith(right + "/") or right.startswith(left + "/")
 
 
-def normalize_ownership_paths(paths: list[str]) -> list[str]:
+def normalize_write_scope(paths: list[str]) -> list[str]:
     return sorted({normalize_path(path) for path in paths})
-
-
-def assert_dispatch_ownership_semantics(
-    payload: dict[str, Any], *, label: str
-) -> list[str]:
-    ownership_paths = normalize_ownership_paths(payload.get("ownership_paths", []))
-    if payload["agent_type"] == "builder":
-        if not ownership_paths:
-            raise AssertionError(f"{label}: builder slice must declare ownership_paths")
-        return ownership_paths
-    if ownership_paths:
-        raise AssertionError(
-            f"{label}: non-builder slices must omit ownership_paths or leave them empty"
-        )
-    return []
 
 
 def _dispatch_validation_sort_key(error: ValidationError) -> tuple[Any, ...]:
@@ -110,7 +84,7 @@ def _format_dispatch_validation_error(error: ValidationError) -> str:
 
 def assert_dispatch_contract(payload: dict[str, Any], *, label: str) -> list[str]:
     errors = sorted(
-        task_dispatch_validator().iter_errors(payload),
+        dispatch_validator().iter_errors(payload),
         key=_dispatch_validation_sort_key,
     )
     if errors:
@@ -118,67 +92,62 @@ def assert_dispatch_contract(payload: dict[str, Any], *, label: str) -> list[str
 
     if not isinstance(payload, dict):
         raise AssertionError(f"{label}: dispatch must be an object")
-    return assert_dispatch_ownership_semantics(payload, label=label)
+
+    write_scope = normalize_write_scope(payload.get("write_scope", []))
+    if payload["role"] == "builder":
+        if not write_scope:
+            raise AssertionError(f"{label}: builder ticket must declare write_scope")
+        return write_scope
+
+    if write_scope:
+        raise AssertionError(
+            f"{label}: non-builder tickets must omit write_scope or leave it empty"
+        )
+    return []
 
 
 class BrokerSimulator:
-    def __init__(self, scenario_dir: Path, scenario: dict[str, Any], mode: str) -> None:
+    def __init__(self, scenario: dict[str, Any], mode: str) -> None:
         if mode not in {"wait_any", "wait_all"}:
             raise ValueError(f"Unsupported mode: {mode}")
 
-        self.scenario_dir = scenario_dir
         self.scenario = scenario
         self.mode = mode
 
         scheduler = scenario["scheduler"]
         self.lane_caps: dict[str, int] = {
-            key: int(value)
-            for key, value in scheduler["lane_caps"].items()
-            if key in AGENT_TYPES
+            role: int(scheduler["lane_caps"].get(role, 0)) for role in ROLES
         }
-        for agent in AGENT_TYPES:
-            self.lane_caps.setdefault(agent, 0)
-
-        self.retry_delay_s = int(scheduler["retry_delay_s"])
-        self.max_retries_by_agent: dict[str, int] = {
-            key: int(value) for key, value in scheduler["max_retries_by_agent"].items()
+        self.retry_delay_s = int(scheduler.get("retry_delay_s", 0))
+        self.max_retries_by_role: dict[str, int] = {
+            role: int(scheduler.get("max_retries_by_role", {}).get(role, 0))
+            for role in ROLES
         }
 
         self.durations_s: dict[str, int] = {
-            key: int(value) for key, value in scenario["durations_s"].items()
+            ticket_id: int(value)
+            for ticket_id, value in scenario.get("durations_s", {}).items()
         }
         self.dispatch_overhead_s = int(scenario.get("dispatch_overhead_s", 0))
         self.fail_attempts: dict[str, set[int]] = {
-            key: {int(v) for v in values}
-            for key, values in scenario.get("fail_attempts", {}).items()
+            ticket_id: {int(value) for value in attempts}
+            for ticket_id, attempts in scenario.get("fail_attempts", {}).items()
         }
-        self.terminal_status_by_slice: dict[str, str] = {}
-        for slice_id, status in scenario.get("terminal_status_by_slice", {}).items():
-            if status not in {"done", "partial"}:
+        self.terminal_status_by_ticket: dict[str, str] = {}
+        for ticket_id, status in scenario.get("terminal_status_by_ticket", {}).items():
+            if status not in {"done", "blocked"}:
                 raise AssertionError(
-                    f"Unsupported terminal status for {slice_id!r}: {status!r}"
+                    f"Unsupported terminal status for {ticket_id!r}: {status!r}"
                 )
-            self.terminal_status_by_slice[slice_id] = status
-
-        files = scenario["files"]
-        self.initial_dispatches = load_json(self.scenario_dir / files["initial_dispatches"])
-        self.handoff_requests_by_slice: dict[str, list[dict[str, Any]]] = {
-            slice_id: load_json(self.scenario_dir / relative_path)
-            for slice_id, relative_path in files["handoff_requests"].items()
-        }
+            self.terminal_status_by_ticket[ticket_id] = status
 
         self.states: dict[str, TicketState] = {}
-        self.fingerprint_to_slice: dict[str, str] = {}
-        self.aliases: dict[str, str] = {}
         self.inflight: list[InflightItem] = []
-        self.builder_work_packages: dict[tuple[str, str, str], dict[str, Any]] = {}
-
         self.time_s = 0
         self.next_added_order = 0
         self.next_inflight_order = 0
 
         self.retry_count = 0
-        self.dedup_merged = 0
         self.lock_conflicts = 0
         self.dispatch_count = 0
         self.max_parallel = 0
@@ -187,26 +156,19 @@ class BrokerSimulator:
         self.status = "running"
         self.blocked_reason: str | None = None
 
-        self.idle_workers: dict[str, list[str]] = {agent: [] for agent in AGENT_TYPES}
-        self.next_worker_index_by_agent: dict[str, int] = {
-            agent: 0 for agent in AGENT_TYPES
-        }
+        self.idle_workers: dict[str, list[str]] = {role: [] for role in ROLES}
+        self.next_worker_index_by_role: dict[str, int] = {role: 0 for role in ROLES}
         self.spawn_count = 0
         self.reuse_count = 0
-        self.spawn_count_by_agent: dict[str, int] = {
-            agent: 0 for agent in AGENT_TYPES
-        }
-        self.reuse_count_by_agent: dict[str, int] = {
-            agent: 0 for agent in AGENT_TYPES
-        }
-        self.worker_history_by_slice: dict[str, list[str]] = {}
-        self.dispatch_modes_by_slice: dict[str, list[str]] = {}
+        self.spawn_count_by_role: dict[str, int] = {role: 0 for role in ROLES}
+        self.reuse_count_by_role: dict[str, int] = {role: 0 for role in ROLES}
+        self.dispatch_modes_by_ticket: dict[str, list[str]] = {}
 
         self._lock_conflict_keys: set[tuple[int, str]] = set()
 
-    def run(self) -> dict[str, Any]:
-        self._enqueue_many(self.initial_dispatches, source="initial")
+        self._enqueue_many(scenario.get("tickets", []), source="initial")
 
+    def run(self) -> dict[str, Any]:
         while self.status == "running":
             self._spawn_runnable()
 
@@ -228,28 +190,22 @@ class BrokerSimulator:
             "makespan_s": self.time_s,
             "max_parallel": self.max_parallel,
             "retry_count": self.retry_count,
-            "dedup_merged": self.dedup_merged,
             "lock_conflicts": self.lock_conflicts,
             "dispatch_count": self.dispatch_count,
             "spawn_count": self.spawn_count,
             "reuse_count": self.reuse_count,
-            "spawn_count_by_agent": dict(self.spawn_count_by_agent),
-            "reuse_count_by_agent": dict(self.reuse_count_by_agent),
-            "worker_history_by_slice": {
-                slice_id: list(history)
-                for slice_id, history in self.worker_history_by_slice.items()
+            "spawn_count_by_role": dict(self.spawn_count_by_role),
+            "reuse_count_by_role": dict(self.reuse_count_by_role),
+            "dispatch_modes_by_ticket": {
+                ticket_id: list(modes)
+                for ticket_id, modes in self.dispatch_modes_by_ticket.items()
             },
-            "dispatch_modes_by_slice": {
-                slice_id: list(modes)
-                for slice_id, modes in self.dispatch_modes_by_slice.items()
-            },
-            "completed_slice_ids": list(self.completed_order),
-            "completed_status_by_slice": {
-                slice_id: state.status
-                for slice_id, state in self.states.items()
+            "completed_ticket_ids": list(self.completed_order),
+            "completed_status_by_ticket": {
+                ticket_id: state.status
+                for ticket_id, state in self.states.items()
                 if self._is_terminal_state(state.status)
             },
-            "event_count": len(self.events),
             "events": list(self.events),
         }
 
@@ -258,451 +214,247 @@ class BrokerSimulator:
             self._is_terminal_state(state.status) for state in self.states.values()
         )
 
-    def _is_terminal_state(self, status: str) -> bool:
-        return status in {"done", "partial"}
-
     def _step_wait_any(self) -> bool:
-        if self.inflight:
-            item = heapq.heappop(self.inflight)
-            self.time_s = item.finish_time
-            return self._finish_item(item)
+        if not self.inflight:
+            return self._mark_blocked_if_stuck()
 
-        self._advance_time_or_block()
-        return self.status != "blocked"
+        item = heapq.heappop(self.inflight)
+        self.time_s = max(self.time_s, item.finish_time)
+        self._finish_item(item)
+        return True
 
     def _step_wait_all(self) -> bool:
         if not self.inflight:
-            self._advance_time_or_block()
-            return self.status != "blocked"
+            return self._mark_blocked_if_stuck()
 
-        wave_size = len(self.inflight)
-        wave = [heapq.heappop(self.inflight) for _ in range(wave_size)]
-        for item in wave:
-            self.time_s = item.finish_time
-            if not self._finish_item(item):
-                return False
+        current_wave: list[InflightItem] = []
+        while self.inflight:
+            current_wave.append(heapq.heappop(self.inflight))
+
+        for item in current_wave:
+            self.time_s = max(self.time_s, item.finish_time)
+            self._finish_item(item)
         return True
 
-    def _advance_time_or_block(self) -> None:
-        pending = [s for s in self.states.values() if s.status == "pending"]
-        if not pending:
-            raise AssertionError("No inflight workers and no pending tickets before completion")
+    def _mark_blocked_if_stuck(self) -> bool:
+        pending_states = [
+            state for state in self.states.values() if state.status == "pending"
+        ]
+        if pending_states:
+            next_available_at = min(state.available_at for state in pending_states)
+            if next_available_at > self.time_s:
+                self.time_s = next_available_at
+                return True
 
-        future_times = [s.available_at for s in pending if s.available_at > self.time_s]
-        if future_times:
-            self.time_s = min(future_times)
-            return
+            pending = [state.dispatch["ticket_id"] for state in pending_states]
+            self.status = "blocked"
+            self.blocked_reason = f"no runnable tickets: {', '.join(sorted(pending))}"
+            return False
 
-        dependency_blocked: list[str] = []
-        lock_blocked: list[str] = []
-        capacity_blocked: list[str] = []
-        for state in pending:
-            dispatch = state.dispatch
-            slice_id = dispatch["slice_id"]
-            if not self._dependencies_met(dispatch["dependencies"]):
-                dependency_blocked.append(slice_id)
-                continue
-            if dispatch["agent_type"] == "builder" and self._has_lock_conflict(dispatch):
-                lock_blocked.append(slice_id)
-                continue
-            if self.lane_caps[dispatch["agent_type"]] <= 0:
-                capacity_blocked.append(slice_id)
-                continue
-
-            raise AssertionError(
-                f"Scheduler expected runnable ticket before blocked state: {slice_id}"
-            )
-
-        if dependency_blocked:
-            reason = "dependency deadlock: " + ", ".join(sorted(dependency_blocked))
-        elif lock_blocked:
-            reason = "lock deadlock: " + ", ".join(sorted(lock_blocked))
-        elif capacity_blocked:
-            reason = "lane capacity prevents dispatch: " + ", ".join(
-                sorted(capacity_blocked)
-            )
-        else:
-            blocked_ids = [s.dispatch["slice_id"] for s in pending]
-            reason = (
-                "scheduler blocked with pending tickets and no inflight work: "
-                + ", ".join(sorted(blocked_ids))
-            )
-        self._mark_blocked(reason)
+        self.status = "completed"
+        return False
 
     def _spawn_runnable(self) -> None:
+        lane_counts = self._current_lane_counts()
+
         while True:
-            lane_counts = self._lane_counts()
-            spawned_any = False
-
-            for state in self._runnable_states():
+            started = False
+            for state in self._pending_states():
                 dispatch = state.dispatch
-                slice_id = dispatch["slice_id"]
-                agent_type = dispatch["agent_type"]
+                ticket_id = dispatch["ticket_id"]
+                role = dispatch["role"]
 
-                if lane_counts[agent_type] >= self.lane_caps[agent_type]:
+                if state.available_at > self.time_s:
                     continue
-
-                if agent_type == "builder" and self._has_lock_conflict(dispatch):
-                    conflict_key = (self.time_s, slice_id)
+                if lane_counts[role] >= self.lane_caps[role]:
+                    continue
+                if not self._dependencies_satisfied(dispatch):
+                    continue
+                if role == "builder" and self._has_lock_conflict(dispatch):
+                    conflict_key = (self.time_s, ticket_id)
                     if conflict_key not in self._lock_conflict_keys:
-                        self._lock_conflict_keys.add(conflict_key)
                         self.lock_conflicts += 1
+                        self._lock_conflict_keys.add(conflict_key)
                     continue
 
+                lane_counts[role] += 1
+                started = True
                 self._start_ticket(state)
-                lane_counts[agent_type] += 1
-                spawned_any = True
 
-            if not spawned_any:
-                return
+            if not started:
+                break
 
-    def _runnable_states(self) -> list[TicketState]:
-        runnable: list[TicketState] = []
-        for state in self.states.values():
-            if state.status != "pending":
-                continue
-            if state.available_at > self.time_s:
-                continue
-
-            if not self._dependencies_met(state.dispatch["dependencies"]):
-                continue
-
-            runnable.append(state)
-
+    def _pending_states(self) -> list[TicketState]:
         return sorted(
-            runnable,
-            key=lambda s: (s.available_at, s.added_order, s.dispatch["slice_id"]),
+            (state for state in self.states.values() if state.status == "pending"),
+            key=lambda state: (
+                state.available_at,
+                state.added_order,
+                state.dispatch["ticket_id"],
+            ),
         )
 
-    def _dependencies_met(self, dependencies: list[str]) -> bool:
-        for dep in dependencies:
-            dep_id = self.aliases.get(dep, dep)
-            state = self.states.get(dep_id)
-            if state is None or not self._is_terminal_state(state.status):
+    def _current_lane_counts(self) -> dict[str, int]:
+        counts = {role: 0 for role in ROLES}
+        for item in self.inflight:
+            role = self.states[item.ticket_id].dispatch["role"]
+            counts[role] += 1
+        return counts
+
+    def _dependencies_satisfied(self, dispatch: dict[str, Any]) -> bool:
+        for dependency in dispatch.get("depends_on", []):
+            dependency_state = self.states.get(dependency)
+            if dependency_state is None or dependency_state.status != "done":
                 return False
         return True
 
-    def _lane_counts(self) -> dict[str, int]:
-        counts = {agent: 0 for agent in AGENT_TYPES}
-        for item in self.inflight:
-            agent_type = self.states[item.slice_id].dispatch["agent_type"]
-            counts[agent_type] += 1
-        return counts
-
     def _has_lock_conflict(self, dispatch: dict[str, Any]) -> bool:
-        target_paths = dispatch.get("ownership_paths", [])
-        if not target_paths:
+        candidate_scope = normalize_write_scope(dispatch.get("write_scope", []))
+        if not candidate_scope:
             return False
 
         for item in self.inflight:
-            inflight_dispatch = self.states[item.slice_id].dispatch
-            if inflight_dispatch["agent_type"] != "builder":
+            inflight_dispatch = self.states[item.ticket_id].dispatch
+            if inflight_dispatch["role"] != "builder":
                 continue
-            for target in target_paths:
-                for active in inflight_dispatch.get("ownership_paths", []):
-                    if is_path_overlap(target, active):
+            inflight_scope = normalize_write_scope(inflight_dispatch.get("write_scope", []))
+            for left in candidate_scope:
+                for right in inflight_scope:
+                    if is_path_overlap(left, right):
                         return True
         return False
 
     def _start_ticket(self, state: TicketState) -> None:
         dispatch = state.dispatch
-        slice_id = dispatch["slice_id"]
-        agent_type = dispatch["agent_type"]
-
-        duration_s = self.durations_s.get(slice_id)
+        ticket_id = dispatch["ticket_id"]
+        role = dispatch["role"]
+        duration_s = self.durations_s.get(ticket_id)
         if duration_s is None:
-            raise AssertionError(f"Missing duration for slice_id={slice_id}")
+            raise AssertionError(f"Missing duration for ticket_id={ticket_id!r}")
 
-        worker_id, dispatch_mode = self._acquire_worker(agent_type)
-        state.status = "inflight"
+        worker_id, dispatch_mode = self._acquire_worker(role)
+        state.status = "running"
         state.attempts += 1
+
         self.dispatch_count += 1
-        self.worker_history_by_slice.setdefault(slice_id, []).append(worker_id)
-        self.dispatch_modes_by_slice.setdefault(slice_id, []).append(dispatch_mode)
+        self.dispatch_modes_by_ticket.setdefault(ticket_id, []).append(dispatch_mode)
 
-        self.next_inflight_order += 1
         finish_time = self.time_s + self.dispatch_overhead_s + duration_s
-        item = InflightItem(
-            finish_time=finish_time,
-            order=self.next_inflight_order,
-            slice_id=slice_id,
-            attempt=state.attempts,
-            worker_id=worker_id,
-            dispatch_mode=dispatch_mode,
+        heapq.heappush(
+            self.inflight,
+            InflightItem(
+                finish_time=finish_time,
+                order=self.next_inflight_order,
+                ticket_id=ticket_id,
+                attempt=state.attempts,
+                worker_id=worker_id,
+                dispatch_mode=dispatch_mode,
+            ),
         )
-        heapq.heappush(self.inflight, item)
-
+        self.next_inflight_order += 1
         self.max_parallel = max(self.max_parallel, len(self.inflight))
         self.events.append(
             {
-                "t": self.time_s,
                 "event": "start",
-                "slice_id": slice_id,
-                "attempt": state.attempts,
+                "ticket_id": ticket_id,
+                "role": role,
                 "worker_id": worker_id,
                 "dispatch_mode": dispatch_mode,
-                "mode": self.mode,
+                "t": self.time_s,
             }
         )
 
-    def _finish_item(self, item: InflightItem) -> bool:
-        state = self.states[item.slice_id]
+    def _finish_item(self, item: InflightItem) -> None:
+        state = self.states[item.ticket_id]
         dispatch = state.dispatch
-        slice_id = dispatch["slice_id"]
-        agent_type = dispatch["agent_type"]
+        role = dispatch["role"]
+        failed_attempts = self.fail_attempts.get(item.ticket_id, set())
 
-        fail_attempts = self.fail_attempts.get(slice_id, set())
-        if item.attempt in fail_attempts:
-            max_retries = self.max_retries_by_agent.get(agent_type, 0)
-            if state.retries >= max_retries:
-                state.status = "blocked"
-                self._mark_blocked(
-                    f"retry exhausted: {slice_id} at attempt {item.attempt}"
+        if item.attempt in failed_attempts:
+            max_retries = self.max_retries_by_role.get(role, 0)
+            if state.retries < max_retries:
+                state.status = "pending"
+                state.retries += 1
+                state.available_at = self.time_s + self.retry_delay_s
+                self.retry_count += 1
+                self._release_worker(role, item.worker_id)
+                self.events.append(
+                    {
+                        "event": "retry",
+                        "ticket_id": item.ticket_id,
+                        "role": role,
+                        "worker_id": item.worker_id,
+                        "t": self.time_s,
+                    }
                 )
-                return False
+                return
 
-            state.retries += 1
-            state.status = "pending"
-            state.available_at = self.time_s + self.retry_delay_s
-            self.retry_count += 1
-            self._release_worker(agent_type, item.worker_id)
+            state.status = self.terminal_status_by_ticket.get(item.ticket_id, "blocked")
+            self.completed_order.append(item.ticket_id)
+            self._release_worker(role, item.worker_id)
             self.events.append(
                 {
-                    "t": self.time_s,
-                    "event": "retry",
-                    "slice_id": slice_id,
-                    "attempt": item.attempt,
+                    "event": "blocked",
+                    "ticket_id": item.ticket_id,
+                    "role": role,
                     "worker_id": item.worker_id,
-                    "next_available_at": state.available_at,
-                    "mode": self.mode,
+                    "t": self.time_s,
                 }
             )
-            return True
+            return
 
-        terminal_status = self.terminal_status_by_slice.get(slice_id, "done")
-        state.status = terminal_status
-        state.available_at = self.time_s
-        self.completed_order.append(slice_id)
-        self._release_worker(agent_type, item.worker_id)
+        state.status = self.terminal_status_by_ticket.get(item.ticket_id, "done")
+        self.completed_order.append(item.ticket_id)
+        self._release_worker(role, item.worker_id)
         self.events.append(
             {
-                "t": self.time_s,
-                "event": terminal_status,
-                "slice_id": slice_id,
-                "attempt": item.attempt,
+                "event": "done",
+                "ticket_id": item.ticket_id,
+                "role": role,
                 "worker_id": item.worker_id,
-                "mode": self.mode,
+                "t": self.time_s,
             }
         )
 
-        handoff_payloads = self.handoff_requests_by_slice.get(slice_id, [])
-        if handoff_payloads:
-            self._enqueue_many(handoff_payloads, source=slice_id)
-        return True
-
-    def _acquire_worker(self, agent_type: str) -> tuple[str, str]:
-        idle_workers = self.idle_workers[agent_type]
-        if idle_workers:
-            worker_id = idle_workers.pop(0)
+    def _acquire_worker(self, role: str) -> tuple[str, str]:
+        idle = self.idle_workers[role]
+        if idle:
+            worker_id = idle.pop(0)
             self.reuse_count += 1
-            self.reuse_count_by_agent[agent_type] += 1
+            self.reuse_count_by_role[role] += 1
             return worker_id, "reuse"
 
-        self.next_worker_index_by_agent[agent_type] += 1
-        worker_id = f"{agent_type}-w{self.next_worker_index_by_agent[agent_type]}"
+        self.next_worker_index_by_role[role] += 1
+        worker_id = f"{role}-w{self.next_worker_index_by_role[role]}"
         self.spawn_count += 1
-        self.spawn_count_by_agent[agent_type] += 1
+        self.spawn_count_by_role[role] += 1
         return worker_id, "spawn"
 
-    def _release_worker(self, agent_type: str, worker_id: str) -> None:
-        if worker_id in self.idle_workers[agent_type]:
+    def _release_worker(self, role: str, worker_id: str) -> None:
+        if worker_id in self.idle_workers[role]:
             return
-        self.idle_workers[agent_type].append(worker_id)
+        self.idle_workers[role].append(worker_id)
 
-    def _mark_blocked(self, reason: str) -> None:
-        if self.status == "blocked":
-            return
-        self.status = "blocked"
-        self.blocked_reason = reason
-        self.events.append(
-            {
-                "t": self.time_s,
-                "event": "blocked",
-                "reason": reason,
-                "mode": self.mode,
-            }
-        )
+    def _enqueue_many(self, tickets: list[dict[str, Any]], *, source: str) -> None:
+        for index, ticket in enumerate(tickets, 1):
+            if not isinstance(ticket, dict):
+                raise AssertionError(f"{source}[{index}]: ticket must be an object")
 
-    def _enqueue_many(self, payloads: list[dict[str, Any]], source: str) -> None:
-        if not isinstance(payloads, list):
-            raise AssertionError(f"{source}: expected list of dispatch payloads")
-        for payload in payloads:
-            self._enqueue_one(payload, source=source)
-
-    def _enqueue_one(self, payload: dict[str, Any], source: str) -> None:
-        dispatch = self._normalize_dispatch(payload)
-        self._assert_builder_work_package_continuity(dispatch, source=source)
-        raw_slice_id = dispatch["slice_id"]
-        slice_id = self.aliases.get(raw_slice_id, raw_slice_id)
-        dispatch["slice_id"] = slice_id
-
-        current = self.states.get(slice_id)
-        if current is not None:
-            self._assert_merge_compatible(current.dispatch, dispatch, source=source)
-            self._merge_additive_fields(current.dispatch, dispatch)
-            self.dedup_merged += 1
-            return
-
-        fingerprint = self._fingerprint(dispatch)
-        if fingerprint in self.fingerprint_to_slice:
-            canonical_id = self.fingerprint_to_slice[fingerprint]
-            canonical = self.states[canonical_id]
-            self._assert_merge_compatible(canonical.dispatch, dispatch, source=source)
-            self._merge_additive_fields(canonical.dispatch, dispatch)
-            if raw_slice_id != canonical_id:
-                self.aliases[raw_slice_id] = canonical_id
-                self._rewrite_dependencies(raw_slice_id, canonical_id)
-            self.dedup_merged += 1
-            return
-
-        state = TicketState(
-            dispatch=dispatch,
-            added_order=self.next_added_order,
-            status="pending",
-            attempts=0,
-            retries=0,
-            available_at=0,
-        )
-        self.next_added_order += 1
-
-        self.states[slice_id] = state
-        self.fingerprint_to_slice[fingerprint] = slice_id
-
-    def _normalize_dispatch(self, payload: dict[str, Any]) -> dict[str, Any]:
-        assert_dispatch_contract(payload, label=f"dispatch {payload.get('slice_id', '<unknown>')}")
-
-        dispatch = json.loads(json.dumps(payload))
-        dispatch.setdefault("slice_kind", "work")
-
-        dispatch["ownership_paths"] = normalize_ownership_paths(
-            dispatch.get("ownership_paths", [])
-        )
-
-        deps = [self.aliases.get(dep, dep) for dep in dispatch.get("dependencies", [])]
-        dispatch["dependencies"] = sorted(set(deps))
-
-        contract = dispatch.get("task_contract")
-        for key in ("acceptance", "constraints"):
-            contract[key] = merge_unique(contract.get(key, []), [])
-        dispatch["task_contract"] = contract
-
-        dispatch["evidence_requirements"] = merge_unique(
-            dispatch.get("evidence_requirements", []),
-            [],
-        )
-
-        return dispatch
-
-    def _assert_merge_compatible(
-        self,
-        current: dict[str, Any],
-        incoming: dict[str, Any],
-        *,
-        source: str,
-    ) -> None:
-        keys = [
-            "schema",
-            "ssot_id",
-            "task_id",
-            "agent_type",
-            "slice_kind",
-            "review_mode",
-            "work_package_id",
-            "timebox_minutes",
-            "ownership_paths",
-        ]
-        for key in keys:
-            if current.get(key) != incoming.get(key):
-                raise AssertionError(
-                    f"{source}: cannot merge divergent field {key!r} for {current['slice_id']}"
-                )
-
-    def _assert_builder_work_package_continuity(
-        self,
-        dispatch: dict[str, Any],
-        *,
-        source: str,
-    ) -> None:
-        if dispatch["agent_type"] != "builder":
-            return
-
-        work_package_id = dispatch.get("work_package_id")
-        if work_package_id is None:
-            return
-
-        package_key = (dispatch["ssot_id"], dispatch["task_id"], work_package_id)
-        current = self.builder_work_packages.get(package_key)
-        if current is None:
-            self.builder_work_packages[package_key] = {
-                "slice_id": dispatch["slice_id"],
-                "ownership_paths": list(dispatch["ownership_paths"]),
-            }
-            return
-
-        if current["ownership_paths"] != dispatch["ownership_paths"]:
-            raise AssertionError(
-                f"{source}: work_package_id {work_package_id!r} cannot continue with "
-                "changed ownership_paths "
-                f"({current['slice_id']} -> {dispatch['slice_id']})"
+            assert_dispatch_contract(
+                ticket,
+                label=f"{source}.{ticket.get('ticket_id', f'ticket[{index}]')}",
             )
 
-    def _merge_additive_fields(
-        self,
-        current: dict[str, Any],
-        incoming: dict[str, Any],
-    ) -> None:
-        current["dependencies"] = merge_unique(
-            current.get("dependencies", []), incoming.get("dependencies", [])
-        )
-        current["dependencies"] = sorted({self.aliases.get(d, d) for d in current["dependencies"]})
+            ticket_id = ticket["ticket_id"]
+            if ticket_id in self.states:
+                raise AssertionError(f"{source}: duplicate ticket_id {ticket_id!r}")
 
-        current_contract = current.setdefault("task_contract", {})
-        incoming_contract = incoming.get("task_contract", {})
-
-        if (
-            current_contract.get("goal")
-            and incoming_contract.get("goal")
-            and current_contract["goal"] != incoming_contract["goal"]
-        ):
-            raise AssertionError(
-                f"Divergent task_contract.goal for {current['slice_id']} during dedup merge"
+            self.states[ticket_id] = TicketState(
+                dispatch=json.loads(json.dumps(ticket)),
+                added_order=self.next_added_order,
             )
+            self.next_added_order += 1
 
-        for key in ("acceptance", "constraints"):
-            current_contract[key] = merge_unique(
-                current_contract.get(key, []), incoming_contract.get(key, [])
-            )
-
-        current["evidence_requirements"] = merge_unique(
-            current.get("evidence_requirements", []),
-            incoming.get("evidence_requirements", []),
-        )
-
-    def _rewrite_dependencies(self, alias_id: str, canonical_id: str) -> None:
-        for state in self.states.values():
-            deps = [canonical_id if dep == alias_id else dep for dep in state.dispatch["dependencies"]]
-            state.dispatch["dependencies"] = sorted(set(deps))
-
-    def _fingerprint(self, dispatch: dict[str, Any]) -> str:
-        payload = {
-            "schema": dispatch["schema"],
-            "ssot_id": dispatch["ssot_id"],
-            "task_id": dispatch["task_id"],
-            "agent_type": dispatch["agent_type"],
-            "slice_kind": dispatch["slice_kind"],
-            "review_mode": dispatch.get("review_mode"),
-            "work_package_id": dispatch.get("work_package_id"),
-            "dependencies": dispatch["dependencies"],
-            "ownership_paths": dispatch["ownership_paths"],
-        }
-        return json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    @staticmethod
+    def _is_terminal_state(status: str) -> bool:
+        return status in {"done", "blocked"}

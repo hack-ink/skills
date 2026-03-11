@@ -1,0 +1,81 @@
+{
+  "route_case": {
+    "tiny_clear_low_risk": false,
+    "t_max_s": 180,
+    "expected_route": "multi"
+  },
+  "scheduler": {
+    "lane_caps": {
+      "runner": 1,
+      "builder": 1,
+      "inspector": 0
+    },
+    "retry_delay_s": 1,
+    "max_retries_by_role": {
+      "runner": 0,
+      "builder": 0,
+      "inspector": 0
+    }
+  },
+  "tickets": [
+    {
+      "schema": "ticket-dispatch/1",
+      "run_id": "swarmbench-01",
+      "ticket_id": "runner-scout",
+      "role": "runner",
+      "objective": "Map the reset-protocol boundaries.",
+      "acceptance": [
+        "Identify the write scope for the builder follow-up."
+      ],
+      "timebox_minutes": 6,
+      "constraints": [
+        "Read-only."
+      ],
+      "context": [
+        "Broker owns follow-up generation."
+      ],
+      "depends_on": []
+    },
+    {
+      "schema": "ticket-dispatch/1",
+      "run_id": "swarmbench-01",
+      "ticket_id": "builder-scope-fix",
+      "role": "builder",
+      "objective": "Apply the scoped reset edit after scouting completes.",
+      "acceptance": [
+        "Edit only the owned scope."
+      ],
+      "timebox_minutes": 10,
+      "constraints": [
+        "No unrelated paths."
+      ],
+      "depends_on": [
+        "runner-scout"
+      ],
+      "write_scope": [
+        "skills/multi-agent/"
+      ]
+    }
+  ],
+  "durations_s": {
+    "runner-scout": 3,
+    "builder-scope-fix": 5
+  },
+  "expectations": {
+    "expected_dispatch_count": 2,
+    "expected_completed_ticket_ids": [
+      "runner-scout",
+      "builder-scope-fix"
+    ],
+    "expected_terminal_status_by_ticket": {
+      "runner-scout": "done",
+      "builder-scope-fix": "done"
+    },
+    "must_start_after_done": [
+      [
+        "builder-scope-fix",
+        "runner-scout"
+      ]
+    ]
+  }
+}

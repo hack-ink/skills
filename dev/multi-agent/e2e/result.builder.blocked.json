@@ -1,0 +1,19 @@
+{
+  "schema": "ticket-result/1",
+  "run_id": "runtime-reset",
+  "ticket_id": "builder-salvage",
+  "role": "builder",
+  "status": "blocked",
+  "summary": "A child stalled after editing files inside the owned scope; the Broker must inspect local evidence directly.",
+  "changed_paths": [
+    "dev/multi-agent/backtests/broker_sim.py"
+  ],
+  "findings": [
+    "The child could not produce a final valid result after one bounded retry."
+  ],
+  "unblock": [
+    "Close the stalled child.",
+    "Inspect the local diff inside the owned scope.",
+    "Choose salvage or a narrowed redispatch."
+  ]
+}
