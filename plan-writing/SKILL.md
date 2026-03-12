@@ -1,199 +1,132 @@
 ---
 name: plan-writing
-description: Use when the user asks for a plan, when a multi-step or risky task should be decomposed before implementation, or when the runtime is in Plan mode. Produces or updates a durable implementation plan at `docs/plans/YYYY-MM-DD_feature-name.md`, grounded in the current repo's actual file paths, verification commands, dependencies, and open questions before code changes begin.
+description: Use when the user asks for a plan, when a multi-step or risky task should be decomposed before implementation, or when the runtime is in Plan mode. Produces or revises the persisted machine-first `plan/1` contract at `docs/plans/YYYY-MM-DD_<feature-name>.md`, owning strategy, task graph, defaults, and replanning policy before implementation begins.
 ---
 
 # Plan Writing
 
-## Purpose
+## Scope
 
-Create execution-ready plan documents that another agent or a later session can follow without re-discovering the codebase from scratch.
+- This skill is the producer stage of the shared `plan/1` contract.
+- It owns the stable execution intent in `spec`.
+- It may initialize or reset the mutable runtime `state`.
+- It is the only skill allowed to change strategy, task graph, defaults, or replanning policy.
 
 Typical triggers:
 
 - The user explicitly asks for a plan, design, or implementation breakdown
 - The task is large enough that coding immediately would be sloppy or risky
 - The runtime is already in a dedicated Plan mode
-- The next step should be a durable plan document before work starts
+- The next step should be a persisted execution contract before work starts
 
-## Core rules
+## Authoritative artifact
 
 - Stay in planning scope. Do not start implementation unless the user explicitly asks to execute now.
 - Ground the plan in current repo evidence. Read enough code, docs, and instructions to avoid placeholder guidance.
-- Write for an executor who is technically strong but new to this codebase.
-- Prefer exact file paths, exact commands, and explicit dependencies whenever you can resolve them now.
-- If an important detail is still unknown after reasonable inspection, record it as an open question instead of pretending certainty.
-- Make the saved plan easy to resume. Capture durable execution state and decision points, not a chat transcript.
+- Persist the plan under `docs/plans/YYYY-MM-DD_<feature-name>.md`.
+- The first top-level artifact in that file must be a fenced JSON block containing the authoritative `plan/1` contract.
+- Anything below that first fenced block is optional context only. It is non-authoritative and must never override the contract.
+- Do not rely on chat summaries, `<proposed_plan>` output, or prior conversational context as execution authority once the saved file exists.
 
-## Plan-mode contract
+## Contract shape
 
-- In runtimes with a dedicated Plan mode, this skill owns the planning artifact.
-- Use Plan mode to converge on scope, assumptions, risks, and execution order.
-- The main output of the turn should be a saved or updated plan document, not code changes.
-- If the user wants execution immediately after planning, treat the saved plan as the source of truth for the next phase.
+The `plan/1` block must decode to this top-level shape:
 
-## Save location
-
-- Save plans under `docs/plans/YYYY-MM-DD_<feature-name>.md`.
-- Use the local current date in `YYYY-MM-DD` form.
-- Use a short, stable feature slug after the underscore. Prefer lowercase ASCII words joined with hyphens.
-- If a matching plan already exists for the same feature, update it instead of creating duplicates.
-
-Example:
-
-```text
-docs/plans/2026-03-10_query-ast.md
+```json
+{
+  "spec": {
+    "schema": "plan/1",
+    "plan_id": "example-plan",
+    "goal": "Non-empty string",
+    "success_criteria": ["Non-empty strings"],
+    "constraints": ["Optional non-empty strings"],
+    "defaults": {},
+    "tasks": [
+      {
+        "id": "task-1",
+        "title": "Non-empty string",
+        "status": "pending|in_progress|blocked|done|cancelled",
+        "objective": "Non-empty string",
+        "inputs": ["Optional non-empty strings"],
+        "outputs": ["Optional non-empty strings"],
+        "verification": ["Non-empty strings"],
+        "depends_on": ["Existing task ids"]
+      }
+    ],
+    "replan_policy": {
+      "owner": "plan-writing",
+      "triggers": ["Non-empty strings"]
+    }
+  },
+  "state": {
+    "phase": "planning|ready|executing|blocked|needs_replan|done",
+    "current_task_id": null,
+    "next_task_id": "task-1",
+    "blockers": [],
+    "evidence": [],
+    "last_updated": "2026-03-13T00:00:00Z",
+    "replan_reason": null,
+    "context_snapshot": {}
+  }
+}
 ```
 
-## Living artifact contract
+## Producer rules
 
-- The saved plan is a lightweight execution artifact, not a one-turn brainstorm.
-- Record only durable state another executor needs: task status, owner, next checkpoint, blockers, dependency shifts, and decisions that change the path.
-- Use task-level `Status` as the only completion authority. Keep `Execution State` limited to resume metadata such as `Last Updated`, `Next Checkpoint`, and `Blockers`.
-- Keep ephemeral chatter out of the plan. Notes like "read file", "thinking", or "retrying command" belong in chat unless they change execution.
-- For important drift or decision changes, add a short factual note with the evidence source that caused the update.
-- Reference adjacent workflows for operational procedure instead of re-documenting them inline.
-- If the work will likely need an isolated workspace, a review stop, or a helper round, say so in the plan instead of pretending the whole effort is one uninterrupted lane.
+- `spec` is stable intent. `plan-execution` must not rewrite it.
+- `state` is mutable runtime state. `plan-writing` may initialize it for a new plan or reset it after replanning.
+- For new plans:
+  - create the first fenced `plan/1` block
+  - populate `spec`
+  - set `state.phase = "ready"`
+  - set `state.next_task_id` deterministically
+  - leave `state.evidence = []`
+- For replans after drift or blockage:
+  - load the existing saved file
+  - preserve existing `state.evidence`
+  - rewrite only the parts of `spec` that truly changed
+  - clear `needs_replan` by producing a consistent `ready` state
+- Treat missing saved files and legacy prose-only plans as authoring work, not as execution authority.
+
+## Determinism rules
+
+- Use exactly one active task at a time. The contract must never contain multiple `in_progress` tasks.
+- Express task order only through `depends_on`. Do not rely on prose ordering.
+- In `ready`, `state.next_task_id` must point to an executable pending task whose dependencies are already satisfied.
+- Treat `state.current_task_id`, `state.next_task_id`, and task statuses as machine-facing runtime signals, not as explanatory prose.
+- Do not leave contradictory states in the file. If the plan is mid-rewrite and not yet coherent, keep editing until it validates.
 
 ## Planning workflow
 
 1. Read the request, issue, spec, or surrounding instructions.
-2. Inspect enough repository context to understand the relevant modules, constraints, and verification path.
-3. Decide the plan boundary: goal, scope, non-goals, dependencies, open questions, and likely handoff points.
-4. Set the initial execution state so a later session can see where to start.
-5. Break the work into reviewable tasks with clear sequencing, ownership, and visible progress signals.
-6. For each task, record the files, intended changes, dependencies, and verification commands.
-7. Save or update the plan document and summarize the recommended execution path.
+2. Inspect enough repository context to fill `goal`, `success_criteria`, `constraints`, `defaults`, `tasks`, and `replan_policy` without placeholders.
+3. Build a task graph with stable ids and explicit `depends_on`.
+4. Choose one deterministic entrypoint task and set `state.next_task_id` to that id.
+   - The entrypoint task must already be executable from the task graph, not merely pending.
+5. Initialize `state` so the contract is valid and ready for execution.
+6. Save the file with the fenced `plan/1` block first.
+7. Normalize and validate the result before reporting it.
 
-## Quality bar
+## Helper commands
 
-- Make tasks small enough to execute and review independently, but not so tiny that the plan turns into noise.
-- A task should usually correspond to one coherent checkpoint, not one sentence-long micro-action.
-- Include exact verification commands when known, using repo-native workflows instead of generic guesses.
-- Make accountability visible without ceremony. Each task should have one clear owner.
-- Call out when work should happen in an isolated worktree or when tasks can be parallelized safely.
-- Call out review or helper boundaries when a checkpoint should stop for inspection, hand off to execution, or use bounded helper fan-out.
-- If docs, migrations, config, or rollout steps matter, include them explicitly rather than leaving them implied.
+Set the skill root from the runtime skill list before running helpers:
 
-## Required plan structure
-
-Every plan should follow this shape:
-
-````markdown
-# <Feature Name> Plan
-
-## Goal
-
-<One short paragraph on what this change should accomplish.>
-
-## Scope
-
-- <What is in scope>
-- <What is in scope>
-
-## Non-goals
-
-- <What this plan intentionally does not change>
-
-## Constraints
-
-- <Repo rules, compatibility limits, rollout limits, or time constraints>
-
-## Open Questions
-
-- None.
-
-## Execution State
-
-- Last Updated: <YYYY-MM-DD>
-- Next Checkpoint: Task 1
-- Blockers: None.
-
-## Decision Notes
-
-- None.
-
-## Implementation Outline
-
-<Two or three short paragraphs describing the approach and key tradeoffs.>
-
-## Task 1: <Checkpoint name>
-
-**Owner**
-
-<Who is accountable for driving this checkpoint or execution handoff. This is not child-role selection or write authority delegation.>
-
-**Status**
-
-pending
-
-**Outcome**
-
-<What will be true after this task completes.>
-
-**Files**
-
-- Modify: `path/to/existing/file`
-- Create: `path/to/new/file`
-- Review: `path/to/related/doc.md`
-
-**Changes**
-
-1. <Concrete change>
-2. <Concrete change>
-
-**Verification**
-
-- `exact command`
-- `exact command`
-
-**Dependencies**
-
-- None.
-
-## Task 2: <Checkpoint name>
-
-...
-
-## Rollout Notes
-
-- <Only when relevant>
-
-## Suggested Execution
-
-- Sequential: <why>
-- Parallelizable: <which tasks, if any>
-````
-
-## Task-writing guidance
-
-- Prefer "Modify `path/to/router/file` to register the new endpoint" over "Update routing".
-- Prefer "Run the repo's verified test or lint command" over "Run tests".
-- Give each task one clear owner, even if the same executor owns most of the plan.
-- Use `Owner` for checkpoint accountability and execution handoff, not for child-role selection or write authority.
-- Use explicit task status values such as `pending`, `in progress`, `blocked`, and `done`.
-- Treat task-level `Status` as the only completion authority. Use `Execution State` only for resume metadata, not for a second progress field.
-- If a task depends on a prior task, say so explicitly.
-- If a task may need an isolated workspace, say so explicitly.
-- Reference adjacent workflows for operational mechanics instead of pasting their procedures into the plan.
-- If a task should stop for review or pause for a helper round, say where execution should pause and why.
-- For material decisions or drift corrections, use a short `Decision Notes` bullet with the reason and evidence pointer instead of a long narrative.
-- If a task is risky or likely to branch, note the decision point before the risky step.
-
-## Handoff
-
-After saving the plan:
-
-- Report the saved path.
-- Summarize the execution shape in a few lines.
-- List any open questions or assumptions that still need confirmation.
-- Call out the initial execution state and any expected worktree or review boundary.
-- If execution should happen next, recommend whether to proceed sequentially in the current session or hand the saved plan to a later execution session.
+- `PLAN_WRITING_HOME=<skill root containing this SKILL.md>`
+- Create a new saved contract from raw JSON:
+  - `printf '%s' "$PLAN_CONTRACT" | python3 "$PLAN_WRITING_HOME/scripts/format_plan_contract.py" > docs/plans/YYYY-MM-DD_<feature-name>.md`
+- Normalize a raw or existing contract into canonical fenced markdown on stdout:
+  - `python3 "$PLAN_WRITING_HOME/scripts/format_plan_contract.py" --path docs/plans/YYYY-MM-DD_<feature-name>.md`
+- Overwrite an existing saved file with the normalized form:
+  - `tmpfile="$(mktemp)" && python3 "$PLAN_WRITING_HOME/scripts/format_plan_contract.py" --path docs/plans/YYYY-MM-DD_<feature-name>.md > "$tmpfile" && mv "$tmpfile" docs/plans/YYYY-MM-DD_<feature-name>.md`
+- Validate a saved plan file:
+  - `python3 "$PLAN_WRITING_HOME/scripts/validate_plan_contract.py" --path docs/plans/YYYY-MM-DD_<feature-name>.md`
+- Validate raw JSON before saving:
+  - `printf '%s' "$PLAN_CONTRACT" | python3 "$PLAN_WRITING_HOME/scripts/validate_plan_contract.py"`
 
 ## Red flags
 
-- Starting code changes before the plan is written
-- Writing a plan with vague steps such as "implement logic" or "fix tests"
-- Omitting verification commands even though the repo has known build or test entrypoints
-- Leaving file paths unresolved when local inspection could have identified them
-- Producing a plan that is only useful to the current session and not to a later executor
+- Treating prose below the fence as authoritative
+- Leaving strategy decisions in chat instead of in `spec`
+- Creating a saved plan file without a valid fenced `plan/1` block
+- Replanning by discarding prior `state.evidence`
+- Handing execution a contract that still needs human interpretation
