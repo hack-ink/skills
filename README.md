@@ -16,7 +16,8 @@ This repository hosts reusable agent skills for Codex workflows.
 - `skill-routing` - generic skill-discovery and loading policy with an optional manual child denylist; the shipped policy uses version 5 with `child_forbidden = ["sidecars"]` and accepts only known local skill names as explicit restrictions (`skill-routing/SKILL.md`).
 - `plan-writing` - plan-writing workflow for multi-step or risky tasks, including Plan mode handoff, evidence-grounded task decomposition, and durable plan docs using the `docs/plans/YYYY-MM-DD_<feature-name>.md` convention (`plan-writing/SKILL.md`).
 - `plan-execution` - execution workflow for saved implementation plans, with critical plan review, checkpoint-based batches, repo-native verification, and staged progress reporting (`plan-execution/SKILL.md`).
-- `pre-commit` - repository commit/push gate with repo-specific Makefile.toml task checks and workflow validation (`pre-commit/SKILL.md`).
+- `delivery-prepare` - producer stage of the shared machine-first delivery contract: local delivery checks plus a valid `delivery/1` payload with explicit authority, mode, and typed refs for downstream closeout (`delivery-prepare/SKILL.md`).
+- `delivery-closeout` - consumer stage of the shared machine-first delivery contract: reads the latest pushed `delivery/1` payload, treats Linear as the source of truth, and mirrors issue outcomes back to GitHub with comment plus open/close only (`delivery-closeout/SKILL.md`).
 - `codebase-review` - methodology and tooling for full codebase review with risk triage, slicing, findings, decision logs, and SHA-anchored coverage gates (`codebase-review/SKILL.md`).
 
 ## Contributing

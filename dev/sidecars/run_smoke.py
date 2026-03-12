@@ -9,7 +9,8 @@ COUPLED_SKILL_NEEDLES = [
     "`git-worktrees`",
     "`plan-writing`",
     "`plan-execution`",
-    "`pre-commit`",
+    "`delivery-prepare`",
+    "`delivery-closeout`",
     "`parallel-conflict-resolution`",
 ]
 
