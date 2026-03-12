@@ -1,6 +1,6 @@
 ---
 name: delivery-closeout
-description: Use when closing out or syncing delivery state after a push, especially for requests like "ship this", "close out the issue", "sync trackers", "tracker sync", or "update Linear/GitHub issues". Consumes the latest pushed machine-first `delivery/1` contract produced by `delivery-prepare`, using explicit authority, mode, and typed refs to mirror Linear issue outcomes back to GitHub issues with comment plus open/close only.
+description: 'Use when closing out or syncing delivery state after a push, especially for requests like "ship this", "close out the issue", "sync trackers", "tracker sync", or "update Linear/GitHub issues". Consumes the latest pushed machine-first `delivery/1` contract produced by `delivery-prepare`, using explicit authority, mode, and typed refs to mirror Linear issue outcomes back to GitHub issues with comment plus open/close only.'
 ---
 
 # Delivery Closeout

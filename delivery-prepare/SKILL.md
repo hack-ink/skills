@@ -1,6 +1,6 @@
 ---
 name: delivery-prepare
-description: Use when preparing a commit or push, including requests like "pre-commit", "prepare commit", "prepare push", or "run checks before push". Produces the shared machine-first `delivery/1` contract consumed by `delivery-closeout`: local delivery evidence plus a valid delivery contract with explicit authority, mode, and typed refs.
+description: 'Use when preparing a commit or push, including requests like "pre-commit", "prepare commit", "prepare push", or "run checks before push". Produces the shared machine-first `delivery/1` contract consumed by `delivery-closeout`: local delivery evidence plus a valid delivery contract with explicit authority, mode, and typed refs.'
 ---
 
 # Delivery Prepare
