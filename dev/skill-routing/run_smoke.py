@@ -11,6 +11,7 @@ DEV_DIR = Path(__file__).resolve().parent
 REPO_ROOT = DEV_DIR.parents[1]
 SOURCE_HELPER_PATH = REPO_ROOT / "skill-routing" / "scripts" / "build_child_skill_policy.py"
 SOURCE_TEMPLATE_PATH = REPO_ROOT / "skill-routing" / "child-skill-policy.toml"
+SOURCE_SKILL_PATH = REPO_ROOT / "skill-routing" / "SKILL.md"
 
 
 def parse_args() -> argparse.Namespace:
@@ -35,6 +36,18 @@ def load_module(path: Path, name: str):
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def assert_skill_doc_boundary() -> None:
+    text = SOURCE_SKILL_PATH.read_text(encoding="utf-8")
+    for needle in [
+        "not a full capability sandbox",
+        "control-plane recursion",
+        "runtime child behavior rules",
+    ]:
+        if needle not in text:
+            raise AssertionError(f"skill-routing doc must contain {needle!r}")
+    print("OK: skill-routing doc states minimal denylist boundaries")
 
 
 def assert_repo_template_canonical(helper) -> None:
@@ -220,6 +233,7 @@ def main() -> int:
     args = parse_args()
     helper = load_module(SOURCE_HELPER_PATH, "build_child_skill_policy")
 
+    assert_skill_doc_boundary()
     assert_repo_template_canonical(helper)
     assert_denylist_fixture(helper)
     assert_unknown_skill_rejected(helper)

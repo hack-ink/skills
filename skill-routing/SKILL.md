@@ -32,8 +32,11 @@ description: Use at the start of a task, before clarifying questions, or before 
 - Child agents may still use skill discovery.
 - When the current agent is a child, resolve the denylist from `child-skill-policy.toml`.
 - The shipped policy file uses the version-5 neutral denylist shape.
+- This denylist is intentionally minimal. It is not a full capability sandbox.
 - `child_forbidden` is the only restriction field in this format.
 - If the policy file omits a skill, child agents may use it when relevant.
+- The denylist exists to block known local control-plane recursion or other explicitly forbidden local skills.
+- Unknown installed skills are bounded by runtime child behavior rules, not by enumerating every name here.
 - Policy entries must use known local skill names from this repo's installable skill catalog.
 - Skills listed in `child_forbidden` must never be self-initiated by a child.
 - There is no dispatch-level skill grant list in this source-repo design.
@@ -46,7 +49,7 @@ description: Use at the start of a task, before clarifying questions, or before 
 - Users may also ask an agent to edit the policy file for them.
 - `scripts/build_child_skill_policy.py` initializes or canonicalizes the policy file but does not classify or populate skills.
 - The policy script rejects unknown skill names and legacy keys such as `main_thread_only`.
-- If the user wants a canonical empty template, rerun:
+- If the user wants to rewrite the canonical shipped template, rerun:
   - `python3 scripts/build_child_skill_policy.py --write`
 
 ## Progressive disclosure
