@@ -91,6 +91,6 @@ Do not edit files.
 - Waiting on a stale sidecar that no longer affects the next decision
 - Adding extra coordination machinery on top of the runtime
 
-## Maintainer check
+## Source-repo maintainer check
 
-- `python3 dev/sidecars/run_smoke.py`
+- When editing the owning skills repo rather than an installed copy, run `python3 dev/sidecars/run_smoke.py` from that repo root.

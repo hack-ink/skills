@@ -95,6 +95,7 @@ def assert_installable_docs_decoupled() -> None:
     ]
     for path in targets:
         text = read_text(path)
+        assert_not_contains(text, "helper", label=str(path))
         for needle in COUPLED_SKILL_NEEDLES:
             assert_not_contains(text, needle, label=str(path))
     print("OK: installable skill docs stay decoupled from other concrete skills")

@@ -17,7 +17,7 @@ description: Use at the start of a task, before clarifying questions, or before 
 
 - All paths in this skill are relative to the skill root (the directory that contains this `SKILL.md`).
 - The child skill policy file is `child-skill-policy.toml`.
-- The helper script is `scripts/build_child_skill_policy.py`.
+- The policy script is `scripts/build_child_skill_policy.py`.
 
 ## Runtime contract
 
@@ -45,7 +45,7 @@ description: Use at the start of a task, before clarifying questions, or before 
 - Users fill the policy manually if they want restrictions.
 - Users may also ask an agent to edit the policy file for them.
 - `scripts/build_child_skill_policy.py` initializes or canonicalizes the policy file but does not classify or populate skills.
-- The helper rejects unknown skill names and legacy keys such as `main_thread_only`.
+- The policy script rejects unknown skill names and legacy keys such as `main_thread_only`.
 - If the user wants a canonical empty template, rerun:
   - `python3 scripts/build_child_skill_policy.py --write`
 
@@ -83,4 +83,4 @@ Examples:
 ## Authoring note
 
 - When creating or updating skills, put trigger conditions and boundaries in the frontmatter `description`, because routing depends on it.
-- Keep the skill body procedural and concise. Move detailed references into `references/` and deterministic helpers into `scripts/` only when needed.
+- Keep the skill body procedural and concise. Move detailed references into `references/` and deterministic scripts into `scripts/` only when needed.
