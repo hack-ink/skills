@@ -17,7 +17,7 @@ This repository hosts reusable agent skills for Codex workflows.
 - `plan-writing` - producer stage of the shared machine-first planning contract: creates or revises persisted `plan/1` files under `docs/plans/YYYY-MM-DD_<feature-name>.json` and owns strategy, task graph, defaults, and replanning policy (`plan-writing/SKILL.md`).
 - `plan-execution` - consumer stage of the shared machine-first planning contract: reads saved `plan/1` files, advances only runtime state, and blocks on missing or invalid saved authority instead of inferring execution intent from chat (`plan-execution/SKILL.md`).
 - `delivery-prepare` - producer stage of the shared machine-first delivery contract: local delivery checks plus a valid `delivery/1` payload with explicit authority, mode, and typed refs for downstream closeout (`delivery-prepare/SKILL.md`).
-- `delivery-closeout` - consumer stage of the shared machine-first delivery contract: reads the latest pushed `delivery/1` payload, treats Linear as the source of truth, and mirrors issue outcomes back to GitHub with comment plus open/close only (`delivery-closeout/SKILL.md`).
+- `delivery-closeout` - consumer stage of the shared machine-first delivery contract: reads a pushed anchor plus a `delivery/1` payload from git, stdin, or a file, treats Linear as the source of truth, and mirrors issue outcomes back to GitHub with comment plus open/close only (`delivery-closeout/SKILL.md`).
 - `codebase-review` - methodology and tooling for full codebase review with risk triage, slicing, findings, decision logs, and SHA-anchored coverage gates (`codebase-review/SKILL.md`).
 
 ## Contributing

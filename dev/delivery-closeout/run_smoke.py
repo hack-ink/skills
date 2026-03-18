@@ -115,6 +115,15 @@ def main() -> None:
             cwd=REPO_ROOT,
         )
         commit_sha = commit_message(repo_ok, generated.stdout.strip())
+        stdin_reader_cmd = [
+            "python3",
+            str(READER),
+            "--repo",
+            str(repo_ok),
+            "--anchor-rev",
+            commit_sha,
+            "--stdin",
+        ]
         ok_proc = run(
             ["python3", str(READER), "--repo", str(repo_ok)],
             cwd=REPO_ROOT,
@@ -122,6 +131,9 @@ def main() -> None:
         ok_payload = json.loads(ok_proc.stdout)
         assert_true(ok_payload["ok"], "valid delivery contract should read successfully")
         assert_equal(ok_payload["commit_sha"], commit_sha, "reader commit sha")
+        assert_equal(ok_payload["contract_source"], "git", "reader contract source")
+        assert_equal(ok_payload["contract_rev"], "HEAD", "reader contract rev")
+        assert_equal(ok_payload["contract_file"], None, "reader contract file")
         assert_equal(ok_payload["authority"], "linear", "reader authority")
         assert_equal(ok_payload["delivery_mode"], "closeout", "reader mode")
         assert_equal(
@@ -150,7 +162,7 @@ def main() -> None:
         print("OK: generator output flows directly into reader without repo inference")
 
         untracked_proc = run(
-            ["python3", str(READER), "--stdin"],
+            stdin_reader_cmd,
             cwd=REPO_ROOT,
             input_text=build_contract(refs=[]),
         )
@@ -163,8 +175,160 @@ def main() -> None:
         assert_equal(untracked_payload["refs"], [], "reader refs for untracked delivery")
         print("OK: reader accepts untracked delivery contracts with empty refs")
 
+        repo_anchor = temp_root / "repo-anchor"
+        repo_anchor.mkdir()
+        init_repo(repo_anchor)
+        anchor_sha = commit_message(
+            repo_anchor,
+            build_contract(
+                refs=[
+                    {"system": "linear", "id": "PUB-582", "role": "authority"},
+                    {
+                        "system": "github",
+                        "repo": "hack-ink/ELF",
+                        "number": 30,
+                        "role": "mirror",
+                    },
+                ],
+                delivery_mode="status-only",
+            ),
+        )
+        final_closeout_contract = build_contract(
+            refs=[
+                {"system": "linear", "id": "PUB-582", "role": "authority"},
+                {
+                    "system": "github",
+                    "repo": "hack-ink/ELF",
+                    "number": 30,
+                    "role": "mirror",
+                },
+            ],
+            delivery_mode="closeout",
+        )
+        missing_anchor_stdin_proc = run(
+            [
+                "python3",
+                str(READER),
+                "--repo",
+                str(repo_anchor),
+                "--stdin",
+            ],
+            cwd=REPO_ROOT,
+            input_text=final_closeout_contract,
+            check=False,
+        )
+        assert_equal(
+            missing_anchor_stdin_proc.returncode,
+            2,
+            "stdin closeout contract without an anchor should fail",
+        )
+        missing_anchor_stdin_payload = json.loads(missing_anchor_stdin_proc.stdout)
+        assert_true(
+            missing_anchor_stdin_payload["errors"]
+            and "anchor rev is required" in missing_anchor_stdin_payload["errors"][0],
+            "stdin closeout contract should require an explicit anchor",
+        )
+        print("OK: explicit stdin contracts require an anchor rev")
+
+        anchored_stdin_proc = run(
+            [
+                "python3",
+                str(READER),
+                "--repo",
+                str(repo_anchor),
+                "--anchor-rev",
+                anchor_sha,
+                "--stdin",
+            ],
+            cwd=REPO_ROOT,
+            input_text=final_closeout_contract,
+        )
+        anchored_stdin_payload = json.loads(anchored_stdin_proc.stdout)
+        assert_true(
+            anchored_stdin_payload["ok"],
+            "stdin closeout contract should read successfully against an explicit anchor",
+        )
+        assert_equal(
+            anchored_stdin_payload["commit_sha"],
+            anchor_sha,
+            "stdin anchor commit sha",
+        )
+        assert_equal(
+            anchored_stdin_payload["contract_source"],
+            "stdin",
+            "stdin contract source",
+        )
+        assert_equal(
+            anchored_stdin_payload["delivery_mode"],
+            "closeout",
+            "stdin contract mode",
+        )
+        print("OK: explicit stdin contracts can close out a pushed anchor without a new commit")
+
+        contract_file = temp_root / "final-closeout.json"
+        contract_file.write_text(final_closeout_contract, encoding="utf-8")
+        missing_anchor_file_proc = run(
+            [
+                "python3",
+                str(READER),
+                "--repo",
+                str(repo_anchor),
+                "--contract-file",
+                str(contract_file),
+            ],
+            cwd=REPO_ROOT,
+            check=False,
+        )
+        assert_equal(
+            missing_anchor_file_proc.returncode,
+            2,
+            "file-based closeout contract without an anchor should fail",
+        )
+        missing_anchor_file_payload = json.loads(missing_anchor_file_proc.stdout)
+        assert_true(
+            missing_anchor_file_payload["errors"]
+            and "anchor rev is required" in missing_anchor_file_payload["errors"][0],
+            "file-based closeout contract should require an explicit anchor",
+        )
+        print("OK: explicit contract files require an anchor rev")
+
+        anchored_file_proc = run(
+            [
+                "python3",
+                str(READER),
+                "--repo",
+                str(repo_anchor),
+                "--anchor-rev",
+                anchor_sha,
+                "--contract-file",
+                str(contract_file),
+            ],
+            cwd=REPO_ROOT,
+        )
+        anchored_file_payload = json.loads(anchored_file_proc.stdout)
+        assert_true(
+            anchored_file_payload["ok"],
+            "file-based closeout contract should read successfully against an explicit anchor",
+        )
+        assert_equal(
+            anchored_file_payload["commit_sha"],
+            anchor_sha,
+            "file anchor commit sha",
+        )
+        assert_equal(
+            anchored_file_payload["contract_source"],
+            "file",
+            "file contract source",
+        )
+        assert_equal(
+            anchored_file_payload["contract_file"],
+            str(contract_file.resolve()),
+            "file contract path",
+        )
+        print("OK: explicit contract files can close out a pushed anchor without a new commit")
+
         duplicate_reader_proc = run(
-            ["python3", str(READER), "--stdin"],
+            stdin_reader_cmd,
             cwd=REPO_ROOT,
             input_text=build_contract(
                 refs=[
@@ -219,7 +383,7 @@ def main() -> None:
         print("OK: reader deduplicates repeated refs")
 
         conflicting_duplicate_proc = run(
-            ["python3", str(READER), "--stdin"],
+            stdin_reader_cmd,
             cwd=REPO_ROOT,
             input_text=build_contract(
                 refs=[
@@ -282,7 +446,7 @@ def main() -> None:
         print("OK: generator rejects #123 shorthand")
 
         shorthand_reader = run(
-            ["python3", str(READER), "--stdin"],
+            stdin_reader_cmd,
             cwd=REPO_ROOT,
             input_text=build_contract(refs=["#30"]),
             check=False,
@@ -300,7 +464,7 @@ def main() -> None:
         print("OK: reader rejects #123 shorthand")
 
         github_only_proc = run(
-            ["python3", str(READER), "--stdin"],
+            stdin_reader_cmd,
             cwd=REPO_ROOT,
             input_text=build_contract(
                 refs=[
@@ -334,7 +498,7 @@ def main() -> None:
         print("OK: reader accepts GitHub-only ref sets without Linear authority")
 
         related_without_authority_proc = run(
-            ["python3", str(READER), "--stdin"],
+            stdin_reader_cmd,
             cwd=REPO_ROOT,
             input_text=build_contract(
                 refs=[{"system": "linear", "id": "PUB-600", "role": "related"}]
@@ -357,7 +521,7 @@ def main() -> None:
         print("OK: reader rejects related-only Linear refs")
 
         multiple_authority_proc = run(
-            ["python3", str(READER), "--stdin"],
+            stdin_reader_cmd,
             cwd=REPO_ROOT,
             input_text=build_contract(
                 refs=[
@@ -381,7 +545,7 @@ def main() -> None:
         print("OK: multiple authority refs are rejected")
 
         reopen_proc = run(
-            ["python3", str(READER), "--stdin"],
+            stdin_reader_cmd,
             cwd=REPO_ROOT,
             input_text=build_contract(
                 refs=[{"system": "linear", "id": "PUB-582", "role": "authority"}],
@@ -393,7 +557,7 @@ def main() -> None:
         print("OK: delivery mode is read from the contract")
 
         invalid_json_proc = run(
-            ["python3", str(READER), "--stdin"],
+            stdin_reader_cmd,
             cwd=REPO_ROOT,
             input_text="not json",
             check=False,
@@ -402,14 +566,14 @@ def main() -> None:
         invalid_json_payload = json.loads(invalid_json_proc.stdout)
         assert_true(
             invalid_json_payload["errors"][0].startswith(
-                "latest commit message is not valid JSON:"
+                "delivery/1 input is not valid JSON:"
             ),
             "invalid JSON failure reason",
         )
         print("OK: invalid JSON blocks the reader")
 
         multiline_proc = run(
-            ["python3", str(READER), "--stdin"],
+            stdin_reader_cmd,
             cwd=REPO_ROOT,
             input_text=json.dumps(
                 {
@@ -438,14 +602,14 @@ def main() -> None:
         )
         multiline_payload = json.loads(multiline_proc.stdout)
         assert_true(
-            "latest commit message must be a single line JSON object"
+            "delivery/1 input must be a single line JSON object"
             in multiline_payload["errors"],
             "multiline failure reason",
         )
         print("OK: multiline JSON blocks the reader")
 
         wrong_schema_proc = run(
-            ["python3", str(READER), "--stdin"],
+            stdin_reader_cmd,
             cwd=REPO_ROOT,
             input_text=build_contract(
                 refs=[{"system": "linear", "id": "PUB-582", "role": "authority"}],
@@ -456,7 +620,7 @@ def main() -> None:
         assert_equal(wrong_schema_proc.returncode, 2, "wrong schema should fail")
         wrong_schema_payload = json.loads(wrong_schema_proc.stdout)
         assert_true(
-            "latest commit message schema must be exactly delivery/1"
+            "delivery/1 schema must be exactly delivery/1"
             in wrong_schema_payload["errors"],
             "wrong schema failure reason",
         )

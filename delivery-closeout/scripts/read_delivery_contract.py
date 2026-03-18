@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Read and validate a delivery/1 contract from the latest commit message."""
+"""Read and validate a delivery/1 contract from git, stdin, or a file."""
 
 from __future__ import annotations
 
@@ -31,7 +31,7 @@ TOP_LEVEL_KEYS = {
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Read and validate a delivery/1 contract from the latest commit message."
+        description="Read and validate a delivery/1 contract from git, stdin, or a file."
     )
     parser.add_argument(
         "--repo",
@@ -42,12 +42,28 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--rev",
         default="HEAD",
-        help="Git revision to read when not using --stdin. Defaults to HEAD.",
+        help=(
+            "Git revision whose commit message carries the contract when not using "
+            "--stdin or --contract-file. Defaults to HEAD."
+        ),
     )
-    parser.add_argument(
+    source_group = parser.add_mutually_exclusive_group()
+    source_group.add_argument(
         "--stdin",
         action="store_true",
         help="Read the delivery/1 contract from stdin instead of git log.",
+    )
+    source_group.add_argument(
+        "--contract-file",
+        type=Path,
+        help="Read the delivery/1 contract from a file instead of git log.",
+    )
+    parser.add_argument(
+        "--anchor-rev",
+        help=(
+            "Git revision to use as the closeout anchor commit. Defaults to --rev "
+            "when reading from git. Required for --stdin/--contract-file."
+        ),
     )
     return parser.parse_args()
 
@@ -68,18 +84,65 @@ def run_git(repo: Path, *args: str) -> str:
     return proc.stdout.strip()
 
 
-def read_commit_message(args: argparse.Namespace) -> tuple[str | None, str]:
-    if args.stdin:
-        return None, sys.stdin.read()
-
-    repo = args.repo.resolve()
+def resolve_repo(repo_arg: Path) -> Path:
+    repo = repo_arg.resolve()
     if not repo.exists():
         raise ValueError(f"git repository path does not exist: {repo}")
     if not repo.is_dir():
         raise ValueError(f"git repository path is not a directory: {repo}")
-    commit_sha = run_git(repo, "rev-parse", args.rev)
-    message = run_git(repo, "log", "-1", "--format=%B", args.rev)
-    return commit_sha, message
+    return repo
+
+
+def resolve_commit_sha(repo: Path, rev: str) -> str:
+    return run_git(repo, "rev-parse", rev)
+
+
+def read_contract_text(
+    args: argparse.Namespace,
+) -> tuple[str | None, str | None, str | None, str | None, str]:
+    repo: Path | None = None
+    if args.stdin:
+        contract_source = "stdin"
+        contract_rev = None
+        contract_file = None
+        raw_text = sys.stdin.read()
+    elif args.contract_file is not None:
+        contract_source = "file"
+        contract_rev = None
+        contract_path = args.contract_file.expanduser().resolve()
+        contract_file = str(contract_path)
+        if not contract_path.exists():
+            raise ValueError(f"delivery contract file does not exist: {contract_path}")
+        if not contract_path.is_file():
+            raise ValueError(f"delivery contract file is not a regular file: {contract_path}")
+        try:
+            raw_text = contract_path.read_text(encoding="utf-8")
+        except OSError as err:
+            raise ValueError(
+                f"failed to read delivery contract file {contract_path}: {err}"
+            ) from err
+    else:
+        contract_source = "git"
+        contract_rev = args.rev
+        contract_file = None
+        repo = resolve_repo(args.repo)
+        raw_text = run_git(repo, "log", "-1", "--format=%B", args.rev)
+
+    anchor_rev = args.anchor_rev
+    if anchor_rev is None and contract_source in {"stdin", "file"}:
+        raise ValueError(
+            "anchor rev is required when reading a delivery/1 contract from stdin "
+            "or --contract-file"
+        )
+    if anchor_rev is None and contract_source == "git":
+        anchor_rev = args.rev
+    commit_sha = None
+    if anchor_rev is not None:
+        if repo is None:
+            repo = resolve_repo(args.repo)
+        commit_sha = resolve_commit_sha(repo, anchor_rev)
+
+    return commit_sha, contract_source, contract_rev, contract_file, raw_text
 
 
 def require_non_empty_string(obj: dict[str, Any], key: str, errors: list[str]) -> None:
@@ -153,17 +216,17 @@ def load_contract(raw_text: str) -> tuple[dict[str, Any] | None, list[str]]:
     errors: list[str] = []
     text = raw_text.strip()
     if not text:
-        return None, ["latest commit message is empty"]
+        return None, ["delivery/1 input is empty"]
     if "\n" in text or "\r" in text:
-        return None, ["latest commit message must be a single line JSON object"]
+        return None, ["delivery/1 input must be a single line JSON object"]
 
     try:
         payload = json.loads(text)
     except json.JSONDecodeError as err:
-        return None, [f"latest commit message is not valid JSON: {err}"]
+        return None, [f"delivery/1 input is not valid JSON: {err}"]
 
     if not isinstance(payload, dict):
-        return None, ["latest commit message must decode to a JSON object"]
+        return None, ["delivery/1 input must decode to a JSON object"]
     missing = sorted(TOP_LEVEL_KEYS - set(payload))
     if missing:
         errors.append(f"missing keys: {missing}")
@@ -178,7 +241,7 @@ def load_contract(raw_text: str) -> tuple[dict[str, Any] | None, list[str]]:
     require_non_empty_string(payload, "impact", errors)
 
     if payload.get("schema") != "delivery/1":
-        errors.append("latest commit message schema must be exactly delivery/1")
+        errors.append("delivery/1 schema must be exactly delivery/1")
     if not isinstance(payload.get("breaking"), bool):
         errors.append("delivery/1 breaking must be a boolean")
     if payload.get("risk") not in ("low", "medium", "high"):
@@ -231,10 +294,19 @@ def load_contract(raw_text: str) -> tuple[dict[str, Any] | None, list[str]]:
     return payload, []
 
 
-def empty_result(*, commit_sha: str | None) -> dict[str, Any]:
+def empty_result(
+    *,
+    commit_sha: str | None,
+    contract_source: str | None,
+    contract_rev: str | None,
+    contract_file: str | None,
+) -> dict[str, Any]:
     return {
         "ok": False,
         "commit_sha": commit_sha,
+        "contract_source": contract_source,
+        "contract_rev": contract_rev,
+        "contract_file": contract_file,
         "schema": None,
         "authority": None,
         "delivery_mode": None,
@@ -248,15 +320,27 @@ def empty_result(*, commit_sha: str | None) -> dict[str, Any]:
 
 
 def build_result(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
-    result = empty_result(commit_sha=None)
+    result = empty_result(
+        commit_sha=None,
+        contract_source=None,
+        contract_rev=None,
+        contract_file=None,
+    )
     try:
-        commit_sha, raw_message = read_commit_message(args)
+        commit_sha, contract_source, contract_rev, contract_file, raw_message = (
+            read_contract_text(args)
+        )
     except ValueError as err:
         result["errors"] = [str(err)]
         return result, 2
 
     payload, errors = load_contract(raw_message)
-    result = empty_result(commit_sha=commit_sha)
+    result = empty_result(
+        commit_sha=commit_sha,
+        contract_source=contract_source,
+        contract_rev=contract_rev,
+        contract_file=contract_file,
+    )
     if payload is not None:
         result["schema"] = payload.get("schema")
         result["authority"] = payload.get("authority")

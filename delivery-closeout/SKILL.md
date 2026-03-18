@@ -1,14 +1,14 @@
 ---
 name: delivery-closeout
-description: 'Use when closing out or syncing delivery state after a push, especially for requests like "ship this", "close out the issue", "sync trackers", "tracker sync", or "update Linear/GitHub issues". Consumes the latest pushed machine-first `delivery/1` contract produced by `delivery-prepare`, using explicit authority, mode, and typed refs to mirror Linear issue outcomes back to GitHub issues with comment plus open/close only.'
+description: 'Use when closing out or syncing delivery state after a push, especially for requests like "ship this", "close out the issue", "sync trackers", "tracker sync", or "update Linear/GitHub issues". Consumes a pushed anchor plus an explicit machine-first `delivery/1` contract produced by `delivery-prepare`, whether the contract lives on that anchor commit or is supplied separately via stdin/file, and mirrors Linear issue outcomes back to GitHub issues with comment plus open/close only.'
 ---
 
 # Delivery Closeout
 
 ## Objective
 
-Consume the latest pushed `delivery/1` contract and sync delivery state back to Linear
-and GitHub.
+Consume a pushed anchor plus a valid `delivery/1` contract and sync delivery state
+back to Linear and GitHub.
 
 ## Scope
 
@@ -18,11 +18,16 @@ and GitHub.
 - Linear is authoritative for internal workflow state.
 - GitHub mirrors Linear via comment plus open/close only.
 - Branch names, PR URLs, and chat wording are evidence/backlinks only. They do not replace the `delivery/1` contract.
+- If the reviewed code anchor should remain unchanged, provide the final closeout contract separately via stdin or file instead of creating an empty follow-up commit just to flip `delivery_mode`.
 
 ## Required inputs
 
 - A pushed commit that is ready to use as the closeout anchor.
-- A latest pushed commit carrying the `delivery/1` contract produced by `delivery-prepare`.
+- A valid `delivery/1` contract produced by `delivery-prepare`.
+- When the final contract is not stored on the anchor commit itself, both an explicit anchor rev and an explicit contract source:
+  - `ANCHOR_REV=<pushed sha>`
+  - `--stdin`
+  - `--contract-file <path>`
 - Access to native Linear MCP plus GitHub CLI/API.
 - The skill root path so the helper can run:
   - `DELIVERY_CLOSEOUT_HOME=<skill root containing this SKILL.md>`
@@ -30,7 +35,9 @@ and GitHub.
 ## Hard gates
 
 - Do not widen this skill into GitHub Projects, milestones, label governance, or PR lifecycle changes.
-- If the current branch has no upstream, or `HEAD` does not equal `@{u}`, block sync. Use the pushed branch tip as the anchor, not an unpushed local commit.
+- If the current branch has no upstream, or `HEAD` does not equal `@{u}`, block sync.
+- If the contract source is stdin or `--contract-file`, require `--anchor-rev`. Do not accept a detached contract without a pushed anchor.
+- If an explicit anchor rev is used, require that anchor to already be reachable from `@{u}`. Do not close out an unpushed or orphaned commit.
 - If `scripts/read_delivery_contract.py` reports invalid `delivery/1`, stop before any tracker mutation.
 - The contract may omit Linear refs entirely for untracked work.
 - Linear related refs without a Linear authority ref are invalid and must block closeout.
@@ -51,29 +58,39 @@ and GitHub.
 
 ## Procedure
 
-1. Confirm the pushed anchor.
+1. Confirm the pushed context and anchor.
    - Run:
      - `git rev-parse --abbrev-ref HEAD`
      - `git rev-parse --abbrev-ref --symbolic-full-name @{u}`
      - `git rev-parse HEAD`
      - `git rev-parse @{u}`
-   - Require `HEAD == @{u}`. If not, block closeout because the latest pushed commit is ambiguous.
+   - Require `HEAD == @{u}`. If not, block closeout because the pushed context is ambiguous.
+   - Set `ANCHOR_REV=HEAD` by default.
+   - If you are closing out an older reviewed commit, set `ANCHOR_REV=<sha>` explicitly and verify it is already pushed:
+     - `git rev-parse "$ANCHOR_REV"`
+     - `git merge-base --is-ancestor "$ANCHOR_REV" @{u}`
+   - Block closeout if the anchor rev is missing or not reachable from `@{u}`.
 2. Read and validate the `delivery/1` contract.
-   - Run:
-     - `python3 "$DELIVERY_CLOSEOUT_HOME/scripts/read_delivery_contract.py"`
+   - When the contract already lives on the anchor commit, run:
+     - `python3 "$DELIVERY_CLOSEOUT_HOME/scripts/read_delivery_contract.py" --rev "$ANCHOR_REV"`
+   - When the final closeout contract is supplied explicitly over stdin, run:
+     - `python3 "$DELIVERY_CLOSEOUT_HOME/scripts/read_delivery_contract.py" --anchor-rev "$ANCHOR_REV" --stdin`
+   - When the final closeout contract is supplied from a file, run:
+     - `python3 "$DELIVERY_CLOSEOUT_HOME/scripts/read_delivery_contract.py" --anchor-rev "$ANCHOR_REV" --contract-file "$CONTRACT_FILE"`
    - The helper validates:
      - `authority == linear`
      - `delivery_mode` is explicit
      - `refs` are typed objects
      - at most one Linear authority ref exists
      - any Linear related refs require that authority ref
+   - The helper returns the resolved anchor commit SHA even when the contract comes from stdin or a file.
    - Treat any validation error as a sync blocker.
 3. Build the sync set.
    - Extract the authoritative Linear issue from `authority_ref` when it exists.
    - Extract any additional Linear refs from `related_linear_refs`.
    - Extract GitHub mirror targets from `github_mirror_refs`.
    - Keep one report row per typed ref.
-   - Preserve optional evidence backlinks such as branch name, commit URL, and PR URL.
+   - Preserve optional evidence backlinks such as branch name, anchor commit URL, and PR URL.
 4. Read current tracker state before mutating.
    - Linear:
      - `get_issue` for each internal issue
@@ -129,10 +146,11 @@ Anchor
 - branch: <branch>
 - upstream: <upstream>
 - commit: <sha>
+- contract source: <git|stdin|file>
 - mode: <closeout|status-only|reopen>
 
 Refs
-- contract: `python3 "$DELIVERY_CLOSEOUT_HOME/scripts/read_delivery_contract.py"` (exit: <code>)
+- contract: `python3 "$DELIVERY_CLOSEOUT_HOME/scripts/read_delivery_contract.py" ...` (exit: <code>)
 - authority: <linear issue id | none>
 - related linear refs: <count>
 - GitHub mirrors: <count>

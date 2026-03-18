@@ -53,7 +53,7 @@ Minimum type/shape constraints:
 
 Delivery contract:
 
-- `delivery-closeout` consumes the latest pushed `delivery/1` contract exactly as produced here.
+- `delivery-closeout` consumes an explicit `delivery/1` contract exactly as produced here, anchored to a pushed commit.
 - If the change is tracked in Linear, declare at most one Linear authority ref: `{ "system": "linear", "id": "TEAM-123", "role": "authority" }`
 - Additional internal refs may be Linear related refs: `{ "system": "linear", "id": "TEAM-456", "role": "related" }`
   but only when a Linear authority ref is also present.
@@ -61,6 +61,8 @@ Delivery contract:
 - If the change is not tracked in Linear or GitHub, `refs` may be empty.
 - Exact duplicate refs are canonicalized by target identity and later repeats are skipped. Conflicting duplicates for the same target are invalid and must fail validation.
 - Same-repo shorthand such as `#123`, branch-name inference, PR-title inference, and repo-origin inference are not part of the canonical contract.
+- Use `delivery_mode: "status-only"` when the pushed code anchor is not ready for final tracker closeout yet, such as a PR branch still under review.
+- If review passes and the pushed code anchor does not change, do not add an empty commit only to flip `delivery_mode`; generate the final closeout contract separately and run `delivery-closeout` with `--anchor-rev <sha>` plus `--stdin` or `--contract-file`.
 
 Recommended contract generator (prints a single-line JSON message):
 
