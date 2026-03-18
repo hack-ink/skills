@@ -1,0 +1,121 @@
+{
+  "spec": {
+    "schema": "plan/1",
+    "plan_id": "2026-03-19-review-repair-self-review-gate",
+    "goal": "Make self-review a hard gate for review-repair so repaired PR changes are self-reviewed clean before any repair-batch commit or push, then reflect that rule in source and live runtime guidance.",
+    "success_criteria": [
+      "review-repair/SKILL.md requires review-prepare to return no_findings on the repaired diff before any repair-batch commit or push",
+      "review-prepare/SKILL.md makes clear that refreshing a PR head includes the post-repair self-review path",
+      "source smokes fail if the self-review gate between review-repair and delivery-prepare/review-request regresses",
+      "home/codex/AGENTS.md states the self-review-before-push rule for review-repair batches",
+      "the installed runtime skills and live ~/.codex/AGENTS.md are synced to the updated source guidance",
+      "focused verification passes after the update"
+    ],
+    "constraints": [
+      "Keep the change scoped to the review workflow contracts and their smoke coverage",
+      "Do not rename skills or broaden the workflow beyond this self-review gate",
+      "Use the already-active skills workspace lane and existing nix branch",
+      "Preserve the existing review-request re-entry and delivery-prepare gate semantics"
+    ],
+    "defaults": {
+      "skills_workspace": "/Users/xavier/code/trusted/y/hack-ink/skills/.workspaces/chore-review-repair-delivery-gate",
+      "skills_repo_root": "/Users/xavier/code/trusted/y/hack-ink/skills",
+      "nix_repo_root": "/Users/xavier/Documents/nix"
+    },
+    "tasks": [
+      {
+        "id": "task-1",
+        "title": "Tighten source review workflow contracts",
+        "status": "done",
+        "objective": "Update review-repair and review-prepare so review-repair batches must clear self-review before commit or push, and make the trigger wording explicit for refreshed PR heads after repair.",
+        "inputs": [
+          "review-repair/SKILL.md",
+          "review-prepare/SKILL.md"
+        ],
+        "outputs": [
+          "Updated review workflow skill contracts"
+        ],
+        "verification": [
+          "python3 dev/review-repair/run_smoke.py"
+        ],
+        "depends_on": []
+      },
+      {
+        "id": "task-2",
+        "title": "Lock the new gate in source smokes",
+        "status": "done",
+        "objective": "Update the review-repair source smoke and the nix source smoke so the self-review gate cannot be removed without a failing check.",
+        "inputs": [
+          "dev/review-repair/run_smoke.py",
+          "/Users/xavier/Documents/nix/dev/smoke/codex/run_scout_skeptic_source_smoke.py"
+        ],
+        "outputs": [
+          "Stronger source smoke coverage for the review-repair self-review gate"
+        ],
+        "verification": [
+          "python3 dev/review-repair/run_smoke.py",
+          "python3 dev/smoke/codex/run_scout_skeptic_source_smoke.py"
+        ],
+        "depends_on": [
+          "task-1"
+        ]
+      },
+      {
+        "id": "task-3",
+        "title": "Propagate the rule to global guidance and runtime",
+        "status": "done",
+        "objective": "Update nix home/codex AGENTS guidance, then sync the installed skills and live ~/.codex/AGENTS.md so the runtime follows the new self-review-before-push rule immediately.",
+        "inputs": [
+          "/Users/xavier/Documents/nix/home/codex/AGENTS.md",
+          "/Users/xavier/.codex/skills/review-repair/SKILL.md",
+          "/Users/xavier/.codex/skills/review-prepare/SKILL.md",
+          "/Users/xavier/.codex/AGENTS.md"
+        ],
+        "outputs": [
+          "Updated nix source guidance",
+          "Updated installed runtime skills and AGENTS"
+        ],
+        "verification": [
+          "python3 dev/review-repair/run_smoke.py",
+          "python3 /Users/xavier/Documents/nix/dev/smoke/codex/run_scout_skeptic_source_smoke.py",
+          "git diff --check"
+        ],
+        "depends_on": [
+          "task-1",
+          "task-2"
+        ]
+      }
+    ],
+    "replan_policy": {
+      "owner": "plan-writing",
+      "triggers": [
+        "The self-review gate requires introducing a new orchestration skill instead of tightening review-repair and AGENTS contracts",
+        "The live runtime cannot be updated through the existing installed skill sync and darwin-rebuild path",
+        "Source and live guidance diverge in a way that needs a broader workflow redesign"
+      ]
+    }
+  },
+  "state": {
+    "phase": "done",
+    "current_task_id": null,
+    "next_task_id": null,
+    "blockers": [],
+    "evidence": [
+      "2026-03-19: Updated review-repair/SKILL.md so any repair batch that changes the branch must clear review-prepare on the repaired diff before any repair-batch commit or push, then route through delivery-prepare only after that self-review gate is clean.",
+      "2026-03-19: Updated review-prepare/SKILL.md and dev/review-prepare/run_smoke.py so review-prepare explicitly covers PR head refreshes, including the post-review-repair path.",
+      "2026-03-19: Updated /Users/xavier/Documents/nix/home/codex/AGENTS.md and /Users/xavier/Documents/nix/dev/smoke/codex/run_scout_skeptic_source_smoke.py so the global review workflow requires review-prepare before any repair-batch commit, push, or review-request re-entry.",
+      "2026-03-19: Verified with python3 dev/review-repair/run_smoke.py, python3 dev/review-prepare/run_smoke.py, python3 /Users/xavier/Documents/nix/dev/smoke/codex/run_scout_skeptic_source_smoke.py, git diff --check, and git -C /Users/xavier/Documents/nix diff --check.",
+      "2026-03-19: Hot-synced /Users/xavier/.codex/skills/review-repair and /Users/xavier/.codex/skills/review-prepare, then ran sudo -n -H darwin-rebuild switch --flake /Users/xavier/Documents/nix#acg-box so live ~/.codex/AGENTS.md now carries the new self-review-before-push rule."
+    ],
+    "last_updated": "2026-03-18T19:25:06Z",
+    "replan_reason": null,
+    "context_snapshot": {
+      "local_checkpoint": {
+        "current_theory": "review-repair currently enforces verification before push but not a clean review-prepare self-review pass on the repaired diff, so repaired heads can be pushed with avoidable self-review debt.",
+        "contradictory_evidence": "The broader workflow already requires review-prepare before entering PR review, and review-repair already gates commit or push on delivery-prepare and re-review.",
+        "missing_evidence": "Need contract text and smoke coverage that explicitly require review-prepare to clear repaired diffs before repair-batch commit or push.",
+        "next_action": "Patch review-repair, review-prepare, and the source/global smoke coverage, then sync the runtime guidance."
+      }
+    }
+  }
+}

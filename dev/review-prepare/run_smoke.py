@@ -31,6 +31,8 @@ def main() -> int:
         "three consecutive rounds",
         "`research`",
         "Do not proceed to PR creation",
+        "including after `review-repair` changes the branch",
+        "PR head refresh",
     ]:
         assert_contains(text, needle)
     print("OK: review-prepare contract captures the pre-PR self-review loop")

@@ -1,6 +1,6 @@
 ---
 name: review-prepare
-description: Use before creating or updating a PR to run the self-review loop on the actual diff. Owns pre-PR review, bounded fix-and-verify rounds, and escalation to `research` when three rounds of patch-on-patch churn do not converge.
+description: Use before creating or refreshing a PR head, including after `review-repair` changes the branch, to run the self-review loop on the actual diff. Owns pre-PR review, bounded fix-and-verify rounds, and escalation to `research` when three rounds of patch-on-patch churn do not converge.
 ---
 
 # Review Prepare
@@ -34,7 +34,7 @@ Every emitted result must use the stable `head_sha` field name for the reviewed 
 - Every fix round must be followed by fresh verification.
 - Do not output `no_findings` without fresh verification evidence for the current branch state.
 - Bind every decision to the explicit reviewed head SHA for that branch state through the stable `head_sha` field.
-- Do not proceed to PR creation or `review-request` until this skill returns `no_findings`.
+- Do not proceed to PR creation, PR head refresh, or `review-request` until this skill returns `no_findings`.
 
 ## Procedure
 
@@ -71,6 +71,6 @@ Every emitted result must use the stable `head_sha` field name for the reviewed 
 ## Red flags
 
 - Calling the branch "ready" because tests happen to pass while the diff still contains obvious review debt
-- Creating or updating a PR before self-review reaches `no_findings`
+- Creating or refreshing a PR head before self-review reaches `no_findings`
 - Carrying GitHub thread behavior into this skill
 - Continuing beyond three churn rounds without escalating to `research`

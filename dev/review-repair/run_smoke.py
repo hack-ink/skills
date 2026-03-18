@@ -35,6 +35,7 @@ def main() -> int:
         "Reply in the GitHub thread",
         "Resolve a thread only",
         "resolve it through GitHub instead of leaving manual cleanup behind",
+        "Before any repair-batch `git commit` or `git push`, run `review-prepare` on the repaired diff and do not continue until it returns `no_findings` for the current repaired head.",
         "If a repair batch needs `git commit` or `git push`, route through `delivery-prepare` before committing or pushing that repaired head.",
         "A repair batch that produces and pushes a new head is not review-complete by itself; return `needs_re_review` for that pushed head so the branch re-enters `review-request`.",
         "`gh api graphql`",
@@ -46,6 +47,23 @@ def main() -> int:
         "`research`",
     ]:
         assert_contains(text, needle)
+    assert_block(
+        text,
+        """
+        Run `review-prepare` on the repaired diff before any repair-batch commit or push.
+           - if `review-prepare` returns findings, fix them, re-run verification, and re-run `review-prepare` until it returns `no_findings` for the current repaired head
+           - do not treat repair-batch verification alone as enough to skip this self-review gate
+        """,
+    )
+    assert_block(
+        text,
+        """
+        If the repair batch needs commit or push:
+           - after `review-prepare` is clean for the repaired head, run `delivery-prepare` before the commit or push
+           - push the repaired head
+           - treat that pushed head as `needs_re_review` so `review-request` can request a fresh review for the new head
+        """,
+    )
     assert_block(
         text,
         """
