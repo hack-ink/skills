@@ -37,7 +37,9 @@ Every emitted result must use the stable `head_sha` field name for the repaired 
   - decide: fix now, push back with technical reasoning, or ask for clarification
 - External review feedback is input to evaluate, not an automatic order to follow.
 - Re-run fresh verification after every repair batch.
+- If a repair batch needs `git commit` or `git push`, route through `delivery-prepare` before committing or pushing that repaired head.
 - Bind every repair decision and resolution decision to the explicit repaired head SHA that was verified through the stable `head_sha` field.
+- A repair batch that produces and pushes a new head is not review-complete by itself; return `needs_re_review` for that pushed head so the branch re-enters `review-request`.
 - Reply in the GitHub thread, not as a top-level PR comment.
 - Resolve a thread only when all of these are true:
   - the code is actually fixed
@@ -56,10 +58,14 @@ Every emitted result must use the stable `head_sha` field name for the repaired 
    - decide: fix now, push back, or ask for clarification
 3. Group compatible fixes into the smallest coherent repair batch.
 4. Apply the batch and re-run scoped verification.
-5. Reply in-thread for every addressed comment.
-6. Resolve only the threads that satisfy the hard gates.
-7. If the branch head changes during the loop, stop carrying prior repair state forward implicitly and return `needs_re_review` for the new head.
-8. Emit the machine-readable result envelope with `status`, `head_sha`, `pr_ref`, and `evidence` for that branch state.
+5. If the repair batch needs commit or push:
+   - run `delivery-prepare` before the commit or push
+   - push the repaired head
+   - treat that pushed head as `needs_re_review` so `review-request` can request a fresh review for the new head
+6. Reply in-thread for every addressed comment.
+7. Resolve only the threads that satisfy the hard gates.
+8. If the branch head changes during the loop, stop carrying prior repair state forward implicitly and return `needs_re_review` for the new head.
+9. Emit the machine-readable result envelope with `status`, `head_sha`, `pr_ref`, and `evidence` for that branch state.
 
 ## Three-round escalation
 
@@ -81,6 +87,7 @@ Every emitted result must use the stable `head_sha` field name for the repaired 
 
 - Treating every reviewer suggestion as automatically correct
 - Repairing code without re-running verification
+- Committing or pushing a repair batch without first running `delivery-prepare`
 - Posting a top-level PR comment instead of replying in-thread
 - Resolving a thread before the fix is verified
 - Requesting another review round from inside this skill instead of returning `needs_re_review`

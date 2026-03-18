@@ -27,6 +27,8 @@ def main() -> int:
         "repaired head SHA",
         "Reply in the GitHub thread",
         "Resolve a thread only",
+        "If a repair batch needs `git commit` or `git push`, route through `delivery-prepare` before committing or pushing that repaired head.",
+        "A repair batch that produces and pushes a new head is not review-complete by itself; return `needs_re_review` for that pushed head so the branch re-enters `review-request`.",
         "`needs_re_review`",
         "`awaiting_external`",
         "three consecutive rounds",

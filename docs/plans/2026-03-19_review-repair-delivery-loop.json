@@ -1,0 +1,122 @@
+{
+  "spec": {
+    "schema": "plan/1",
+    "plan_id": "2026-03-19-review-repair-delivery-loop",
+    "goal": "Close the review-repair delivery loop so repair batches that create a new head must re-enter delivery-prepare before commit or push and then re-enter review-request for the pushed head.",
+    "success_criteria": [
+      "review-repair explicitly requires delivery-prepare before any repair-batch commit or push and treats the pushed repair head as needing re-review",
+      "repo-local smoke coverage fails if that review-repair delivery handoff text regresses",
+      "home/codex/AGENTS.md states the repair-batch delivery-prepare and review-request re-entry edge for new heads",
+      "nix source smoke coverage guards the new AGENTS line",
+      "the installed ~/.codex review-repair skill copy matches the updated source skill and the live AGENTS activation can be verified"
+    ],
+    "constraints": [
+      "Keep the fix scoped to the review-repair to delivery-prepare to review-request lifecycle edge",
+      "Do not rename the existing skills or merge them into a new monolithic skill",
+      "Edit only the touched skill contract, the paired smokes, and the matching home/codex guidance",
+      "Use current local evidence rather than broad workflow redesign"
+    ],
+    "defaults": {
+      "skills_workspace": "/Users/xavier/code/trusted/y/hack-ink/skills/.workspaces/chore-review-repair-delivery-gate",
+      "skills_repo_root": "/Users/xavier/code/trusted/y/hack-ink/skills",
+      "nix_repo_root": "/Users/xavier/Documents/nix"
+    },
+    "tasks": [
+      {
+        "id": "task-1",
+        "title": "Harden review-repair delivery handoff",
+        "status": "done",
+        "objective": "Update review-repair so any repair batch that needs commit or push must route through delivery-prepare first and then return needs_re_review for the new pushed head.",
+        "inputs": [
+          "review-repair/SKILL.md",
+          "delivery-prepare/SKILL.md",
+          "pr-land/SKILL.md",
+          "dev/review-repair/run_smoke.py"
+        ],
+        "outputs": [
+          "Updated review-repair procedure and hard-gate wording",
+          "Smoke assertions for the delivery-prepare and re-review handoff"
+        ],
+        "verification": [
+          "python3 dev/review-repair/run_smoke.py"
+        ],
+        "depends_on": []
+      },
+      {
+        "id": "task-2",
+        "title": "Mirror the loop in AGENTS guidance",
+        "status": "done",
+        "objective": "Add explicit AGENTS wording for review-repair batches that create a new head so the lifecycle requires delivery-prepare before commit or push and review-request after the new head is pushed.",
+        "inputs": [
+          "/Users/xavier/Documents/nix/home/codex/AGENTS.md",
+          "/Users/xavier/Documents/nix/dev/smoke/codex/run_scout_skeptic_source_smoke.py"
+        ],
+        "outputs": [
+          "Updated home/codex AGENTS review workflow wording",
+          "Source smoke assertions for the new loop-closure line"
+        ],
+        "verification": [
+          "python3 dev/smoke/codex/run_scout_skeptic_source_smoke.py"
+        ],
+        "depends_on": [
+          "task-1"
+        ]
+      },
+      {
+        "id": "task-3",
+        "title": "Verify and sync runtime surfaces",
+        "status": "done",
+        "objective": "Run the focused verification set, sync the installed review-repair skill copy, and verify the live AGENTS surface after activation or equivalent source-backed update.",
+        "inputs": [
+          "/Users/xavier/.codex/skills/review-repair/SKILL.md",
+          "/Users/xavier/.codex/AGENTS.md"
+        ],
+        "outputs": [
+          "Focused verification evidence for the closed loop",
+          "Updated installed runtime review-repair skill",
+          "Verified live AGENTS surface for the new rule"
+        ],
+        "verification": [
+          "python3 dev/review-repair/run_smoke.py",
+          "python3 dev/smoke/codex/run_scout_skeptic_source_smoke.py",
+          "git diff --check"
+        ],
+        "depends_on": [
+          "task-1",
+          "task-2"
+        ]
+      }
+    ],
+    "replan_policy": {
+      "owner": "plan-writing",
+      "triggers": [
+        "Closing the loop requires renaming skills instead of wording-only contract changes",
+        "The AGENTS update would need broader orchestration semantics beyond the review-repair edge",
+        "Verification shows the installed runtime cannot be updated through the expected local sync path"
+      ]
+    }
+  },
+  "state": {
+    "phase": "done",
+    "current_task_id": null,
+    "next_task_id": null,
+    "blockers": [],
+    "evidence": [
+      "2026-03-19: Local probe found that home/codex/AGENTS.md already requires delivery-prepare before any git commit or push, but review-repair itself does not yet state the repair-batch re-entry through delivery-prepare.",
+      "2026-03-19: Updated review-repair/SKILL.md and dev/review-repair/run_smoke.py so repair batches that need commit or push must re-enter delivery-prepare and return needs_re_review for the new pushed head; verified with python3 dev/review-repair/run_smoke.py.",
+      "2026-03-19: Updated /Users/xavier/Documents/nix/home/codex/AGENTS.md and dev/smoke/codex/run_scout_skeptic_source_smoke.py to state and guard the same review-repair to delivery-prepare to review-request loop; verified with python3 dev/smoke/codex/run_scout_skeptic_source_smoke.py.",
+      "2026-03-19: Synced /Users/xavier/.codex/skills/review-repair/SKILL.md to the new source contract, ran sudo -n -H darwin-rebuild switch --flake /Users/xavier/Documents/nix#acg-box, and verified the live /Users/xavier/.codex/AGENTS.md surface now contains the new review-repair loop-closure line.",
+      "2026-03-19: Self-review found that dev/review-repair/run_smoke.py only matched loose substrings for the new handoff; tightened the smoke to assert the exact delivery-prepare and re-enter-review-request contract sentences and re-verified with python3 dev/review-repair/run_smoke.py and git diff --check."
+    ],
+    "last_updated": "2026-03-19T02:33:00Z",
+    "replan_reason": null,
+    "context_snapshot": {
+      "local_checkpoint": {
+        "current_theory": "The CI regressions after review repair come from a missing explicit contract edge between review-repair and delivery-prepare rather than from naming or lifecycle-series structure.",
+        "contradictory_evidence": "If review-repair already had explicit commit or push handoff wording and smoke coverage, the root cause would instead be orchestration outside the checked-in contracts.",
+        "missing_evidence": "Need to patch the skill and AGENTS wording, then verify the focused smokes and runtime sync surfaces.",
+        "next_action": "Update review-repair and its smoke first, then mirror the same loop closure in home/codex/AGENTS.md and verify both source and runtime copies."
+      }
+    }
+  }
+}
