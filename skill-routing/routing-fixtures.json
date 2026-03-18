@@ -1,0 +1,83 @@
+{
+  "version": 1,
+  "fixtures": [
+    {
+      "name": "debugging stacks overlay when evidence branches",
+      "prompt": "Investigate a flaky integration test with two plausible root causes. Inspect logs and several files in parallel, then challenge the current theory before changing code.",
+      "expect_primary_process_skills": [
+        "systematic-debugging"
+      ],
+      "expect_overlay_skills": [
+        "scout-skeptic"
+      ],
+      "policy_reason_needles": [
+        "Fix this bug",
+        "multiple plausible hypotheses, regression risks, or missing tests worth challenging",
+        "Do not exclude `scout-skeptic` solely because a primary workflow skill such as `systematic-debugging`, `research`, `codebase-review`, or `verification-before-completion` already applies."
+      ]
+    },
+    {
+      "name": "verification stacks overlay for risky closeout",
+      "prompt": "Before closeout, review a risky refactor for regression risk, missing tests, and contradictory evidence without editing files.",
+      "expect_primary_process_skills": [
+        "verification-before-completion"
+      ],
+      "expect_overlay_skills": [
+        "scout-skeptic"
+      ],
+      "policy_reason_needles": [
+        "read-only review pass before trusting a fix, explanation, or closeout claim",
+        "multiple plausible hypotheses, regression risks, or missing tests worth challenging",
+        "Do not exclude `scout-skeptic` solely because a primary workflow skill such as `systematic-debugging`, `research`, `codebase-review`, or `verification-before-completion` already applies."
+      ]
+    },
+    {
+      "name": "research stacks overlay when exploration would bloat context",
+      "prompt": "Research how the config, docs, and implementation interact across multiple files, and gather read-only evidence without flooding the main thread context.",
+      "expect_primary_process_skills": [
+        "research"
+      ],
+      "expect_overlay_skills": [
+        "scout-skeptic"
+      ],
+      "policy_reason_needles": [
+        "multiple files, questions, or evidence sources can be inspected in parallel",
+        "reduce context bloat",
+        "This skill commonly stacks with `systematic-debugging`, `research`, `codebase-review`, and `verification-before-completion`."
+      ]
+    },
+    {
+      "name": "single-file typo fix stays direct",
+      "prompt": "Fix a typo in one file after a short local probe confirms the issue.",
+      "expect_primary_process_skills": [],
+      "expect_overlay_skills": [],
+      "policy_reason_needles": [
+        "when a short local probe is not enough",
+        "A short local probe by the main thread will answer the question."
+      ]
+    },
+    {
+      "name": "one grep question stays direct",
+      "prompt": "Answer whether one function exists by grepping a single path.",
+      "expect_primary_process_skills": [],
+      "expect_overlay_skills": [],
+      "policy_reason_needles": [
+        "A short local probe by the main thread will answer the question.",
+        "The output would not materially change the next main-thread step."
+      ]
+    },
+    {
+      "name": "obvious one-file import error stays direct",
+      "prompt": "A build failure points to one missing import in a single file and there is no competing theory to investigate.",
+      "expect_primary_process_skills": [
+        "systematic-debugging"
+      ],
+      "expect_overlay_skills": [],
+      "policy_reason_needles": [
+        "Fix this bug",
+        "A short local probe by the main thread will answer the question.",
+        "The output would not materially change the next main-thread step."
+      ]
+    }
+  ]
+}

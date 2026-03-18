@@ -1,26 +1,34 @@
 ---
-name: sidecars
-description: Use when a task benefits from sidecar fan-out for exploration or critique while the main thread remains the only implementation owner.
+name: scout-skeptic
+description: Use for non-trivial tasks that benefit from parallel exploration, evidence gathering, hypothesis checking, or adversarial review. Common fits: debugging, code review, risky refactors, research, and pre-closeout verification. Spawn `scout` for exploration and `skeptic` for critique while the main thread keeps implementation ownership.
 ---
 
-# Sidecars
+# Scout-Skeptic
 
 ## Purpose
 
-Use Codex sidecars as optional, read-only agents inside one task. This skill explains when to spawn sidecars, when not to, and how to ask for evidence that the main thread can use immediately.
+Use the `scout-skeptic` skill as an additive overlay for one task when a short local probe is not enough and the main thread would benefit from bounded, read-only exploration or critique.
+
+## When this should be loaded
+
+- Load this after the first short probe for non-trivial tasks when multiple files, questions, or evidence sources can be inspected in parallel.
+- Load this when there are multiple plausible hypotheses, regression risks, or missing tests worth challenging before implementation or closeout.
+- Load this when isolating exploration from the main context would reduce context bloat.
+- This skill commonly stacks with `systematic-debugging`, `research`, `codebase-review`, and `verification-before-completion`.
+- Do not skip `scout-skeptic` solely because another process skill already applies.
 
 ## Core model
 
 - The main thread owns the task from start to finish.
-- `scout` and `skeptic` are disposable sidecars.
-- Sidecars are read-only. They must not edit repo content, delegate further, or take implementation ownership.
-- If a sidecar concludes that code should change, it stops and hands that conclusion back to the main thread.
+- `scout` and `skeptic` are disposable, read-only sidecars.
+- They must not edit repo content, delegate further, or take implementation ownership.
+- If either sidecar concludes that code should change, it stops and hands that conclusion back to the main thread.
 
 ## Spawn a `scout` when
 
 - You need codebase exploration, repo probing, reproductions, or evidence gathering in parallel.
 - You need multiple independent research questions answered faster than one serial pass.
-- You want a sidecar to gather evidence while the main thread continues direct work.
+- You want a read-only sidecar to gather evidence while the main thread continues direct work.
 
 ## Spawn a `skeptic` when
 
@@ -32,7 +40,7 @@ Use Codex sidecars as optional, read-only agents inside one task. This skill exp
 
 - A short local probe by the main thread will answer the question.
 - The subtask would require repo edits or sustained implementation ownership.
-- Two sidecars would duplicate the same objective.
+- `scout` and `skeptic` would duplicate the same objective.
 - The output would not materially change the next main-thread step.
 
 ## One realistic use
@@ -42,18 +50,18 @@ Use Codex sidecars as optional, read-only agents inside one task. This skill exp
   - Spawn a `skeptic` to challenge that theory and list alternative causes, missing tests, or missing evidence.
   - The main thread stays the only implementation owner, keeps working directly, and retires stale sidecars once enough evidence exists.
 
-## Sidecar round
+## Scout-Skeptic round
 
-- Spawn one or more sidecars only when each sidecar has a distinct objective.
-- Keep executing directly while sidecars run; do not stop just because a sidecar is still working.
+- Spawn one or more sidecars only when each one has a distinct objective.
+- Keep executing directly while they run; do not stop just because one sidecar is still working.
 - At the next decision boundary, do one bounded collect step.
 - If a collect times out, treat that sidecar as not ready yet, not as an automatic failure.
 - Retire a sidecar only when its missing evidence is already covered elsewhere or the main thread's acceptance is already independently satisfied.
-- If a sidecar still holds the only missing evidence, do not retire it; do one more bounded collect step or spawn a narrower replacement sidecar.
+- If a sidecar still holds the only missing evidence, do not retire it; do one more bounded collect step or spawn a narrower replacement.
 - If enough evidence already exists, retire stale or redundant sidecars and continue direct execution.
 - If evidence is still insufficient after the bounded collect step, start a narrower new round or mark the task blocked.
 
-## Writing a good sidecar prompt
+## Writing a good prompt
 
 - Give the sidecar exactly one narrow objective.
 - Point to the smallest relevant files, commands, or evidence sources.
@@ -86,11 +94,11 @@ Do not edit files.
 
 ## Red flags
 
-- Treating a sidecar as a code-writing lane
-- Spawning sidecars with overlapping objectives
+- Treating `scout` or `skeptic` as a code-writing lane
+- Spawning overlapping sidecar objectives
 - Waiting on a stale sidecar that no longer affects the next decision
 - Adding extra coordination machinery on top of the runtime
 
 ## Source-repo maintainer check
 
-- When editing the owning skills repo rather than an installed copy, run `python3 dev/sidecars/run_smoke.py` from that repo root.
+- When editing the owning skills repo rather than an installed copy, run `python3 dev/scout-skeptic/run_smoke.py` from that repo root.

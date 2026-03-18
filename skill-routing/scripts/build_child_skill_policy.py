@@ -16,7 +16,7 @@ ALLOWED_KEYS = {"version", "child_forbidden"}
 SKILLS_REPO_ROOT = Path(__file__).resolve().parents[2]
 EMPTY_TEMPLATE_COMMENTS = [
     "# Optional denylist. Omitted skills are allowed by default.",
-    "# The shipped default forbids `sidecars` so child agents cannot re-enter control-plane fan-out.",
+    "# The shipped default forbids `scout-skeptic` so child agents cannot re-enter control-plane fan-out.",
     "# Add known local skill names only when children must never self-initiate them.",
 ]
 
@@ -75,7 +75,7 @@ def list_known_skills(skills_root: Path = SKILLS_REPO_ROOT) -> set[str]:
 
 
 def blank_policy() -> dict[str, object]:
-    return {"version": POLICY_VERSION, "child_forbidden": ["sidecars"]}
+    return {"version": POLICY_VERSION, "child_forbidden": ["scout-skeptic"]}
 
 
 def load_policy(policy_path: Path) -> dict[str, object]:

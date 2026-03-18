@@ -39,17 +39,23 @@ def assert_not_contains(text: str, needle: str, *, label: str) -> None:
         raise AssertionError(f"{label} must not contain {needle!r}")
 
 
-def assert_sidecars_skill() -> None:
-    skill_path = REPO_ROOT / "sidecars" / "SKILL.md"
+def assert_scout_skeptic_skill() -> None:
+    skill_path = REPO_ROOT / "scout-skeptic" / "SKILL.md"
     assert_exists(skill_path)
     text = read_text(skill_path)
-    assert_contains(text, "scout", label="sidecars skill")
-    assert_contains(text, "skeptic", label="sidecars skill")
-    assert_contains(text, "## Sidecar round", label="sidecars skill")
-    assert_contains(text, "bounded collect step", label="sidecars skill")
-    assert_contains(text, "not ready yet", label="sidecars skill")
-    assert_contains(text, "only missing evidence", label="sidecars skill")
-    assert_contains(text, "acceptance is already independently satisfied", label="sidecars skill")
+    assert_contains(text, "name: scout-skeptic", label="scout-skeptic skill")
+    assert_contains(text, "scout", label="scout-skeptic skill")
+    assert_contains(text, "skeptic", label="scout-skeptic skill")
+    assert_contains(text, "additive overlay", label="scout-skeptic skill")
+    assert_contains(text, "## Scout-Skeptic round", label="scout-skeptic skill")
+    assert_contains(text, "bounded collect step", label="scout-skeptic skill")
+    assert_contains(text, "not ready yet", label="scout-skeptic skill")
+    assert_contains(text, "only missing evidence", label="scout-skeptic skill")
+    assert_contains(
+        text,
+        "acceptance is already independently satisfied",
+        label="scout-skeptic skill",
+    )
     for needle in [
         "helper",
         "ticket-dispatch/1",
@@ -58,8 +64,8 @@ def assert_sidecars_skill() -> None:
         "review_mode",
         "changed_paths",
     ]:
-        assert_not_contains(text, needle, label="sidecars skill")
-    print(f"OK: sidecars skill exists ({skill_path})")
+        assert_not_contains(text, needle, label="scout-skeptic skill")
+    print(f"OK: scout-skeptic skill exists ({skill_path})")
 
 
 def assert_deleted_surface_absent() -> None:
@@ -85,13 +91,13 @@ def assert_repo_docs() -> None:
         assert_not_contains(text, "multi-agent", label=str(path))
         for needle in forbidden[1:]:
             assert_not_contains(text, needle, label=str(path))
-    assert_contains(read_text(REPO_ROOT / "README.md"), "sidecars", label="README.md")
-    print("OK: repo docs point to sidecars and omit deleted protocol surface")
+    assert_contains(read_text(REPO_ROOT / "README.md"), "scout-skeptic", label="README.md")
+    print("OK: repo docs point to scout-skeptic and omit deleted protocol surface")
 
 
 def assert_installable_docs_decoupled() -> None:
     targets = [
-        REPO_ROOT / "sidecars" / "SKILL.md",
+        REPO_ROOT / "scout-skeptic" / "SKILL.md",
         REPO_ROOT / "skill-routing" / "SKILL.md",
     ]
     for path in targets:
@@ -103,11 +109,11 @@ def assert_installable_docs_decoupled() -> None:
 
 
 def main() -> int:
-    assert_sidecars_skill()
+    assert_scout_skeptic_skill()
     assert_deleted_surface_absent()
     assert_repo_docs()
     assert_installable_docs_decoupled()
-    print("OK: sidecars smoke passed")
+    print("OK: scout-skeptic smoke passed")
     return 0
 
 
