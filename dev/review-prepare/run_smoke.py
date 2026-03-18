@@ -19,6 +19,11 @@ def main() -> int:
     for needle in [
         "name: review-prepare",
         "actual diff",
+        "machine-readable result envelope",
+        "`status`",
+        "`head_sha`",
+        "`evidence`",
+        "reviewed head SHA",
         "`no_findings`",
         "`findings`",
         "`needs_architecture_review`",

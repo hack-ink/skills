@@ -9,6 +9,7 @@ import tempfile
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+SKILL_PATH = REPO_ROOT / "plan-execution" / "SKILL.md"
 FORMATTER = REPO_ROOT / "plan-writing" / "scripts" / "format_plan_contract.py"
 VALIDATOR = REPO_ROOT / "plan-writing" / "scripts" / "validate_plan_contract.py"
 READER = REPO_ROOT / "plan-execution" / "scripts" / "read_plan_contract.py"
@@ -47,6 +48,11 @@ def assert_equal(actual: object, expected: object, message: str) -> None:
 def assert_true(condition: bool, message: str) -> None:
     if not condition:
         raise AssertionError(message)
+
+
+def assert_contains(text: str, needle: str) -> None:
+    if needle not in text:
+        raise AssertionError(f"plan-execution skill must contain {needle!r}")
 
 
 def build_contract() -> dict[str, object]:
@@ -114,6 +120,11 @@ def write_invalid_plan(path: Path, contract: dict[str, object]) -> None:
 
 
 def main() -> None:
+    skill_text = SKILL_PATH.read_text(encoding="utf-8")
+    assert_contains(skill_text, "plan-local completion only")
+    assert_contains(skill_text, "does not bypass downstream review")
+    print("OK: plan-execution clarifies plan-local done semantics")
+
     assert_equal(
         READER_HELPER.read_text(encoding="utf-8"),
         WRITER_HELPER.read_text(encoding="utf-8"),

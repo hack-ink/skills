@@ -19,8 +19,11 @@ description: Use after a PR exists and `review-prepare` has converged to request
 
 ## Outputs
 
-- `review_requested`
-- `blocked`
+- Emit a machine-readable result envelope with these required fields:
+  - `status`: one of `review_requested`, `blocked`
+  - `head_sha`: exact branch head SHA the review request applies to
+  - `pr_ref`: stable PR identity such as URL or number
+  - `evidence`: ordered list of verification or gating evidence strings for that head; use `[]` when no additional evidence is available
 
 ## Hard gates
 
@@ -30,6 +33,7 @@ description: Use after a PR exists and `review-prepare` has converged to request
 - The workspace must be clean.
 - The current head must have fresh verification evidence.
 - `review-prepare` must already be clean for this branch state.
+- The requested review must be explicitly bound to the same head SHA that was verified through the stable `head_sha` field.
 
 ## Procedure
 
@@ -39,7 +43,8 @@ description: Use after a PR exists and `review-prepare` has converged to request
    - `git status --short`
 4. Confirm fresh verification evidence exists for the current head.
 5. Request Codex review through the current repo-approved review entrypoint.
-6. Emit `review_requested` with the PR identity and head SHA.
+6. Emit the machine-readable result envelope with `status`, `head_sha`, `pr_ref`, and `evidence`.
+7. Treat any later branch head change as invalidating this request for downstream gate purposes until a new request is sent for the new head.
 
 ## Hand-off
 

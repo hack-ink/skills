@@ -14,28 +14,33 @@ description: Use before creating or updating a PR to run the self-review loop on
 ## Inputs
 
 - Current diff or branch range
+- Current head SHA
 - Requirements source
 - `plan/1` path when the task is plan-backed
 - Verification commands for the touched area
 
 ## Outputs
 
-- `no_findings`
-- `findings`
-- `needs_architecture_review`
-- `blocked`
+- Emit a machine-readable result envelope with these required fields:
+  - `status`: one of `no_findings`, `findings`, `needs_architecture_review`, `blocked`
+  - `head_sha`: exact reviewed head SHA that this decision applies to
+  - `evidence`: ordered list of verification or review evidence strings for that head; use `[]` when no fresh verification evidence exists yet
+
+Every emitted result must use the stable `head_sha` field name for the reviewed branch state. Do not hide the reviewed SHA only inside prose.
 
 ## Hard gates
 
 - Review the actual diff, not memory of the implementation.
 - Every fix round must be followed by fresh verification.
 - Do not output `no_findings` without fresh verification evidence for the current branch state.
+- Bind every decision to the explicit reviewed head SHA for that branch state through the stable `head_sha` field.
 - Do not proceed to PR creation or `review-request` until this skill returns `no_findings`.
 
 ## Procedure
 
 1. Collect the real review surface:
    - `git status --short`
+   - `git rev-parse HEAD`
    - `git diff --stat`
    - `git diff <range>`
 2. Review the diff against requirements, plan intent, regression risk, missing tests, and docs/config impact.
@@ -45,7 +50,8 @@ description: Use before creating or updating a PR to run the self-review loop on
    - structure problems that need architecture work
 4. If findings exist, fix the smallest coherent batch.
 5. Run the scoped verification for that batch.
-6. Review again from the new diff.
+6. Review again from the new diff and re-read `git rev-parse HEAD` if the branch changed during the loop.
+7. Emit the machine-readable result envelope with `status`, `head_sha`, and `evidence` for the reviewed branch state.
 
 ## Three-round escalation
 

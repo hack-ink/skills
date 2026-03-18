@@ -1,0 +1,228 @@
+{
+  "spec": {
+    "schema": "plan/1",
+    "plan_id": "2026-03-18-contract-hardening",
+    "goal": "Harden the Codex process contracts so review state is head-bound, delivery gates are repo-native, plan completion semantics are explicit, and scout-skeptic local checkpoints are standardized across source guidance.",
+    "success_criteria": [
+      "review-prepare, review-request, and review-repair emit stable machine-readable result envelopes with a shared `head_sha` field for the reviewed branch state",
+      "delivery-prepare no longer hardcodes Cargo Make commands as the universal repo gate and instead documents repo-native gate discovery without placeholder fallbacks",
+      "plan-writing, plan-execution, and home/codex/AGENTS.md explicitly state that plan/1 done is plan-local and does not bypass downstream review, merge, closeout, or workspace cleanup gates",
+      "scout-skeptic and home/codex/AGENTS.md define a concrete local checkpoint fallback when child-agent fanout is unavailable or unnecessary",
+      "repo-local smoke coverage is updated to guard the new contract language",
+      "installed ~/.codex skill copies for touched skills are kept in sync with the source skill updates"
+    ],
+    "constraints": [
+      "Keep implementation ownership on the main thread",
+      "Edit only the touched skills, their smoke tests, and the paired home/codex/AGENTS.md guidance",
+      "Preserve the existing plan/1 and delivery/1 schema shapes unless a clarification can be expressed without changing machine-readable fields",
+      "Use clone-backed workspaces for repo edits and leave unrelated local changes in the primary checkouts untouched"
+    ],
+    "defaults": {
+      "skills_workspace": "/Users/xavier/code/trusted/y/hack-ink/skills/.workspaces/chore-contract-hardening",
+      "nix_workspace": "/Users/xavier/Documents/nix/.workspaces/chore-contract-hardening",
+      "skills_repo_root": "/Users/xavier/code/trusted/y/hack-ink/skills",
+      "nix_repo_root": "/Users/xavier/Documents/nix"
+    },
+    "tasks": [
+      {
+        "id": "task-1",
+        "title": "Bind review outcomes to reviewed heads",
+        "status": "done",
+        "objective": "Update the review-* skills and supporting smokes so review state is explicitly tied to the head SHA that was reviewed or repaired.",
+        "inputs": [
+          "review-prepare/SKILL.md",
+          "review-request/SKILL.md",
+          "review-repair/SKILL.md",
+          "dev/review-prepare/run_smoke.py",
+          "dev/review-request/run_smoke.py",
+          "dev/review-repair/run_smoke.py",
+          "home/codex/AGENTS.md"
+        ],
+        "outputs": [
+          "Head-bound review contract language across the review skills",
+          "Smoke coverage for the new head-binding requirements"
+        ],
+        "verification": [
+          "python3 dev/review-prepare/run_smoke.py",
+          "python3 dev/review-request/run_smoke.py",
+          "python3 dev/review-repair/run_smoke.py"
+        ],
+        "depends_on": []
+      },
+      {
+        "id": "task-2",
+        "title": "Generalize delivery gate discovery",
+        "status": "done",
+        "objective": "Replace Cargo Make hardcoding in delivery-prepare with a repo-native gate discovery contract and update its smoke coverage.",
+        "inputs": [
+          "delivery-prepare/SKILL.md",
+          "dev/delivery-prepare/run_smoke.py",
+          "home/codex/AGENTS.md"
+        ],
+        "outputs": [
+          "Repo-native delivery gate wording",
+          "Smoke coverage that rejects Cargo Make as a universal requirement"
+        ],
+        "verification": [
+          "python3 dev/delivery-prepare/run_smoke.py"
+        ],
+        "depends_on": []
+      },
+      {
+        "id": "task-3",
+        "title": "Clarify plan-local completion semantics",
+        "status": "done",
+        "objective": "Make it explicit that plan/1 done is local to the saved plan contract and does not bypass downstream lifecycle gates in AGENTS.",
+        "inputs": [
+          "plan-writing/SKILL.md",
+          "plan-execution/SKILL.md",
+          "dev/plan-writing/run_smoke.py",
+          "dev/plan-execution/run_smoke.py",
+          "home/codex/AGENTS.md"
+        ],
+        "outputs": [
+          "Explicit plan-local done semantics in both plan skills and AGENTS",
+          "Smoke coverage that guards the clarification"
+        ],
+        "verification": [
+          "python3 dev/plan-writing/run_smoke.py",
+          "python3 dev/plan-execution/run_smoke.py"
+        ],
+        "depends_on": []
+      },
+      {
+        "id": "task-4",
+        "title": "Define local scout-skeptic checkpoints",
+        "status": "done",
+        "objective": "Formalize the minimum local checkpoint shape for scout-skeptic when child-agent fanout is unavailable or unnecessary, and sync AGENTS to the same language.",
+        "inputs": [
+          "scout-skeptic/SKILL.md",
+          "dev/scout-skeptic/run_smoke.py",
+          "home/codex/AGENTS.md"
+        ],
+        "outputs": [
+          "A standard local checkpoint checklist or artifact shape",
+          "Smoke coverage for the local checkpoint fallback"
+        ],
+        "verification": [
+          "python3 dev/scout-skeptic/run_smoke.py"
+        ],
+        "depends_on": []
+      },
+      {
+        "id": "task-5",
+        "title": "Sync source and installed runtime copies",
+        "status": "done",
+        "objective": "Keep the installed ~/.codex skill copies aligned with the touched source skills after the contract hardening changes are validated.",
+        "inputs": [
+          "~/.codex/skills/review-prepare/SKILL.md",
+          "~/.codex/skills/review-request/SKILL.md",
+          "~/.codex/skills/review-repair/SKILL.md",
+          "~/.codex/skills/delivery-prepare/SKILL.md",
+          "~/.codex/skills/plan-writing/SKILL.md",
+          "~/.codex/skills/plan-execution/SKILL.md",
+          "~/.codex/skills/scout-skeptic/SKILL.md"
+        ],
+        "outputs": [
+          "Updated installed skill copies that match the source edits"
+        ],
+        "verification": [
+          "python3 - <<'PY'\nfrom pathlib import Path\npairs = [\n    ('review-prepare','SKILL.md'),\n    ('review-request','SKILL.md'),\n    ('review-repair','SKILL.md'),\n    ('delivery-prepare','SKILL.md'),\n    ('plan-writing','SKILL.md'),\n    ('plan-execution','SKILL.md'),\n    ('scout-skeptic','SKILL.md'),\n]\nfor skill, rel in pairs:\n    src = Path('/Users/xavier/code/trusted/y/hack-ink/skills/.workspaces/chore-contract-hardening') / skill / rel\n    dst = Path('/Users/xavier/.codex/skills') / skill / rel\n    assert src.read_text() == dst.read_text(), skill\nprint('OK')\nPY"
+        ],
+        "depends_on": [
+          "task-1",
+          "task-2",
+          "task-3",
+          "task-4"
+        ]
+      },
+      {
+        "id": "task-6",
+        "title": "Stabilize review result envelopes",
+        "status": "done",
+        "objective": "Turn the review-* head binding from prose-only guidance into a stable machine-readable output contract with fixed field names and smoke coverage.",
+        "inputs": [
+          "review-prepare/SKILL.md",
+          "review-request/SKILL.md",
+          "review-repair/SKILL.md",
+          "dev/review-prepare/run_smoke.py",
+          "dev/review-request/run_smoke.py",
+          "dev/review-repair/run_smoke.py"
+        ],
+        "outputs": [
+          "Review skill outputs define a stable result envelope with fixed field names",
+          "Smoke coverage guards the envelope fields instead of only prose head-binding language"
+        ],
+        "verification": [
+          "python3 dev/review-prepare/run_smoke.py",
+          "python3 dev/review-request/run_smoke.py",
+          "python3 dev/review-repair/run_smoke.py"
+        ],
+        "depends_on": [
+          "task-1"
+        ]
+      },
+      {
+        "id": "task-7",
+        "title": "Guard new AGENTS rules in source smoke",
+        "status": "done",
+        "objective": "Extend the Nix source smoke so the new AGENTS contract lines for local checkpoints, plan-local done semantics, repo-native delivery gate discovery, and review head-SHA binding cannot regress silently.",
+        "inputs": [
+          "/Users/xavier/Documents/nix/.workspaces/chore-contract-hardening/home/codex/AGENTS.md",
+          "/Users/xavier/Documents/nix/.workspaces/chore-contract-hardening/dev/smoke/codex/run_scout_skeptic_source_smoke.py"
+        ],
+        "outputs": [
+          "Source smoke assertions for the four new AGENTS contract lines",
+          "Green source smoke that fails if any of those AGENTS lines are removed"
+        ],
+        "verification": [
+          "python3 dev/smoke/codex/run_scout_skeptic_source_smoke.py",
+          "git diff --check"
+        ],
+        "depends_on": [
+          "task-2",
+          "task-3",
+          "task-4"
+        ]
+      }
+    ],
+    "replan_policy": {
+      "owner": "plan-writing",
+      "triggers": [
+        "A required contract clarification needs a schema change instead of a wording-only change",
+        "Cross-repo AGENTS guidance conflicts with the updated skill contracts",
+        "Smoke coverage exposes a contradiction that cannot be fixed without changing task boundaries"
+      ]
+    }
+  },
+  "state": {
+    "phase": "done",
+    "current_task_id": null,
+    "next_task_id": null,
+    "blockers": [],
+    "evidence": [
+      "2026-03-18: Created clone-backed workspaces at /Users/xavier/code/trusted/y/hack-ink/skills/.workspaces/chore-contract-hardening and /Users/xavier/Documents/nix/.workspaces/chore-contract-hardening",
+      "2026-03-18: Baseline checks passed with python3 dev/skill-routing/run_smoke.py in the skills workspace and git diff --check in the nix workspace",
+      "2026-03-18: Updated review-*, delivery-prepare, plan-*, and scout-skeptic source contracts plus repo-local smoke coverage",
+      "2026-03-18: Updated /Users/xavier/Documents/nix/.workspaces/chore-contract-hardening/home/codex/AGENTS.md with matching review, delivery, plan, and local-checkpoint guidance",
+      "2026-03-18: Verified python3 dev/review-prepare/run_smoke.py, python3 dev/review-request/run_smoke.py, python3 dev/review-repair/run_smoke.py, python3 dev/delivery-prepare/run_smoke.py, python3 dev/plan-writing/run_smoke.py, python3 dev/plan-execution/run_smoke.py, python3 dev/scout-skeptic/run_smoke.py, python3 dev/smoke/codex/run_scout_skeptic_source_smoke.py, and git diff --check in both workspaces",
+      "2026-03-18: Synced the touched source skills into ~/.codex/skills and rebuilt nix-darwin from /Users/xavier/Documents/nix/.workspaces/chore-contract-hardening#acg-box so ~/.codex/AGENTS.md matches source",
+      "2026-03-18: Self-review found that review head binding was still prose-only because the review skill outputs did not define stable machine-readable field names",
+      "2026-03-18: Stabilized review-* output contracts around fixed `status`, `head_sha`, and `evidence` fields, with `pr_ref` added for PR-bound stages",
+      "2026-03-18: Verified python3 dev/review-prepare/run_smoke.py, python3 dev/review-request/run_smoke.py, python3 dev/review-repair/run_smoke.py, python3 plan-writing/scripts/validate_plan_contract.py --path docs/plans/2026-03-18_contract-hardening.json, source/runtime equality for the three touched review skills, and git diff --check in the skills workspace",
+      "2026-03-18: Self-review found that the new AGENTS contract lines in the nix lane were still unguarded by dev/smoke/codex/run_scout_skeptic_source_smoke.py",
+      "2026-03-18: Extended dev/smoke/codex/run_scout_skeptic_source_smoke.py to assert the local checkpoint fallback line, the plan-local done line, the repo-native delivery gate line, and the review head-SHA line from home/codex/AGENTS.md",
+      "2026-03-18: Verified python3 dev/smoke/codex/run_scout_skeptic_source_smoke.py, git diff --check in both workspaces, and python3 plan-writing/scripts/validate_plan_contract.py --path docs/plans/2026-03-18_contract-hardening.json"
+    ],
+    "last_updated": "2026-03-18T16:07:57Z",
+    "replan_reason": null,
+    "context_snapshot": {
+      "local_checkpoint": {
+        "current_theory": "This review finding is a narrow drift-prevention gap and can be fixed by extending the existing nix source smoke with explicit assertions for the four new AGENTS contract lines.",
+        "contradictory_evidence": "If another source smoke already covered those lines indirectly, adding duplicate assertions here would be unnecessary.",
+        "missing_evidence": "Need to verify the current source smoke still passes without asserting the new lines and then turns those lines into explicit checks.",
+        "next_action": "Patch the nix source smoke to assert the local checkpoint, plan-local done, repo-native gate, and review head-SHA lines, then rerun smoke and diff hygiene."
+      }
+    }
+  }
+}

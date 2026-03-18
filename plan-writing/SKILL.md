@@ -87,6 +87,7 @@ The saved `plan/1` JSON must decode to this top-level shape:
   - rewrite only the parts of `spec` that truly changed
   - clear `needs_replan` by producing a consistent `ready` state
 - Treat missing saved files and legacy prose-only plans as authoring work, not as execution authority.
+- Treat `state.phase = "done"` as plan-local completion only. It means this saved plan's task graph is terminal; it does not by itself certify downstream review, merge, `delivery-closeout`, or workspace cleanup unless those lifecycle stages are explicit tasks in the same saved plan.
 
 ## Determinism rules
 

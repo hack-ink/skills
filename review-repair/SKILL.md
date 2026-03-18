@@ -14,17 +14,19 @@ description: Use after a PR has review feedback on GitHub. Owns unresolved-threa
 ## Inputs
 
 - PR URL or PR number
+- Current head SHA
 - `plan/1` path when applicable
 - Optional review round identifier
 
 ## Outputs
 
-- `repaired`
-- `no_action`
-- `needs_re_review`
-- `awaiting_external`
-- `needs_architecture_review`
-- `blocked`
+- Emit a machine-readable result envelope with these required fields:
+  - `status`: one of `repaired`, `no_action`, `needs_re_review`, `awaiting_external`, `needs_architecture_review`, `blocked`
+  - `head_sha`: exact repaired or inspected head SHA that this result applies to
+  - `pr_ref`: stable PR identity such as URL or number
+  - `evidence`: ordered list of verification, review-thread, or blocker evidence strings for that head; use `[]` when none apply
+
+Every emitted result must use the stable `head_sha` field name for the repaired branch state. Do not leave the SHA implied only by prose.
 
 ## Hard gates
 
@@ -35,6 +37,7 @@ description: Use after a PR has review feedback on GitHub. Owns unresolved-threa
   - decide: fix now, push back with technical reasoning, or ask for clarification
 - External review feedback is input to evaluate, not an automatic order to follow.
 - Re-run fresh verification after every repair batch.
+- Bind every repair decision and resolution decision to the explicit repaired head SHA that was verified through the stable `head_sha` field.
 - Reply in the GitHub thread, not as a top-level PR comment.
 - Resolve a thread only when all of these are true:
   - the code is actually fixed
@@ -46,6 +49,7 @@ description: Use after a PR has review feedback on GitHub. Owns unresolved-threa
 ## Procedure
 
 1. Collect unresolved review threads and requested changes.
+   - Record the current head SHA before touching code.
 2. For each thread:
    - restate the technical requirement
    - validate it against the codebase
@@ -54,7 +58,8 @@ description: Use after a PR has review feedback on GitHub. Owns unresolved-threa
 4. Apply the batch and re-run scoped verification.
 5. Reply in-thread for every addressed comment.
 6. Resolve only the threads that satisfy the hard gates.
-7. If the branch changed in a reviewer-visible way, return `needs_re_review`.
+7. If the branch head changes during the loop, stop carrying prior repair state forward implicitly and return `needs_re_review` for the new head.
+8. Emit the machine-readable result envelope with `status`, `head_sha`, `pr_ref`, and `evidence` for that branch state.
 
 ## Three-round escalation
 

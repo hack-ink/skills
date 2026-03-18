@@ -20,6 +20,7 @@ Do not run `git commit` or `git push` until you have produced a **Delivery-prepa
 - A clear skip reason for each skipped gate
 
 If a gate is not applicable, record it as `skipped` with a reason and do not invent substitute commands.
+If the repository does not document an exact local commit/push gate, record that discovery result explicitly instead of assuming a universal command set from file names alone.
 
 This repository also requires commit messages to follow the `delivery/1` schema (single-line JSON). Do not use free-form commit messages.
 
@@ -134,12 +135,15 @@ Fallback validation (use only if the script is unavailable; record exit code in 
 
 ## Steps
 
-1. `Makefile.toml` exists at repo-root?
-    - If present, run **exactly** in this order:
-        - `cargo make lint-fix`
-        - `cargo make fmt`
-        - `cargo make test`
-    - If not present, record that the Makefile.toml gate is not applicable and skip this section.
+1. Discover the repo-native local commit/push gate.
+    - Scan the smallest repo-specific sources that could define it, for example:
+        - `AGENTS.md`
+        - `README.md` / `CONTRIBUTING.md`
+        - task-runner manifests such as `Makefile.toml`, `package.json`, or `pyproject.toml`
+        - maintainer docs under `dev/` or similar repo-local guidance
+    - If those sources document an exact local gate, run the documented commands in the documented order.
+    - If a task-runner manifest exists but the exact gate names are not documented, do not infer a universal sequence from the file name alone.
+    - If no exact gate is documented, record `repo-native gate: skipped` with reason `no documented repo-native commit/push gate` and keep the task-specific verification evidence separate in the report.
 
 2. `docs/` directory exists at repo-root?
     - If present, perform a **documentation impact review**:
@@ -155,7 +159,7 @@ Fallback validation (use only if the script is unavailable; record exit code in 
         - If the change plausibly affects CI but your local runs do not cover it, record the gap and risk (and optionally run additional local checks if they are clearly justified).
     - Do not auto-run workflows or use `gh` watchers as a substitute for CI.
 
-`lint-fix` may change files, so keep `fmt` and `test` tied to the same local state.
+If the documented repo-native gate mutates files, keep the later commands in that gate tied to the same local state.
 
 ## Outputs
 
@@ -175,10 +179,10 @@ Commit message
   - fallback validator snippet (exit: <code> | n/a)
 
 Repo gates
-- Makefile.toml gate: ran | skipped: <reason>
-  - `cargo make lint-fix` (exit: <code> | n/a)
-  - `cargo make fmt` (exit: <code> | n/a)
-  - `cargo make test` (exit: <code> | n/a)
+- repo-native gate discovery: done | skipped: <reason>
+  - scanned/read: <paths/files>
+  - gate: ran | skipped: <reason>
+  - `<documented command>` (exit: <code> | n/a)
 - docs review: done | skipped: <reason>
   - scanned/read: <paths/files>
   - conclusion: <no-impact|impact|unclear> (risk: <low|medium|high>)

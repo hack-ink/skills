@@ -1,6 +1,6 @@
 ---
 name: scout-skeptic
-description: Use for non-trivial tasks that benefit from parallel exploration, evidence gathering, hypothesis checking, or adversarial review. Common fits: debugging, code review, risky refactors, research, and pre-closeout verification. Spawn `scout` for exploration and `skeptic` for critique while the main thread keeps implementation ownership.
+description: "Use for non-trivial tasks that benefit from parallel exploration, evidence gathering, hypothesis checking, or adversarial review. Common fits: debugging, code review, risky refactors, research, and pre-closeout verification. Spawn `scout` for exploration and `skeptic` for critique while the main thread keeps implementation ownership."
 ---
 
 # Scout-Skeptic
@@ -61,6 +61,19 @@ Use the `scout-skeptic` skill as an additive overlay for one task when a short l
 - If enough evidence already exists, retire stale or redundant sidecars and continue direct execution.
 - If evidence is still insufficient after the bounded collect step, start a narrower new round or mark the task blocked.
 
+## Local checkpoint fallback
+
+When child-agent fanout is unavailable, unnecessary, or not worth the overhead, run the checkpoint locally instead of skipping it.
+
+Treat the local checkpoint as complete only when you record all four items:
+
+- current theory or working plan
+- strongest contradictory evidence, regression risk, or skeptic concern
+- missing evidence or missing test that would still change the decision
+- next direct action the main thread will take
+
+Keep this local checkpoint short and task-specific. It is a bounded reasoning artifact, not a second planning workflow.
+
 ## Writing a good prompt
 
 - Give the sidecar exactly one narrow objective.
@@ -98,6 +111,7 @@ Do not edit files.
 - Spawning overlapping sidecar objectives
 - Waiting on a stale sidecar that no longer affects the next decision
 - Adding extra coordination machinery on top of the runtime
+- Claiming a local checkpoint happened without recording the current theory, skeptic concern, missing evidence, and next direct action
 
 ## Source-repo maintainer check
 

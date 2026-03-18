@@ -8,6 +8,7 @@ import subprocess
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+SKILL_PATH = REPO_ROOT / "plan-writing" / "SKILL.md"
 FORMATTER = REPO_ROOT / "plan-writing" / "scripts" / "format_plan_contract.py"
 VALIDATOR = REPO_ROOT / "plan-writing" / "scripts" / "validate_plan_contract.py"
 
@@ -43,6 +44,11 @@ def assert_equal(actual: object, expected: object, message: str) -> None:
 def assert_true(condition: bool, message: str) -> None:
     if not condition:
         raise AssertionError(message)
+
+
+def assert_contains(text: str, needle: str) -> None:
+    if needle not in text:
+        raise AssertionError(f"plan-writing skill must contain {needle!r}")
 
 
 def build_contract() -> dict[str, object]:
@@ -95,6 +101,11 @@ def build_contract() -> dict[str, object]:
 
 
 def main() -> None:
+    skill_text = SKILL_PATH.read_text(encoding="utf-8")
+    assert_contains(skill_text, "plan-local completion only")
+    assert_contains(skill_text, "does not by itself certify downstream review")
+    print("OK: plan-writing clarifies plan-local done semantics")
+
     raw_contract = json.dumps(build_contract())
     formatted = run(
         ["python3", str(FORMATTER)],

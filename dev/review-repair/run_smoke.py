@@ -19,6 +19,12 @@ def main() -> int:
     for needle in [
         "name: review-repair",
         "External review feedback is input to evaluate",
+        "machine-readable result envelope",
+        "`status`",
+        "`head_sha`",
+        "`pr_ref`",
+        "`evidence`",
+        "repaired head SHA",
         "Reply in the GitHub thread",
         "Resolve a thread only",
         "`needs_re_review`",

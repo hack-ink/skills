@@ -55,6 +55,11 @@ def assert_scout_skeptic_skill() -> None:
     assert_contains(text, "bounded collect step", label="scout-skeptic skill")
     assert_contains(text, "not ready yet", label="scout-skeptic skill")
     assert_contains(text, "only missing evidence", label="scout-skeptic skill")
+    assert_contains(text, "## Local checkpoint fallback", label="scout-skeptic skill")
+    assert_contains(text, "current theory or working plan", label="scout-skeptic skill")
+    assert_contains(text, "strongest contradictory evidence, regression risk, or skeptic concern", label="scout-skeptic skill")
+    assert_contains(text, "missing evidence or missing test", label="scout-skeptic skill")
+    assert_contains(text, "next direct action the main thread will take", label="scout-skeptic skill")
     assert_contains(
         text,
         "acceptance is already independently satisfied",

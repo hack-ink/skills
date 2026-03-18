@@ -8,6 +8,7 @@ import subprocess
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+SKILL_PATH = REPO_ROOT / "delivery-prepare" / "SKILL.md"
 GENERATOR = REPO_ROOT / "delivery-prepare" / "scripts" / "build_delivery_contract.py"
 VALIDATOR = (
     REPO_ROOT / "delivery-prepare" / "scripts" / "validate_delivery_contract.py"
@@ -107,6 +108,11 @@ def assert_true(condition: bool, message: str) -> None:
         raise AssertionError(message)
 
 
+def assert_contains(text: str, needle: str) -> None:
+    if needle not in text:
+        raise AssertionError(f"delivery-prepare skill must contain {needle!r}")
+
+
 def build_invalid_contract(*, refs: object, **overrides: object) -> str:
     payload = {
         "schema": "delivery/1",
@@ -126,6 +132,15 @@ def build_invalid_contract(*, refs: object, **overrides: object) -> str:
 
 
 def main() -> None:
+    skill_text = SKILL_PATH.read_text(encoding="utf-8")
+    for needle in [
+        "repo-native local commit/push gate",
+        "do not infer a universal sequence from the file name alone",
+        "repo-native gate discovery",
+    ]:
+        assert_contains(skill_text, needle)
+    print("OK: skill text requires repo-native gate discovery")
+
     untracked_contract = run(
         [
             "python3",
