@@ -1,0 +1,112 @@
+{
+  "spec": {
+    "schema": "plan/1",
+    "plan_id": "2026-03-20-plan-slug-guidance",
+    "goal": "Make the plan skill contract state the plan-file slug style explicitly so agents do not have to infer it from the `<feature-name>` placeholder.",
+    "success_criteria": [
+      "plan-writing/SKILL.md states that plan files use `docs/plans/YYYY-MM-DD_<feature-slug>.json`, with a single underscore separator after the date and a kebab-case feature slug",
+      "plan-execution/SKILL.md mirrors the same file naming guidance for consumers",
+      "README.md no longer leaves the slug style implicit",
+      "Focused plan-writing and plan-execution smoke coverage guards the new wording"
+    ],
+    "constraints": [
+      "Keep the change scoped to naming guidance and paired smoke coverage",
+      "Do not change the persisted `plan/1` schema or helper script behavior",
+      "Keep examples aligned with existing `docs/plans/*.json` filenames in this repo"
+    ],
+    "defaults": {
+      "skills_repo_root": "/Users/xavier/code/trusted/y/hack-ink/skills"
+    },
+    "tasks": [
+      {
+        "id": "task-1",
+        "title": "Audit plan-file naming surfaces",
+        "status": "done",
+        "objective": "Inspect the current plan-writing, plan-execution, README, and existing plan files so the wording change matches the repo's actual filename convention.",
+        "inputs": [
+          "plan-writing/SKILL.md",
+          "plan-execution/SKILL.md",
+          "README.md",
+          "docs/plans/*.json"
+        ],
+        "outputs": [
+          "Confirmed repo-local naming convention for plan files"
+        ],
+        "verification": [
+          "rg -n \"docs/plans/YYYY-MM-DD_|<feature-name>|<feature-slug>\" README.md plan-writing/SKILL.md plan-execution/SKILL.md"
+        ],
+        "depends_on": []
+      },
+      {
+        "id": "task-2",
+        "title": "Clarify naming guidance in skill docs",
+        "status": "done",
+        "objective": "Update plan-writing, plan-execution, and the repo README to say that the date is followed by one underscore and the feature slug itself is kebab-case.",
+        "inputs": [
+          "plan-writing/SKILL.md",
+          "plan-execution/SKILL.md",
+          "README.md"
+        ],
+        "outputs": [
+          "Explicit plan-file naming guidance in all user-facing entrypoints"
+        ],
+        "verification": [
+          "git diff -- README.md plan-writing/SKILL.md plan-execution/SKILL.md"
+        ],
+        "depends_on": [
+          "task-1"
+        ]
+      },
+      {
+        "id": "task-3",
+        "title": "Harden focused smoke coverage",
+        "status": "done",
+        "objective": "Update the plan-writing and plan-execution smokes to assert the explicit slug guidance, then rerun the focused verification set.",
+        "inputs": [
+          "dev/plan-writing/run_smoke.py",
+          "dev/plan-execution/run_smoke.py"
+        ],
+        "outputs": [
+          "Focused smoke assertions for the explicit plan-file naming rule"
+        ],
+        "verification": [
+          "python3 dev/plan-writing/run_smoke.py",
+          "python3 dev/plan-execution/run_smoke.py",
+          "git diff --check"
+        ],
+        "depends_on": [
+          "task-2"
+        ]
+      }
+    ],
+    "replan_policy": {
+      "owner": "plan-writing",
+      "triggers": [
+        "Clarifying the slug style requires changing helper-script behavior instead of only documentation and smoke coverage",
+        "Existing plan filenames in the repo are inconsistent enough that one naming rule would be misleading",
+        "Another shared contract surface outside the touched files must become authoritative for plan naming"
+      ]
+    }
+  },
+  "state": {
+    "phase": "done",
+    "current_task_id": null,
+    "next_task_id": null,
+    "blockers": [],
+    "evidence": [
+      "2026-03-20: Audited README.md, plan-writing/SKILL.md, plan-execution/SKILL.md, and existing docs/plans/*.json files; repo-local saved plans already use a single underscore after the date plus kebab-case feature slugs such as 2026-03-19_review-request-entrypoint.json.",
+      "2026-03-20: Updated plan-writing/SKILL.md, plan-execution/SKILL.md, and README.md to replace the ambiguous `<feature-name>` placeholder with `<feature-slug>` and to state the explicit one-underscore-plus-kebab-case naming rule.",
+      "2026-03-20: Hardened dev/plan-writing/run_smoke.py and dev/plan-execution/run_smoke.py to assert the explicit filename guidance; verified with python3 dev/plan-writing/run_smoke.py, python3 dev/plan-execution/run_smoke.py, and git diff --check."
+    ],
+    "last_updated": "2026-03-20T06:40:00Z",
+    "replan_reason": null,
+    "context_snapshot": {
+      "local_checkpoint": {
+        "contradictory_evidence": "If another checked-in surface uses snake_case or a different separator for real plan files, tightening the wording to kebab-case would be wrong.",
+        "current_theory": "The repo already uses kebab-case feature slugs in saved plan filenames; the ambiguity comes from `<feature-name>` placeholders that never state the slug style explicitly.",
+        "missing_evidence": "Need to confirm all touched user-facing entrypoints and focused smokes can align on one explicit naming sentence.",
+        "next_action": "Update plan-writing, plan-execution, README, and the focused smokes to encode the explicit underscore-plus-kebab-case rule."
+      }
+    }
+  }
+}

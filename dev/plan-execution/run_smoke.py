@@ -123,7 +123,11 @@ def main() -> None:
     skill_text = SKILL_PATH.read_text(encoding="utf-8")
     assert_contains(skill_text, "plan-local completion only")
     assert_contains(skill_text, "does not bypass downstream review")
+    assert_contains(skill_text, "YYYY-MM-DD_<feature-slug>.json")
+    assert_contains(skill_text, "Plan filenames use one underscore after the date")
+    assert_contains(skill_text, "feature slug itself is kebab-case")
     print("OK: plan-execution clarifies plan-local done semantics")
+    print("OK: plan-execution makes the plan filename slug style explicit")
 
     assert_equal(
         READER_HELPER.read_text(encoding="utf-8"),

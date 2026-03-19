@@ -8,14 +8,15 @@ description: Use when the user wants to execute an existing implementation plan,
 ## Scope
 
 - This skill is the consumer stage of the shared `plan/1` contract.
-- It consumes a saved file under `docs/plans/YYYY-MM-DD_<feature-name>.json`.
+- It consumes a saved file under `docs/plans/YYYY-MM-DD_<feature-slug>.json`.
+- Plan filenames use one underscore after the date, and the feature slug itself is kebab-case.
 - It owns only runtime state transitions.
 - It must not repair or rewrite strategy itself.
 
 Typical triggers:
 
 - The user says "execute this plan" or links a plan doc
-- Work should continue from `docs/plans/YYYY-MM-DD_<feature-name>.json`
+- Work should continue from `docs/plans/YYYY-MM-DD_<feature-slug>.json`
 - A separate session is asked to implement a saved plan
 - A previously blocked contract now needs to resume from saved state
 
@@ -84,7 +85,7 @@ If this saved plan does not explicitly include downstream review or landing task
 Set the skill root from the runtime skill list before running the reader:
 
 - `PLAN_EXECUTION_HOME=<skill root containing this SKILL.md>`
-- `python3 "$PLAN_EXECUTION_HOME/scripts/read_plan_contract.py" --path docs/plans/YYYY-MM-DD_<feature-name>.json`
+- `python3 "$PLAN_EXECUTION_HOME/scripts/read_plan_contract.py" --path docs/plans/YYYY-MM-DD_<feature-slug>.json`
 
 The reader validates the saved file, normalizes the contract, and returns machine-readable metadata plus the normalized contract payload.
 

@@ -104,7 +104,11 @@ def main() -> None:
     skill_text = SKILL_PATH.read_text(encoding="utf-8")
     assert_contains(skill_text, "plan-local completion only")
     assert_contains(skill_text, "does not by itself certify downstream review")
+    assert_contains(skill_text, "YYYY-MM-DD_<feature-slug>.json")
+    assert_contains(skill_text, "Use exactly one underscore between the date and the feature slug.")
+    assert_contains(skill_text, "Write the feature slug in kebab-case")
     print("OK: plan-writing clarifies plan-local done semantics")
+    print("OK: plan-writing makes the plan filename slug style explicit")
 
     raw_contract = json.dumps(build_contract())
     formatted = run(
