@@ -25,6 +25,8 @@ Typical triggers:
 - Default to one clone-backed `.workspaces/<lane>` lane per non-read-only implementation task, branch, and review stream unless the correct lane is already active.
 - Prefer reusing an existing matching lane over creating a duplicate.
 - Keep `.workspaces/` ignored.
+- If a task explicitly needs a persisted `plan/1` artifact, create or update it from inside the active workspace so the plan stays in the same lane as the implementation.
+- Do not leave task-local `docs/plans/...` artifacts behind in the primary checkout while implementation lives in a workspace lane.
 - Use self-contained clone-backed workspaces, not linked shared-Git checkouts, when the lane itself needs to run `git add`, `git commit`, `git push`, or other Git writes under sandboxed execution.
 - Run the repository's documented bootstrap and a fast baseline verification after creation.
 - Treat closeout as part of task completion. A finished lane is not done until the workspace and branch state are clean.
@@ -207,13 +209,19 @@ Teardown flow:
 3. If the remote branch still exists and the task is complete, delete it:
    - `git -C "$workspace_path" push origin --delete "$branch_name"`
 4. If the remote branch is already absent, record that it was auto-deleted or already cleaned up.
-5. Remove the workspace directory with `rm -rf "$workspace_path"` only after showing the dirty state and unique-commit risk.
+5. Fast-forward the primary checkout's integration branch to the latest upstream state before claiming full closeout:
+   - require the primary checkout worktree to be clean
+   - if the primary checkout is not already on `<target-branch>`, switch to it only after confirming the checkout is clean
+   - `git -C "$repo_root" fetch origin "$target_branch"`
+   - `git -C "$repo_root" pull --ff-only origin "$target_branch"`
+6. Remove the workspace directory with `rm -rf "$workspace_path"` only after showing the dirty state and unique-commit risk.
 
 Default closeout target state:
 
 - `.workspaces/<lane>` does not exist
 - the lane-local branch disappears with the clone-backed workspace
 - any same-named local branch in the primary checkout is absent
+- the primary checkout is on the integration branch and fast-forwarded to the latest upstream state
 - the remote branch is absent
 
 If remote branch deletion fails because of branch protection, platform policy, or network failure, return `warned` instead of falsely claiming a fully clean closeout.

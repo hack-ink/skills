@@ -54,7 +54,7 @@
       ],
       "expect_overlay_skills": [],
       "policy_reason_needles": [
-        "\"Implement this feature in this repo\" -> load `workspaces` first so the work starts in an isolated `.workspaces/*` lane.",
+        "\"Implement this feature in this repo\" -> load `workspaces` first so the work starts in an isolated `.workspaces/*` lane; if a saved `plan/1` is explicitly required, create or revise it from inside that active lane instead of leaving it in the primary checkout.",
         "Start or resume non-read-only implementation work -> `workspaces`"
       ]
     },

@@ -26,6 +26,8 @@ def main() -> int:
     for needle in [
         "name: review-repair",
         "External review feedback is input to evaluate",
+        "uses `review-loop` for any owned repair batch",
+        "Use `review-loop` as the shared repair-batch review engine on the repaired diff.",
         "machine-readable result envelope",
         "`status`",
         "`head_sha`",
@@ -35,16 +37,16 @@ def main() -> int:
         "Reply in the review thread",
         "Resolve a thread only",
         "resolve it through GitHub instead of leaving manual cleanup behind",
-        "Before any repair-batch `git commit` or `git push`, run `review-prepare` on the repaired diff and do not continue until it returns `no_findings` for the current repaired head.",
+        "the repaired diff must reach `clean` through `review-loop` before any commit, push, or resolve decision that depends on the new state.",
+        "A repaired head that reaches `clean` through `review-loop` satisfies the current-head self-review gate for downstream flow",
         "Do not leave a repaired head carrying known owned bugs or small cleanup while treating external review as the next line of defense.",
-        "If a repair batch needs `git commit` or `git push`, route through `delivery-prepare` before committing or pushing that repaired head.",
+        "If a repair batch needs `git commit` or `git push`, route through `delivery-prepare` only after `review-loop` reaches `clean` for that repaired head.",
         "A repair batch that produces and pushes a new head is not complete by itself; keep ownership until the repaired diff is verified, the thread replies are posted, and every fixed thread is resolved.",
         "`gh api graphql`",
         "use `path`, `line` / `startLine`, and the latest comment `url` or body to match the right `$THREAD_ID` before resolving",
         "`awaiting_external`",
-        "three consecutive rounds",
-        "external review feedback or repaired-diff self-review",
-        "new bugs, owned findings, or structural problems",
+        "The bounded repair mechanics inherit the three-round limit from `review-loop`.",
+        "external review feedback -> triage -> `review-loop` repair batch -> next review pass",
         "deeper architecture or design cause",
         "technical reasoning",
         "`research`",
@@ -54,16 +56,16 @@ def main() -> int:
     assert_block(
         text,
         """
-        Run `review-prepare` on the repaired diff before any repair-batch commit or push.
-           - if `review-prepare` returns findings, fix them, re-run verification, and re-run `review-prepare` until it returns `no_findings` for the current repaired head
-           - do not treat repair-batch verification alone as enough to skip this self-review gate
+        Apply the batch and run `review-loop` on the repaired diff.
+           - if `review-loop` returns `findings`, keep fixing, re-verifying, and re-running `review-loop` until it returns `clean` for the current repaired head
+           - if `review-loop` returns `needs_architecture_review` or `blocked`, stop and emit that result for the current head
         """,
     )
     assert_block(
         text,
         """
         If the repair batch needs commit or push:
-           - after `review-prepare` is clean for the repaired head, run `delivery-prepare` before the commit or push
+           - after `review-loop` is clean for the repaired head, run `delivery-prepare` before the commit or push
            - push the repaired head
            - continue owning the external-review repair loop for that new head instead of assuming another request step
         """,
@@ -96,7 +98,7 @@ def main() -> int:
               unresolveReviewThread(input: {threadId: $threadId}) {
         """,
     )
-    print("OK: review-repair contract captures verified thread repair and resolve")
+    print("OK: review-repair contract captures shared-loop repair and verified thread resolve")
     return 0
 
 

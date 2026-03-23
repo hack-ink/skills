@@ -13,8 +13,9 @@ This repository hosts reusable agent skills for Codex workflows.
 - `python-policy` - Python policy for runtime boundaries and project-configured quality gates, deferring to checked-in bootstrap and allowing documented isolated runtimes when required (`python-policy/SKILL.md`).
 - `research` - research/investigation workflow that reads existing materials, clarifies unknowns with the user, and makes evidence-backed recommendations with websearch (`research/SKILL.md`).
 - `research-pro` - consult ChatGPT Pro via chatgpt.com Projects for architecture/research decisions, with Pro thinking defaulting to Extended (use Standard/default only when requested), project-only memory set only when creating a new Project, and polling-aware handoff (`research-pro/SKILL.md`).
-- `review-prepare` - primary branch-readiness self-review gate for actual diffs, with bounded fix-and-verify rounds, adversarial re-review, and escalation to `research` when patch-on-patch churn does not converge (`review-prepare/SKILL.md`).
-- `review-repair` - external-review repair workflow for unresolved PR review threads, including truth-checking reviewer claims, verified fixes, in-thread replies, thread resolution, and bounded escalation to `research` (`review-repair/SKILL.md`).
+- `review-loop` - shared bounded review -> fix -> verify -> re-review engine for concrete diffs or repaired branch states, with head-SHA binding and three-round escalation to `research` (`review-loop/SKILL.md`).
+- `review-prepare` - primary branch-readiness self-review wrapper around `review-loop`, mapping the shared review engine onto pre-PR go/no-go status (`review-prepare/SKILL.md`).
+- `review-repair` - external-review wrapper around `review-loop` plus unresolved-thread triage, in-thread replies, and verified thread resolution (`review-repair/SKILL.md`).
 - `pr-land` - land-lite PR workflow for readiness checks, branch sync decisions, and merge execution without swallowing delivery closeout or cleanup (`pr-land/SKILL.md`).
 - `scrapling` - fallback web-scraping workflow for Scrapling when `curl`, built-in web fetch, or web search tools return incomplete, JS-shell, or bot-blocked content, with static/dynamic/stealth mode selection and CLI/Python/MCP examples (`scrapling/SKILL.md`).
 - `rust-policy` - Rust policy for scope, toolchain/workflow, safety, formatting, error handling, logging, and ownership, with `rustfmt` as the final formatting authority (`rust-policy/SKILL.md`).
@@ -27,12 +28,13 @@ This repository hosts reusable agent skills for Codex workflows.
 
 To add or update a skill:
 
-1. Create a new `<skill-name>/SKILL.md` with required frontmatter (`name`, `description`).
-2. Keep installable runtime assets with the skill itself. If `SKILL.md` references a script, template, schema, or helper at runtime, keep it under `<skill-name>/`.
-3. Keep repo-local validation assets under `dev/<skill-name>/`. Smoke tests, e2e fixtures, backtests, and maintainer-only validation entrypoints belong there and are not part of the installed skill contract.
-4. Treat generated artifacts, lockfiles, codegen outputs, and build outputs as tooling-owned. Skills must not instruct manual edits to those files when a canonical regeneration or sync command exists; they should point to the canonical command and verify the regenerated result instead.
-5. Keep instructions concise, testable, and narrowly scoped.
-6. Update this `README.md` catalog when new skills are added.
+1. Load the system `skill-creator` skill first so naming, frontmatter, and packaging follow the current authoring contract.
+2. Create a new `<skill-name>/SKILL.md` with required frontmatter (`name`, `description`).
+3. Keep installable runtime assets with the skill itself. If `SKILL.md` references a script, template, schema, or helper at runtime, keep it under `<skill-name>/`.
+4. Keep repo-local validation assets under `dev/<skill-name>/`. Smoke tests, e2e fixtures, backtests, and maintainer-only validation entrypoints belong there and are not part of the installed skill contract.
+5. Treat generated artifacts, lockfiles, codegen outputs, and build outputs as tooling-owned. Skills must not instruct manual edits to those files when a canonical regeneration or sync command exists; they should point to the canonical command and verify the regenerated result instead.
+6. Keep instructions concise, testable, and narrowly scoped.
+7. Update this `README.md` catalog when new skills are added.
 
 ## Repository layout
 

@@ -1,6 +1,6 @@
 ---
 name: review-prepare
-description: Use before creating or refreshing a PR head, including after `review-repair` changes the branch, to run the primary self-review gate on the actual diff. Owns branch-readiness review, bounded fix-and-verify rounds, and escalation to `research` when three rounds of patch-on-patch churn do not converge.
+description: Use before creating or refreshing a PR head, including after `review-repair` changes the branch, to run the primary self-review gate on the actual diff. Wraps the shared `review-loop` mechanics for branch-readiness review and maps that result onto pre-PR go/no-go status.
 ---
 
 # Review Prepare
@@ -8,7 +8,8 @@ description: Use before creating or refreshing a PR head, including after `revie
 ## Scope
 
 - This skill owns the primary self-review gate for branch readiness.
-- This skill reviews the actual diff, fixes review findings, reruns verification, and decides whether the branch is clean enough to proceed without any known owned review debt.
+- This skill wraps `review-loop` for the actual diff and maps the shared loop result onto pre-PR branch-readiness status.
+- This skill decides whether the branch is clean enough to proceed without any known owned review debt.
 - This skill does not create a PR, handle external-review threads, merge, or close out trackers.
 
 ## Inputs
@@ -30,11 +31,8 @@ Every emitted result must use the stable `head_sha` field name for the reviewed 
 
 ## Hard gates
 
-- Review the actual diff, not memory of the implementation.
-- Every fix round must be followed by fresh verification.
-- Do not output `no_findings` until you have challenged the current diff from both the implementation lens and an adversarial reviewer lens.
-- The adversarial reviewer pass must explicitly check regression risk, missing tests, docs/config drift, and operator-facing fallout for the current diff.
-- Do not output `no_findings` without fresh verification evidence for the current branch state.
+- Run `review-loop` on the actual diff instead of inventing a second local review engine here.
+- Do not output `no_findings` unless `review-loop` reached `clean` for the current head.
 - Do not output `no_findings` while any known owned issue remains on the current head, even if it is a small or obvious fix.
 - External review is input to validate after self review, not a place to hand off known owned cleanup.
 - Bind every decision to the explicit reviewed head SHA for that branch state through the stable `head_sha` field.
@@ -47,41 +45,33 @@ Every emitted result must use the stable `head_sha` field name for the reviewed 
    - `git rev-parse HEAD`
    - `git diff --stat`
    - `git diff <range>`
-2. Run the implementation pass against requirements, plan intent, and the intended user-visible behavior of the diff.
-3. Run a second pass from the adversarial reviewer lens:
-   - look for regression risk and missing tests
-   - look for docs, config, migration, or operator-facing fallout
-   - challenge whether the current diff would survive a skeptical re-read even if tests are green
-4. Decide whether the current issues are:
-   - clear findings to fix now
-   - no findings
-   - structure problems that need architecture work
-5. If findings exist, fix the smallest coherent batch.
-6. Run the scoped verification for that batch.
-7. Review again from the new diff and re-read `git rev-parse HEAD` if the branch changed during the loop.
-8. Emit the machine-readable result envelope with `status`, `head_sha`, and `evidence` for the reviewed branch state.
+2. Run `review-loop` on the current diff and branch state.
+3. Map the shared loop result to this wrapper's status vocabulary:
+   - `clean` -> `no_findings`
+   - `findings` -> `findings`
+   - `needs_architecture_review` -> `needs_architecture_review`
+   - `blocked` -> `blocked`
+4. Emit the machine-readable result envelope with `status`, `head_sha`, and `evidence` for the reviewed branch state.
 
 ## Three-round escalation
 
-- Count one round as: review -> fix -> re-verify -> re-review.
-- If three consecutive rounds still produce new bugs, owned findings, or structural problems, stop patch-on-patch repair.
-- Return `needs_architecture_review`.
-- Default escalation target is `research`, not `research-pro`.
-- If `research` recommends structural changes to module boundaries, interfaces, data flow, or tests, keep this skill at `needs_architecture_review` and let `research` or the caller hand the result back to `plan-writing`.
+- This wrapper inherits the three-round limit from `review-loop`.
+- If `review-loop` returns `needs_architecture_review`, keep that status here and escalate to `research`, not `research-pro`.
+- If `research` recommends structural changes to module boundaries, interfaces, data flow, or tests, let the caller route that result into whatever planning workflow is active.
 
 ## Recommended checks
 
 - Compare requirements against the current diff, not just tests.
 - Re-read the current `plan/1` if one exists.
-- Re-run the adversarial reviewer pass after every non-trivial repair batch instead of trusting the previous review result.
+- Treat `review-loop` as the shared implementation-plus-adversarial review engine instead of duplicating its mechanics here.
 - Stack `verification-before-completion` before any success claim.
-- Stack `scout-skeptic` when the diff is risky or the findings pattern is unclear, or run an explicit local skeptic pass before `no_findings`.
+- Stack `scout-skeptic` when the diff is risky or the findings pattern is unclear, or run an explicit local skeptic pass before handing control to `review-loop`.
 
 ## Red flags
 
 - Calling the branch "ready" because tests happen to pass while the diff still contains obvious review debt
-- Returning `no_findings` without a fresh adversarial reviewer pass on the current diff
+- Returning `no_findings` without first running the shared `review-loop` on the current diff
 - Returning `no_findings` while known owned issues are still queued for someone else to catch later
 - Creating or refreshing a PR head before self-review reaches `no_findings`
 - Carrying GitHub thread behavior into this skill
-- Continuing beyond three churn rounds without escalating to `research`
+- Re-implementing `review-loop` logic here instead of using the shared review engine

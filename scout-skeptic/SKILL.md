@@ -9,6 +9,17 @@ description: "Use after a short local probe when a non-trivial task still has mu
 
 Use the `scout-skeptic` skill as an additive overlay for one task when a short local probe is not enough and the main thread would benefit from a bounded scout/skeptic checkpoint for evidence gathering or critique.
 
+## Non-trivial threshold
+
+Treat the task as trivial when the first short probe leaves only one obvious local action and no second independent verification or review question that could still change the next step.
+
+Treat the task as non-trivial when the first short probe still leaves either of these:
+
+- at least two independent read-only questions, hypotheses, or evidence gaps
+- one remaining implementation path plus a second distinct verification, regression, or reviewer-risk question that could still change the next action
+
+If unsure, write the local checkpoint explicitly and use that record to justify whether this skill should load.
+
 ## When this should be loaded
 
 - Load this after the first short probe for non-trivial tasks when multiple files, questions, or evidence sources can be inspected in parallel.

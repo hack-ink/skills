@@ -18,8 +18,10 @@ def main() -> int:
     text = SKILL_PATH.read_text(encoding="utf-8")
     for needle in [
         "name: review-prepare",
+        "Wraps the shared `review-loop` mechanics",
+        "maps the shared loop result onto pre-PR branch-readiness status",
         "primary self-review gate for branch readiness",
-        "actual diff",
+        "Run `review-loop` on the actual diff",
         "machine-readable result envelope",
         "`status`",
         "`head_sha`",
@@ -29,18 +31,15 @@ def main() -> int:
         "`findings`",
         "`needs_architecture_review`",
         "`blocked`",
-        "three consecutive rounds",
+        "inherits the three-round limit from `review-loop`",
         "`research`",
         "Do not proceed to PR creation",
         "including after `review-repair` changes the branch",
         "PR head refresh",
-        "adversarial reviewer lens",
-        "regression risk, missing tests, docs/config drift, and operator-facing fallout",
         "merge readiness",
         "Do not output `no_findings` while any known owned issue remains on the current head",
         "External review is input to validate after self review, not a place to hand off known owned cleanup",
-        "new bugs, owned findings, or structural problems",
-        "Returning `no_findings` without a fresh adversarial reviewer pass on the current diff",
+        "Returning `no_findings` without first running the shared `review-loop` on the current diff",
     ]:
         assert_contains(text, needle)
     print("OK: review-prepare contract captures the pre-PR self-review loop")

@@ -90,7 +90,7 @@ description: Use at the start of a task, before clarifying questions, or before 
 Examples:
 
 - "Fix this bug" -> load debugging workflow skills before language- or framework-specific skills; if the first probe still leaves multiple independent read-only questions, plausible causes, or missing tests worth challenging, also load `scout-skeptic`.
-- "Implement this feature in this repo" -> load `workspaces` first so the work starts in an isolated `.workspaces/*` lane.
+- "Implement this feature in this repo" -> load `workspaces` first so the work starts in an isolated `.workspaces/*` lane; if a saved `plan/1` is explicitly required, create or revise it from inside that active lane instead of leaving it in the primary checkout.
 - "I have two unrelated implementation tasks in the same repo" -> load `workspaces` first so each task gets its own isolated `.workspaces/*` lane.
 - "Write the implementation plan" or a task already running in Plan mode -> load the planning workflow before any code changes.
 - "Execute this plan" or "continue from `docs/plans/...`" -> load the workflow that treats the saved plan as the execution entrypoint.
@@ -104,6 +104,7 @@ Examples:
 ## Workflow-specific routing examples
 
 - Start or resume non-read-only implementation work -> `workspaces`
+- If a saved `plan/1` is explicitly needed for that implementation, create or revise it from inside the active workspace lane
 - Multiple `.workspaces/*` lanes conflict and one must survive -> `workspace-reconcile`
 - Before creating or updating a PR, run the pre-PR self-review loop -> `review-prepare`
 - When PR review comments arrive, validate them, repair verified issues, and resolve only verified fixes -> `review-repair`
@@ -119,5 +120,6 @@ Examples:
 ## Authoring note
 
 - When creating or updating skills, put trigger conditions and boundaries in the frontmatter `description`, because routing depends on it.
+- When creating or updating a skill, load the system `skill-creator` skill first if it is available in the current runtime, then apply this repo's local conventions.
 - If the routing examples or overlay expectations change, update `routing-fixtures.json` and the primary workflow reference list above so the checked-in prompt contract stays aligned with this skill.
 - Keep the skill body procedural and concise. Move detailed references into `references/` and deterministic scripts into `scripts/` only when needed.

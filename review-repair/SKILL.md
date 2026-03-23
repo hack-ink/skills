@@ -1,6 +1,6 @@
 ---
 name: review-repair
-description: Use after a PR has review feedback on GitHub. Owns unresolved-thread triage, fix-and-verify rounds, in-thread replies, conditional resolve, and escalation to `research` when three review-repair rounds do not converge.
+description: Use after a PR has review feedback on GitHub. Wraps `review-loop` for the repaired diff after unresolved-thread triage, then owns in-thread replies, conditional resolve, and escalation when repeated external-review repair still does not converge.
 ---
 
 # Review Repair
@@ -8,7 +8,7 @@ description: Use after a PR has review feedback on GitHub. Owns unresolved-threa
 ## Scope
 
 - This skill owns the external-review repair loop after a PR already exists.
-- This skill reads unresolved review comments, evaluates them with technical rigor, fixes valid issues, reruns verification, replies in-thread, and resolves only the threads that are actually complete.
+- This skill triages unresolved review comments, uses `review-loop` for any owned repair batch on the repaired diff, replies in-thread, and resolves only the threads that are actually complete.
 - This skill does not request review, merge, close out trackers, or clean up workspaces.
 
 ## Inputs
@@ -36,10 +36,11 @@ Every emitted result must use the stable `head_sha` field name for the repaired 
   - verify the suggestion against the codebase, tests, and requirements
   - decide: fix now, push back with technical reasoning, or ask for clarification
 - External review feedback is input to evaluate, not an automatic order to follow.
-- Re-run fresh verification after every repair batch.
-- Before any repair-batch `git commit` or `git push`, run `review-prepare` on the repaired diff and do not continue until it returns `no_findings` for the current repaired head.
+- Use `review-loop` as the shared repair-batch review engine on the repaired diff.
+- Do not treat repair-batch verification alone as enough; the repaired diff must reach `clean` through `review-loop` before any commit, push, or resolve decision that depends on the new state.
+- A repaired head that reaches `clean` through `review-loop` satisfies the current-head self-review gate for downstream flow unless the caller explicitly requires a separate `review-prepare` artifact.
 - Do not leave a repaired head carrying known owned bugs or small cleanup while treating external review as the next line of defense.
-- If a repair batch needs `git commit` or `git push`, route through `delivery-prepare` before committing or pushing that repaired head.
+- If a repair batch needs `git commit` or `git push`, route through `delivery-prepare` only after `review-loop` reaches `clean` for that repaired head.
 - Bind every repair decision and resolution decision to the explicit repaired head SHA that was verified through the stable `head_sha` field.
 - A repair batch that produces and pushes a new head is not complete by itself; keep ownership until the repaired diff is verified, the thread replies are posted, and every fixed thread is resolved.
 - Reply in the review thread, not as a top-level PR comment.
@@ -60,12 +61,11 @@ Every emitted result must use the stable `head_sha` field name for the repaired 
    - validate it against the codebase
    - decide: fix now, push back, or ask for clarification
 3. Group compatible fixes into the smallest coherent repair batch.
-4. Apply the batch and re-run scoped verification.
-5. Run `review-prepare` on the repaired diff before any repair-batch commit or push.
-   - if `review-prepare` returns findings, fix them, re-run verification, and re-run `review-prepare` until it returns `no_findings` for the current repaired head
-   - do not treat repair-batch verification alone as enough to skip this self-review gate
+4. Apply the batch and run `review-loop` on the repaired diff.
+   - if `review-loop` returns `findings`, keep fixing, re-verifying, and re-running `review-loop` until it returns `clean` for the current repaired head
+   - if `review-loop` returns `needs_architecture_review` or `blocked`, stop and emit that result for the current head
 6. If the repair batch needs commit or push:
-   - after `review-prepare` is clean for the repaired head, run `delivery-prepare` before the commit or push
+   - after `review-loop` is clean for the repaired head, run `delivery-prepare` before the commit or push
    - push the repaired head
    - continue owning the external-review repair loop for that new head instead of assuming another request step
 7. Reply in-thread for every addressed comment.
@@ -156,12 +156,13 @@ gh api graphql \
 
 ## Three-round escalation
 
-- Count one round as: external review feedback or repaired-diff self-review -> repair -> re-verify -> next review pass.
-- If either the external-review loop or the repaired-diff self-review loop reaches three consecutive rounds that still uncover new bugs, owned findings, or structural problems, stop incremental patching.
+- The bounded repair mechanics inherit the three-round limit from `review-loop`.
+- Count one round as: external review feedback -> triage -> `review-loop` repair batch -> next review pass.
+- If either the external-review loop or the `review-loop` repair pass reaches `needs_architecture_review`, stop incremental patching.
 - Return `needs_architecture_review`.
 - Default escalation target is `research`.
 - Use `research` to look for the deeper architecture or design cause instead of continuing patch-on-patch churn.
-- If `research` changes interfaces, data flow, module ownership, or test shape, keep this skill at `needs_architecture_review` and let `research` or the caller route the result back through `plan-writing`.
+- If `research` changes interfaces, data flow, module ownership, or test shape, keep this skill at `needs_architecture_review` and let the caller route the result into whatever planning workflow is active.
 
 ## Thread discipline
 
@@ -175,10 +176,10 @@ gh api graphql \
 
 - Treating every reviewer suggestion as automatically correct
 - Repairing code without re-running verification
-- Treating repair-batch verification as enough to skip `review-prepare` on the repaired diff
+- Treating repair-batch verification as enough to skip the shared `review-loop` on the repaired diff
 - Leaving external review to rediscover known owned issues on the repaired diff
 - Committing or pushing a repair batch without first running `delivery-prepare`
-- Committing or pushing a repair batch before `review-prepare` returns `no_findings` for the repaired head
+- Committing or pushing a repair batch before `review-loop` returns `clean` for the repaired head
 - Posting a top-level PR comment instead of replying in-thread
 - Leaving a verified completed thread unresolved because the resolve step required `gh api graphql`
 - Resolving a thread before the fix is verified

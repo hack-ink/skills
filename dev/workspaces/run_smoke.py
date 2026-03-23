@@ -61,6 +61,10 @@ def assert_skill_doc() -> None:
         "warned",
         "push origin --delete",
         "remote branch is absent",
+        "create or update it from inside the active workspace",
+        "Do not leave task-local `docs/plans/...` artifacts behind in the primary checkout",
+        "pull --ff-only origin \"$target_branch\"",
+        "primary checkout is on the integration branch and fast-forwarded to the latest upstream state",
     ]:
         assert_contains(text, needle, label="workspaces skill")
     print("OK: workspaces skill documents setup and cleanup outputs")

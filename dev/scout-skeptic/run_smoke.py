@@ -50,6 +50,17 @@ def assert_scout_skeptic_skill() -> None:
     assert_contains(text, "scout", label="scout-skeptic skill")
     assert_contains(text, "skeptic", label="scout-skeptic skill")
     assert_contains(text, "additive overlay", label="scout-skeptic skill")
+    assert_contains(text, "## Non-trivial threshold", label="scout-skeptic skill")
+    assert_contains(
+        text,
+        "Treat the task as trivial when the first short probe leaves only one obvious local action",
+        label="scout-skeptic skill",
+    )
+    assert_contains(
+        text,
+        "one remaining implementation path plus a second distinct verification, regression, or reviewer-risk question",
+        label="scout-skeptic skill",
+    )
     assert_contains(
         text,
         "thresholded mechanism, not a vague preference",
